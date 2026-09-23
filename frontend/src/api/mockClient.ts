@@ -46,7 +46,8 @@ export const mockClient: ProcurementApi = {
       run.lines = run.lines.filter((line) => line.supplier === params.supplier);
       run.suppliers = run.suppliers.filter((summary) => summary.supplier === params.supplier);
     }
-    run.warnings = [...run.warnings, 'Демо-режим: расчёт показывает иллюстративный образец, файлы не анализируются.'];
+    run.warnings = [...run.warnings, 'Демо-режим: числа взяты из образца; метод, сроки, сервис, прирост и загруженные файлы не пересчитывают рекомендации.'];
+    if (params.supplier) run.warnings.push('Показатели разовых продаж, восстановленного спроса и излишков относятся к исходному образцу для всех поставщиков.');
     totals(run);
     runs.set(run.run_id, run);
     return clone(run);

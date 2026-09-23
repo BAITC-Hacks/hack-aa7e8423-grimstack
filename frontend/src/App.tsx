@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError, type DatasetFiles } from './api/ProcurementApi';
 import { getApi } from './api/client';
@@ -20,7 +20,7 @@ function Parameters({ meta, params, setParams, onCalculate, calculating, onOpenU
   const supplierInfo = meta?.suppliers.find((item) => item.supplier === params.supplier);
   return <SectionPanel aria-label="Параметры расчёта">
     <div className={styles.parameterGrid}>
-      <Select id="supplier" label="Поставщик" value={params.supplier ?? ''} onChange={(event) => setParams({ ...params, supplier: (event.target.value || null) as Supplier | null, category: null, lead_time_days: null, review_period_days: null })}><option value="">Все поставщики</option>{meta?.suppliers.map((item) => <option key={item.supplier} value={item.supplier}>{item.supplier_name}</option>)}</Select>
+      <Select id="supplier" label="Поставщик" value={params.supplier ?? ''} onChange={(event) => setParams({ ...params, supplier: (event.target.value || null) as Supplier | null, dataset_id: null, category: null, lead_time_days: null, review_period_days: null })}><option value="">Все поставщики</option>{meta?.suppliers.map((item) => <option key={item.supplier} value={item.supplier}>{item.supplier_name}</option>)}</Select>
       <Select id="method" label="Метод" value={params.method} onChange={(event) => setParams({ ...params, method: event.target.value as RunParams['method'] })}><option value="analyze">Наш расчёт</option><option value="baseline">Excel-метод</option></Select>
       <Field id="growth" label="Прирост, %" type="number" min={-90} max={500} value={params.growth_pct} onChange={(event) => setParams({ ...params, growth_pct: Number(event.target.value) })} />
       <Button variant="primary" type="button" loading={calculating} onClick={onCalculate}>Рассчитать</Button>
@@ -43,7 +43,7 @@ function QuantityEditor({ line, approved, onSave }: { line: OrderLine; approved:
     const value = Number(draft);
     if (draft.trim() === '' || !isValidQuantity(value, line.moq)) { setError(`Количество должно быть кратно ${formatNumber(line.moq)} и не меньше 0`); return; }
     setBusy(true); setError('');
-    try { await onSave(line, value); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Не удалось сохранить количество'); } finally { setBusy(false); }
+    try { await onSave(line, value); } catch (cause) { if (cause instanceof ApiError && cause.status === 409) setDraft(String(line.final_qty)); setError(cause instanceof Error ? cause.message : 'Не удалось сохранить количество'); } finally { setBusy(false); }
   }
   return <div className={styles.editor}><div className={styles.editorControls}><input aria-label={`Итоговое количество для ${line.name}`} type="number" min="0" step={line.moq} value={draft} disabled={approved || busy} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void submit(); if (event.key === 'Escape') { setDraft(String(line.final_qty)); setError(''); } }} />{changed && !approved && <Button type="button" disabled={busy} loading={busy} onClick={() => void submit()}>Сохранить</Button>}</div>{error && <small role="alert" className={styles.cellError}>{error}</small>}</div>;
 }
@@ -64,20 +64,26 @@ function SupplierOrders({ summary, lines, selectedId, onSelect, onSave, onApprov
   </section>;
 }
 
-function UploadDialog({ open, onOpenChange, onUploaded }: { open: boolean; onOpenChange: (open: boolean) => void; onUploaded: (datasetId: string, warnings: string[]) => void }) {
+function UploadDialog({ open, onOpenChange, onUploaded }: { open: boolean; onOpenChange: (open: boolean) => void; onUploaded: (datasetId: string, supplier: Supplier, warnings: string[]) => void }) {
   const [supplier, setSupplier] = useState<Supplier>('IEK');
   const [files, setFiles] = useState<DatasetFiles>({});
   const [error, setError] = useState('');
+  const [fieldError, setFieldError] = useState<Partial<Record<FileRole, string>>>({});
   const [busy, setBusy] = useState(false);
   async function submit() {
     for (const role of requiredRoles) if (!files[role]) { setError(`Выберите файл: ${roleLabels[role]}`); return; }
     for (const file of Object.values(files)) if (file && (!file.name.toLowerCase().endsWith('.xlsx') || file.size === 0 || file.size > 30 * 1024 * 1024)) { setError('Нужны непустые .xlsx-файлы размером до 30 МБ каждый'); return; }
-    setBusy(true); setError('');
-    try { const uploaded = await (await getApi()).uploadDataset(supplier, files); onUploaded(uploaded.dataset_id, uploaded.warnings); onOpenChange(false); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : 'Не удалось загрузить файлы'); }
+    setBusy(true); setError(''); setFieldError({});
+    try { const uploaded = await (await getApi()).uploadDataset(supplier, files); onUploaded(uploaded.dataset_id, uploaded.supplier, uploaded.warnings); onOpenChange(false); }
+    catch (cause) {
+      const message = cause instanceof Error ? cause.message : 'Не удалось загрузить файлы';
+      const role = cause instanceof ApiError ? cause.meta.file_role : undefined;
+      if (typeof role === 'string' && allRoles.includes(role as FileRole)) setFieldError({ [role]: message });
+      else setError(message);
+    }
     finally { setBusy(false); }
   }
-  return <Dialog open={open} onOpenChange={onOpenChange} title="Загрузка выгрузок"><p>Загрузите файлы одного поставщика. Первые четыре обязательны.</p><Select id="upload-supplier" label="Поставщик" value={supplier} onChange={(event) => setSupplier(event.target.value as Supplier)}><option value="IEK">IEK</option><option value="SE">Systeme Electric</option></Select><div className={styles.uploadFields}>{allRoles.map((role) => <Field key={role} id={`file-${role}`} label={`${roleLabels[role]}${requiredRoles.includes(role) ? ' *' : ''}`} type="file" accept=".xlsx" onChange={(event) => setFiles({ ...files, [role]: event.target.files?.[0] })} />)}</div>{error && <InlineAlert tone="error">{error}</InlineAlert>}<div className={styles.dialogActions}><Button type="button" onClick={() => onOpenChange(false)}>Отмена</Button><Button type="button" variant="primary" loading={busy} onClick={() => void submit()}>Загрузить</Button></div></Dialog>;
+  return <Dialog open={open} onOpenChange={onOpenChange} title="Загрузка выгрузок"><p>Загрузите файлы одного поставщика. Первые четыре обязательны.</p><Select id="upload-supplier" label="Поставщик" value={supplier} onChange={(event) => setSupplier(event.target.value as Supplier)}><option value="IEK">IEK</option><option value="SE">Systeme Electric</option></Select><div className={styles.uploadFields}>{allRoles.map((role) => <Field key={role} id={`file-${role}`} label={`${roleLabels[role]}${requiredRoles.includes(role) ? ' *' : ''}`} error={fieldError[role]} type="file" accept=".xlsx" onChange={(event) => setFiles({ ...files, [role]: event.target.files?.[0] })} />)}</div>{error && <InlineAlert tone="error">{error}</InlineAlert>}<div className={styles.dialogActions}><Button type="button" onClick={() => onOpenChange(false)}>Отмена</Button><Button type="button" variant="primary" loading={busy} onClick={() => void submit()}>Загрузить</Button></div></Dialog>;
 }
 
 export default function App() {
@@ -94,6 +100,7 @@ export default function App() {
   const [urgency, setUrgency] = useState<Urgency | ''>('');
   const metaQuery = useQuery({ queryKey: ['meta'], queryFn: async () => (await getApi()).getMeta() });
   const runQuery = useQuery({ queryKey: ['run', runId], enabled: Boolean(runId), queryFn: async () => (await getApi()).getRun(runId!) });
+  useEffect(() => { if (runQuery.error instanceof ApiError && runQuery.error.status === 404) sessionStorage.removeItem('grimstack-run-id'); }, [runQuery.error]);
   const run = runQuery.data;
   const selected = run?.lines.find((line) => line.line_id === selectedId) ?? null;
   const visibleLines = useMemo(() => (run?.lines ?? []).filter((line) => {
@@ -135,7 +142,7 @@ export default function App() {
       <div className={`${styles.workspace} ${selected ? styles.withDetail : ''}`}><SectionPanel className={styles.orders} aria-labelledby="orders-heading"><div className={styles.ordersHeading}><h2 id="orders-heading">Заказы поставщикам</h2><div className={styles.filters}><Field id="search" label="Поиск по коду, артикулу, названию" value={search} onChange={(event) => setSearch(event.target.value)} /><Select id="urgency-filter" label="Срочность" value={urgency} onChange={(event) => setUrgency(event.target.value as Urgency | '')}><option value="">Все</option><option value="critical">Срочно</option><option value="high">Скоро</option><option value="planned">Плановый</option><option value="none">Без заказа</option></Select></div></div>{run.lines.length === 0 ? <p>Заказывать нечего</p> : run.suppliers.map((supplier) => <SupplierOrders key={supplier.supplier} summary={supplier} lines={visibleLines.filter((line) => line.supplier === supplier.supplier)} selectedId={selectedId} onSelect={(line) => setSelectedId(line.line_id)} onSave={saveLine} onApprove={approve} onExport={exportFile} onSummary={showSummary} />)}</SectionPanel>{selected && <><button className={styles.backdrop} type="button" aria-label="Закрыть детали" onClick={() => setSelectedId(null)} /><SkuPanel line={selected} onClose={() => setSelectedId(null)} /></>}</div>
     </>}
     {!run && !calculating && !runQuery.isError && <SectionPanel className={styles.empty}><h2>Начните с расчёта</h2><p>Выберите параметры и нажмите «Рассчитать». Затем можно проверить каждую позицию, изменить количество и выгрузить заказ.</p></SectionPanel>}
-    <UploadDialog open={uploadOpen} onOpenChange={setUploadOpen} onUploaded={(datasetId, warnings) => { setParams((current) => ({ ...current, dataset_id: datasetId })); setNotice(`Набор ${datasetId} загружен. ${warnings.join(' ')}`); }} />
+    <UploadDialog open={uploadOpen} onOpenChange={setUploadOpen} onUploaded={(datasetId, supplier, warnings) => { setParams((current) => ({ ...current, supplier, category: null, dataset_id: datasetId })); setNotice(`Набор ${datasetId} загружен. ${warnings.join(' ')}`); }} />
     <Dialog open={summary !== null} onOpenChange={(open) => { if (!open) setSummary(null); }} title="Сводка по заказу">{summary && <><p>{summary.text}</p>{summary.cached && <p>Из кэша</p>}<div className={styles.dialogActions}><Button type="button" onClick={() => setSummary(null)}>Закрыть</Button></div></>}</Dialog>
   </PageShell>;
 }

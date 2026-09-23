@@ -9,7 +9,9 @@ export default function HistoryChart({ history }: { history: SkuHistory }) {
   const color = (name: string) => tokens.getPropertyValue(name).trim();
   const months = [...history.months, ...history.forecast_months];
   const pad = (values: number[]) => [...values, ...Array<null>(history.forecast_months.length).fill(null)];
-  const forecast = [...Array<null>(history.months.length - 1).fill(null), history.restored.at(-1) ?? null, ...history.forecast];
+  const forecast = history.months.length > 0
+    ? [...Array<null>(history.months.length - 1).fill(null), history.restored.at(-1) ?? null, ...history.forecast]
+    : [...history.forecast];
   const options: ApexOptions = {
     chart: { background: 'transparent', toolbar: { show: false }, animations: { enabled: false } },
     colors: [color('--text'), color('--text-muted'), color('--success'), color('--accent')],
