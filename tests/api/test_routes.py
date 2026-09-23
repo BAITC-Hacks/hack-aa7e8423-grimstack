@@ -10,7 +10,7 @@ import pytest
 from fastapi.testclient import TestClient
 from openpyxl import load_workbook
 
-from app import engine, ingest
+from app import ai, engine, ingest
 from app.api.routes import EXPORT_COLUMNS, MAX_UPLOAD_BYTES
 from app.contracts import Meta, RunResult, SkuHistory
 from app.main import create_app
@@ -47,6 +47,8 @@ def sample_core(monkeypatch):
     monkeypatch.setattr(engine, "meta", lambda _data: Meta.model_validate(sample("sample_meta.json")))
     monkeypatch.setattr(engine, "history", history)
     monkeypatch.setitem(ingest._LOADERS, "IEK", lambda _folder, _as_of: {"source": "upload"})
+    monkeypatch.setattr(ingest, "apply_product_groups", lambda _data, _csv: None)
+    monkeypatch.setattr(ai, "summary", lambda _run, _supplier: None)
 
 
 @pytest.fixture
