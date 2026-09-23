@@ -92,6 +92,75 @@ def test_backtest_report_and_missing_file(client, tmp_path, monkeypatch):
     assert error["code"] == "backtest_not_found"
 
 
+def test_compare_runs_counts_amount_and_added_removed_lines(client, monkeypatch):
+    def fake_run(_dataset, params):
+        result = RunResult.model_validate(json.loads(
+            (CONTRACTS / "sample_run.json").read_text(encoding="utf-8")
+        ))
+        result.run_id = uuid4().hex[:12]
+        result.params = params
+        se_lines = [line for line in result.lines if line.supplier == "SE"]
+        if params.lead_time_days == 38:
+            selected = [(se_lines[0], 20, "critical"),
+                        (se_lines[2], 30, "critical"),
+                        (se_lines[4], 7, "planned")]
+        else:
+            selected = [(se_lines[0], 10, "planned"),
+                        (se_lines[1], 5, "critical")]
+        for line, quantity, urgency in selected:
+            line.recommended_qty = line.final_qty = quantity
+            line.urgency = urgency
+            line.amount = round(quantity * line.unit_cost, 2)
+        result.lines = [line for line, _, _ in selected]
+        result.suppliers = [summary for summary in result.suppliers if summary.supplier == "SE"]
+        return result
+
+    monkeypatch.setattr(engine, "run", fake_run)
+    response = client.post("/api/runs/compare", json={
+        "base": {"supplier": "SE"},
+        "scenario": {"supplier": "SE", "lead_time_days": 38},
+    })
+    assert response.status_code == 200, response.text
+    comparison = response.json()
+    assert comparison["base_run_id"] != comparison["scenario_run_id"]
+    assert set(client.app.state.store.runs) == {
+        comparison["base_run_id"], comparison["scenario_run_id"]
+    }
+    assert comparison["delta"] == {
+        "lines_to_order": 1,
+        "critical": 1,
+        "total_qty": 42,
+        "total_amount": 33519.72,
+    }
+    assert [line["line_id"] for line in comparison["changed"]] == [
+        "SE:300200700_", "SE:130300027_", "SE:030200193_", "SE:130300028_"
+    ]
+    added = comparison["changed"][0]
+    assert (added["base_qty"], added["scenario_qty"]) == (0, 30)
+    assert (added["base_urgency"], added["scenario_urgency"]) == ("none", "critical")
+    removed = comparison["changed"][-1]
+    assert (removed["base_qty"], removed["scenario_qty"]) == (5, 0)
+    assert (removed["base_urgency"], removed["scenario_urgency"]) == ("critical", "none")
+    assert client.get(f"/api/runs/{comparison['base_run_id']}").status_code == 200
+    assert client.get(f"/api/runs/{comparison['scenario_run_id']}").status_code == 200
+
+
+def test_compare_runs_missing_dataset_and_unknown_amount(client):
+    missing = assert_error(client.post("/api/runs/compare", json={
+        "base": {}, "scenario": {"dataset_id": "missing"}
+    }), 404)
+    assert missing["code"] == "not_found"
+    assert client.app.state.store.runs == {}
+
+    response = client.post("/api/runs/compare", json={
+        "base": {"supplier": "IEK"},
+        "scenario": {"supplier": "IEK", "lead_time_days": 38},
+    })
+    assert response.status_code == 200, response.text
+    assert response.json()["delta"]["total_amount"] is None
+    assert response.json()["changed"] == []
+
+
 def test_health_meta_and_saved_filtered_run(client):
     assert client.get("/health").json() == {"status": "ok"}
     meta = client.get("/api/meta")

@@ -13,6 +13,7 @@ from openpyxl import Workbook
 from starlette.datastructures import UploadFile
 
 from app import ai, engine, ingest
+from app.api.schemas import ChangedLine, CompareDelta, CompareRequest, CompareResult
 from app.contracts import (
     DatasetUploaded,
     ErrorBody,
@@ -85,6 +86,66 @@ def create_run(params: RunParams, store: Store = Depends(get_store)) -> RunResul
     result = engine.run(dataset, params)
     store.save_run(result, dataset)
     return result
+
+
+@router.post("/runs/compare", response_model=CompareResult)
+def compare_runs(request: CompareRequest, store: Store = Depends(get_store)) -> CompareResult:
+    try:
+        base_dataset = store.dataset_for(request.base.dataset_id)
+        scenario_dataset = store.dataset_for(request.scenario.dataset_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Набор данных не найден") from exc
+
+    base = engine.run(base_dataset, request.base)
+    scenario = engine.run(scenario_dataset, request.scenario)
+    with store.lock:
+        store.save_run(base, base_dataset)
+        store.save_run(scenario, scenario_dataset)
+
+    base_lines = {line.line_id: line for line in base.lines}
+    scenario_lines = {line.line_id: line for line in scenario.lines}
+    changed = []
+    for line_id in base_lines.keys() | scenario_lines.keys():
+        before = base_lines.get(line_id)
+        after = scenario_lines.get(line_id)
+        base_qty = before.recommended_qty if before else 0.0
+        scenario_qty = after.recommended_qty if after else 0.0
+        base_urgency = before.urgency if before else "none"
+        scenario_urgency = after.urgency if after else "none"
+        if base_qty == scenario_qty and base_urgency == scenario_urgency:
+            continue
+        line = after or before
+        assert line is not None
+        changed.append(ChangedLine(
+            line_id=line_id,
+            name=line.name,
+            supplier=line.supplier,
+            base_qty=base_qty,
+            scenario_qty=scenario_qty,
+            base_urgency=base_urgency,
+            scenario_urgency=scenario_urgency,
+        ))
+    changed.sort(key=lambda line: (-abs(line.scenario_qty - line.base_qty), line.line_id))
+
+    amount = (
+        round(scenario.kpi.total_amount - base.kpi.total_amount, 2)
+        if base.kpi.total_amount is not None and scenario.kpi.total_amount is not None
+        else None
+    )
+    return CompareResult(
+        base_run_id=base.run_id,
+        scenario_run_id=scenario.run_id,
+        delta=CompareDelta(
+            lines_to_order=scenario.kpi.lines_to_order - base.kpi.lines_to_order,
+            critical=scenario.kpi.critical - base.kpi.critical,
+            total_qty=(
+                sum(item.total_qty for item in scenario.suppliers)
+                - sum(item.total_qty for item in base.suppliers)
+            ),
+            total_amount=amount,
+        ),
+        changed=changed[:20],
+    )
 
 
 @router.get("/runs/{run_id}", response_model=RunResult)
