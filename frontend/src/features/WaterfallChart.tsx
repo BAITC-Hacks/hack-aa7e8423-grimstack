@@ -53,6 +53,7 @@ export default function WaterfallChart({ steps, recommendedQty, unit }: Waterfal
     yaxis: { labels: { maxWidth: 150, style: { colors: color('--text') } } },
     annotations: { xaxis: [{ x: 0, borderColor: color('--border-strong'), strokeDashArray: 0 }] },
     tooltip: { enabled: false },
+    responsive: [{ breakpoint: 540, options: { yaxis: { labels: { maxWidth: 82, style: { colors: color('--text') } } } } }],
   };
 
   return <>
