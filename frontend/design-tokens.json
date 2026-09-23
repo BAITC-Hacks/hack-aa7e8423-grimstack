@@ -1,28 +1,54 @@
 {
   "meta": {
     "name": "GrimStack Supply operations",
-    "description": "Light operational canvas with a dark navigation rail. Mirrors frontend/src/styles/tokens.css."
+    "description": "Light procurement dashboard with a pink canvas and a white navigation rail. Mirrors frontend/src/styles/tokens.css."
   },
   "color": {
-    "bg": "#F4F5F1",
+    "bg": "#FFF5FA",
     "surface": "#FFFFFF",
-    "surfaceRaised": "#EEF1EC",
-    "border": "#DCE3DB",
-    "borderStrong": "#ABB9AE",
-    "text": "#17241D",
-    "textMuted": "#617168",
-    "accent": "#176949",
+    "surfaceRaised": "#FAF7FC",
+    "border": "#E8E2EE",
+    "borderStrong": "#CBC0D3",
+    "text": "#272337",
+    "textMuted": "#665D70",
+    "accent": "#B71F67",
     "onAccent": "#FFFFFF",
-    "accentSoft": "#E3F1E9",
-    "critical": "#B64834",
-    "criticalSoft": "#F9E8E3",
-    "warning": "#945D19",
-    "warningSoft": "#FFF0D9",
-    "success": "#287453",
-    "successSoft": "#E3F2E9",
-    "navBg": "#14251C",
-    "navText": "#E7EFE6",
-    "navMuted": "#9EB2A3"
+    "purple": "#6643A4",
+    "purpleSoft": "#EEE8F8",
+    "cyan": "#0E708A",
+    "cyanSoft": "#E6F5F8",
+    "orange": "#9A5710",
+    "orangeSoft": "#FFF0DE",
+    "critical": "#B42352",
+    "criticalSoft": "#FBE9EF",
+    "warning": "#875211",
+    "warningSoft": "#FFF0DE",
+    "success": "#1B6B53",
+    "successSoft": "#E5F5EF",
+    "series1": "#B71F67",
+    "series2": "#6643A4",
+    "series3": "#0E708A",
+    "series4": "#9A5710",
+    "navBg": "#FFFFFF",
+    "navText": "#272337",
+    "navMuted": "#665D70",
+    "tableHeadBg": "#30374B",
+    "tableHeadText": "#FFFFFF",
+    "focusRing": "#6643A4",
+    "scrim": "rgb(32 24 45 / .56)"
+  },
+  "gradient": {
+    "brand": "linear-gradient(115deg, #B71F67 0%, #7A4AB4 100%)",
+    "kpi1": "linear-gradient(120deg, #B71F67 0%, #9B3F9C 100%)",
+    "kpi2": "linear-gradient(120deg, #6A42A8 0%, #4E58AB 100%)",
+    "kpi3": "linear-gradient(120deg, #0E708A 0%, #285AB0 100%)",
+    "kpi4": "linear-gradient(120deg, #9A5710 0%, #AF474A 100%)"
+  },
+  "shadow": {
+    "frame": "0 22px 72px rgb(72 37 80 / .12)",
+    "panel": "0 8px 26px rgb(72 37 80 / .06)",
+    "control": "0 2px 6px rgb(72 37 80 / .08)",
+    "dialog": "0 24px 72px rgb(39 35 55 / .22)"
   },
   "font": {
     "body": "IBM Plex Sans",
@@ -51,8 +77,8 @@
     "12": 48
   },
   "radius": {
-    "control": 8,
-    "panel": 14
+    "control": 9,
+    "panel": 16
   },
   "size": {
     "borderWidth": 1,

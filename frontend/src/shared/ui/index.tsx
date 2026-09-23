@@ -19,7 +19,7 @@ export function Field({ label, error, success, id, className = '', ...props }: F
 
 type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & { label: string; children: ReactNode };
 export function Select({ label, children, id, className = '', ...props }: SelectProps) {
-  return <label className={`${styles.field} ${className}`} htmlFor={id}><span>{label}</span><select {...props} id={id} className={styles.control}>{children}</select></label>;
+  return <label className={`${styles.field} ${className}`} htmlFor={id}><span>{label}</span><span className={styles.selectWrap}><select {...props} id={id} className={styles.control}>{children}</select></span></label>;
 }
 
 export function StatusBadge({ urgency }: { urgency: Urgency }) { return <span className={`${styles.badge} ${styles[urgency]}`}>{urgencyLabels[urgency]}</span>; }
@@ -29,7 +29,7 @@ export function InlineAlert({ children, tone = 'warning' }: { children: ReactNod
 export function Skeleton({ label = 'Загрузка данных' }: { label?: string }) { return <div role="status" aria-label={label} className={styles.skeleton}>{label}…</div>; }
 
 export function Dialog({ open, onOpenChange, title, children }: { open: boolean; onOpenChange: (open: boolean) => void; title: string; children: ReactNode }) {
-  return <RadixDialog.Root open={open} onOpenChange={onOpenChange}><RadixDialog.Portal><RadixDialog.Overlay className={styles.dialogOverlay} /><RadixDialog.Content className={styles.dialog}><RadixDialog.Title className={styles.dialogTitle}>{title}</RadixDialog.Title>{children}</RadixDialog.Content></RadixDialog.Portal></RadixDialog.Root>;
+  return <RadixDialog.Root open={open} onOpenChange={onOpenChange}><RadixDialog.Portal><RadixDialog.Overlay className={styles.dialogOverlay} /><RadixDialog.Content className={styles.dialog}><RadixDialog.Title className={styles.dialogTitle}>{title}</RadixDialog.Title><RadixDialog.Close className={styles.dialogClose} aria-label="Закрыть окно">×</RadixDialog.Close>{children}</RadixDialog.Content></RadixDialog.Portal></RadixDialog.Root>;
 }
 
 export function Tooltip({ text, children }: { text: string; children: ReactNode }) { return <span title={text} aria-label={text} tabIndex={0} className={styles.tooltip}>{children}</span>; }

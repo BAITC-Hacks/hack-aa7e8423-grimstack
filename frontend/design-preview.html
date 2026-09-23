@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GrimStack Supply — предпросмотр оформления</title>
+  <link rel="stylesheet" href="src/styles/tokens.css" />
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; padding: 54px 24px; background: var(--bg); color: var(--text); font: var(--font-md)/var(--line-body) var(--font-body); }
+    button, select { font: inherit; }
+    button { cursor: pointer; }
+    :focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+    .notice { width: min(100%, 1380px); margin: 0 auto 14px; color: var(--text-muted); font-size: var(--font-sm); }
+    .app { display: grid; grid-template-columns: 210px minmax(0, 1fr); width: min(100%, 1380px); margin: auto; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-panel); background: var(--surface); box-shadow: var(--shadow-frame); }
+    .sidebar { border-right: 1px solid var(--border); background: var(--surface); }
+    .brand { padding: 22px 18px; background: var(--brand-gradient); color: var(--on-accent); font-weight: 700; }
+    .navCaption { padding: 22px 18px 8px; color: var(--text-muted); font-size: var(--font-xs); text-transform: uppercase; letter-spacing: .12em; }
+    .nav { display: grid; gap: 4px; padding: 0 10px; }
+    .nav a { display: block; min-height: var(--touch-target-min); padding: 10px 12px; border-radius: var(--radius-control); color: var(--text-muted); font-size: var(--font-sm); text-decoration: none; }
+    .nav a.active { background: var(--accent-soft); color: var(--accent); border-left: 3px solid var(--accent); font-weight: 700; }
+    .main { min-width: 0; background: var(--surface-raised); }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 58px; padding: 0 28px; background: var(--surface); border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: var(--font-sm); }
+    .content { padding: 28px; }
+    .eyebrow { color: var(--accent); font-size: var(--font-xs); font-weight: 700; text-transform: uppercase; letter-spacing: .12em; }
+    h1 { margin: 6px 0 4px; font-size: clamp(28px, 3vw, 40px); }
+    h2 { margin: 0 0 14px; font-size: var(--font-lg); }
+    p { margin: 0 0 16px; color: var(--text-muted); }
+    .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin: 24px 0; }
+    .kpi { min-height: 140px; padding: 20px; border-radius: var(--radius-panel); color: var(--on-accent); box-shadow: var(--shadow-panel); }
+    .kpi:nth-child(1) { background: var(--kpi-gradient-1); }
+    .kpi:nth-child(2) { background: var(--kpi-gradient-2); }
+    .kpi:nth-child(3) { background: var(--kpi-gradient-3); }
+    .kpi:nth-child(4) { background: var(--kpi-gradient-4); }
+    .kpi span { display: block; font-size: var(--font-sm); font-weight: 600; }
+    .kpi strong { display: block; margin-top: 10px; font-size: clamp(28px, 3vw, 42px); }
+    .grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(260px, 1fr); gap: 16px; }
+    .panel { min-width: 0; padding: 20px; border: 1px solid var(--border); border-radius: var(--radius-panel); background: var(--surface); box-shadow: var(--shadow-panel); }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+    .button { min-height: var(--touch-target-min); padding: 9px 16px; border: 1px solid var(--border-strong); border-radius: var(--radius-control); background: var(--surface); color: var(--text); font-weight: 600; box-shadow: var(--shadow-control); }
+    .button.primary { border-color: var(--accent); background: var(--brand-gradient); color: var(--on-accent); }
+    .field { display: grid; gap: 8px; max-width: 240px; color: var(--text); font-size: var(--font-sm); font-weight: 600; }
+    .field select { width: 100%; min-height: var(--touch-target-min); padding: 8px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius-control); color: var(--text); background: var(--surface); }
+    .badges { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0; }
+    .badge { padding: 5px 10px; border-radius: 999px; font-size: var(--font-xs); font-weight: 700; }
+    .badge.critical { background: var(--critical-soft); color: var(--critical); }
+    .badge.high { background: var(--warning-soft); color: var(--warning); }
+    .badge.approved { background: var(--success-soft); color: var(--success); }
+    .tableScroll { width: 100%; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: var(--font-sm); }
+    th, td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; }
+    thead th { background: var(--table-head-bg); color: var(--table-head-text); }
+    .dialogExample { padding: 18px; border: 1px solid var(--border); border-radius: var(--radius-panel); box-shadow: var(--shadow-dialog); }
+    .dialogExample h3 { margin: 0 0 8px; font-size: var(--font-lg); }
+    .dialogExample .actions { justify-content: flex-end; margin: 16px 0 0; }
+    @media (max-width: 1000px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .grid { grid-template-columns: minmax(0, 1fr); } }
+    @media (max-width: 920px) { body { padding: 18px; } .app { display: block; } .navCaption { display: none; } .nav { grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 8px; } .nav a { text-align: center; } }
+    @media (max-width: 600px) { .content { padding: 16px; } .topbar { padding: 12px 16px; } .nav { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 390px) { body { padding: 10px; } .kpis { gap: 8px; } .kpi { padding: 14px; min-height: 115px; } .kpi strong { font-size: 26px; } }
+  </style>
+</head>
+<body>
+  <p class="notice">Статический предпросмотр оформления · числа в карточках служат только для макета</p>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">◆ GrimStack Supply</div>
+      <div class="navCaption">Рабочая область</div>
+      <nav class="nav" aria-label="Разделы">
+        <a class="active" href="#overview">Обзор</a>
+        <a href="#orders">Заказы</a>
+        <a href="#analytics">Аналитика</a>
+        <a href="#data">Данные</a>
+      </nav>
+    </aside>
+    <div class="main">
+      <header class="topbar"><span>Электрокомплект · IEK и Systeme Electric</span><span>Предпросмотр</span></header>
+      <div class="content">
+        <div class="eyebrow">Закупки / обзор</div>
+        <h1>Автозаказ поставщикам</h1>
+        <p>Визуальная система рабочего места менеджера закупок</p>
+        <div class="kpis" aria-label="Примеры KPI">
+          <div class="kpi"><span>Позиций к заказу</span><strong>128</strong></div>
+          <div class="kpi"><span>Срочные позиции</span><strong>14</strong></div>
+          <div class="kpi"><span>Сумма заказа SE</span><strong>2,7 млн ₸</strong></div>
+          <div class="kpi"><span>Позиции с излишком</span><strong>23</strong></div>
+        </div>
+        <div class="grid">
+          <section class="panel" id="orders">
+            <h2>Кнопки, список и таблица</h2>
+            <div class="actions"><button class="button primary">Рассчитать</button><button class="button">Excel для 1С</button></div>
+            <label class="field">Поставщик<select><option>Все поставщики</option><option>IEK</option><option>Systeme Electric</option></select></label>
+            <div class="badges"><span class="badge critical">Срочно</span><span class="badge high">Скоро</span><span class="badge approved">Утверждён</span></div>
+            <div class="tableScroll"><table><thead><tr><th>Товар</th><th>Наш расчёт</th><th>Excel-метод</th></tr></thead><tbody><tr><td>Пример товара</td><td>—</td><td>—</td></tr></tbody></table></div>
+          </section>
+          <section class="panel" id="data">
+            <h2>Модальное окно</h2>
+            <div class="dialogExample" role="group" aria-label="Пример модального окна"><h3>Утвердить заказ?</h3><p>После утверждения количества нельзя будет изменить.</p><div class="actions"><button class="button">Отмена</button><button class="button primary">Утвердить</button></div></div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
