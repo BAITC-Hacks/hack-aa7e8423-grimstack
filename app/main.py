@@ -52,7 +52,15 @@ def create_app(
         app.state.store = Store(default_dataset=dataset, approvals_path=approvals)
         yield
 
-    app = FastAPI(title="GrimStack закупки", lifespan=lifespan)
+    app = FastAPI(
+        title="Автозаказ поставщикам — Электрокомплект",
+        description=(
+            "Расчёт пополнения склада Алматы по выгрузкам IEK и Systeme Electric. "
+            "Менеджер проверяет предложения, утверждает заказ и выгружает Excel для 1С."
+        ),
+        version="0.1.0",
+        lifespan=lifespan,
+    )
 
     @app.middleware("http")
     async def log_request(request: Request, call_next):
@@ -96,7 +104,12 @@ def create_app(
         logger.exception("Необработанная ошибка API", exc_info=exc)
         return error_response(500, "Внутренняя ошибка сервера", "internal_error")
 
-    @app.get("/health")
+    @app.get(
+        "/health",
+        tags=["Сервис"],
+        summary="Проверить доступность сервиса",
+        description="Возвращает статус работающего API после загрузки исходных данных.",
+    )
     def health() -> dict[str, str]:
         return {"status": "ok"}
 

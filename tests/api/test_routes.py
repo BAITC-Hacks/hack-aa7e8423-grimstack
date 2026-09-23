@@ -82,6 +82,40 @@ def test_startup_and_request_logging(tmp_path, caplog):
     assert any("GET /health -> 200 за" in message for message in messages)
 
 
+def test_swagger_documents_routes_errors_and_upload(client):
+    docs = client.get("/docs")
+    assert docs.status_code == 200
+    assert "Swagger UI" in docs.text
+
+    schema = client.get("/openapi.json").json()
+    assert schema["info"]["title"] == "Автозаказ поставщикам — Электрокомплект"
+    assert schema["info"]["description"]
+    assert schema["info"]["version"]
+    expected_errors = {
+        ("/api/backtest", "get"): {404},
+        ("/api/runs", "post"): {404, 422},
+        ("/api/runs/compare", "post"): {404, 422},
+        ("/api/runs/{run_id}", "get"): {404},
+        ("/api/runs/{run_id}/lines/{line_id}", "patch"): {404, 409, 422},
+        ("/api/runs/{run_id}/suppliers/{supplier}/approve", "post"): {404},
+        ("/api/runs/{run_id}/export.xlsx", "get"): {404, 422},
+        ("/api/sku/{supplier}/{sku}/history", "get"): {404},
+        ("/api/datasets/{supplier}", "post"): {404, 422},
+        ("/api/runs/{run_id}/summary", "post"): {404, 422, 503},
+    }
+    for path, methods in schema["paths"].items():
+        for method, operation in methods.items():
+            assert operation["tags"] and operation["summary"] and operation["description"]
+            for status in expected_errors.get((path, method), set()):
+                error_schema = operation["responses"][str(status)]["content"]["application/json"]["schema"]
+                assert error_schema["$ref"].endswith("/ErrorBody")
+
+    upload = schema["paths"]["/api/datasets/{supplier}"]["post"]["requestBody"]
+    form = upload["content"]["multipart/form-data"]["schema"]
+    assert set(form["required"]) == {"monthly_sales", "monthly_stock", "in_transit", "moq"}
+    assert form["properties"]["monthly_sales"]["format"] == "binary"
+
+
 def test_backtest_report_and_missing_file(client, tmp_path, monkeypatch):
     report = client.get("/api/backtest")
     assert report.status_code == 200

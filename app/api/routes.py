@@ -37,6 +37,37 @@ EXPORT_COLUMNS = (
     "Код 1С", "Артикул поставщика", "Наименование", "Ед.", "Количество",
     "Цена", "Сумма", "Поставщик", "Срочность", "Обоснование",
 )
+ERROR_RESPONSES = {
+    404: {"model": ErrorBody, "description": "Ресурс не найден"},
+    409: {"model": ErrorBody, "description": "Заказ уже утверждён"},
+    422: {"model": ErrorBody, "description": "Некорректные данные запроса"},
+    503: {"model": ErrorBody, "description": "Сводка ИИ недоступна"},
+}
+UPLOAD_REQUEST_BODY = {
+    "requestBody": {
+        "required": True,
+        "content": {
+            "multipart/form-data": {
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "monthly_sales": {"type": "string", "format": "binary", "description": "Продажи по месяцам"},
+                        "monthly_stock": {"type": "string", "format": "binary", "description": "Остатки по месяцам"},
+                        "in_transit": {"type": "string", "format": "binary", "description": "Товары в пути"},
+                        "moq": {"type": "string", "format": "binary", "description": "Кратность заказа"},
+                        "sales_tx": {"type": "string", "format": "binary", "description": "Строки продаж, если есть"},
+                        "seasonality": {"type": "string", "format": "binary", "description": "Сезонность, если есть"},
+                    },
+                    "required": ["monthly_sales", "monthly_stock", "in_transit", "moq"],
+                }
+            }
+        },
+    }
+}
+
+
+def errors(*statuses: int) -> dict[int, dict]:
+    return {status: ERROR_RESPONSES[status] for status in statuses}
 
 
 def get_store(request: Request) -> Store:
@@ -64,12 +95,23 @@ def get_supplier(run: RunResult, supplier: Supplier) -> SupplierSummary:
     return found
 
 
-@router.get("/meta", response_model=Meta)
+@router.get(
+    "/meta", response_model=Meta,
+    tags=["Данные"], summary="Получить параметры исходных данных",
+    description="Показывает дату данных, доступных поставщиков и параметры по умолчанию.",
+)
 def meta(store: Store = Depends(get_store)) -> Meta:
     return engine.meta(store.default_dataset)
 
 
-@router.get("/backtest", responses={404: {"model": ErrorBody}})
+@router.get(
+    "/backtest", tags=["Бэктест"], summary="Получить отчёт бэктеста",
+    description="Отдаёт готовый JSON-отчёт проверки расчёта на исторических данных без пересчёта.",
+    responses={
+        200: {"description": "Исходный JSON-отчёт", "content": {"application/json": {"schema": {"type": "object"}}}},
+        **errors(404),
+    },
+)
 def backtest_report() -> Response:
     if not BACKTEST_REPORT_PATH.is_file():
         error = ErrorBody(detail="Отчёт бэктеста не найден", code="backtest_not_found")
@@ -77,7 +119,12 @@ def backtest_report() -> Response:
     return FileResponse(BACKTEST_REPORT_PATH, media_type="application/json")
 
 
-@router.post("/runs", response_model=RunResult)
+@router.post(
+    "/runs", response_model=RunResult,
+    tags=["Расчёты"], summary="Рассчитать заказ поставщикам",
+    description="Создаёт и сохраняет расчёт по выбранному набору данных и параметрам.",
+    responses=errors(404, 422),
+)
 def create_run(params: RunParams, store: Store = Depends(get_store)) -> RunResult:
     try:
         dataset = store.dataset_for(params.dataset_id)
@@ -88,7 +135,12 @@ def create_run(params: RunParams, store: Store = Depends(get_store)) -> RunResul
     return result
 
 
-@router.post("/runs/compare", response_model=CompareResult)
+@router.post(
+    "/runs/compare", response_model=CompareResult,
+    tags=["Расчёты"], summary="Сравнить два сценария расчёта",
+    description="Считает и сохраняет базовый и изменённый сценарии, возвращает разницу и товары с наибольшим изменением заказа.",
+    responses=errors(404, 422),
+)
 def compare_runs(request: CompareRequest, store: Store = Depends(get_store)) -> CompareResult:
     try:
         base_dataset = store.dataset_for(request.base.dataset_id)
@@ -148,13 +200,23 @@ def compare_runs(request: CompareRequest, store: Store = Depends(get_store)) -> 
     )
 
 
-@router.get("/runs/{run_id}", response_model=RunResult)
+@router.get(
+    "/runs/{run_id}", response_model=RunResult,
+    tags=["Расчёты"], summary="Получить сохранённый расчёт",
+    description="Возвращает строки заказа, итоги и параметры ранее созданного расчёта.",
+    responses=errors(404),
+)
 def read_run(run_id: str, store: Store = Depends(get_store)) -> RunResult:
     with store.lock:
         return get_run(store, run_id).model_copy(deep=True)
 
 
-@router.patch("/runs/{run_id}/lines/{line_id}", response_model=OrderLine)
+@router.patch(
+    "/runs/{run_id}/lines/{line_id}", response_model=OrderLine,
+    tags=["Заказы"], summary="Изменить количество товара в заказе",
+    description="Проверяет верхний предел и кратность упаковки, затем обновляет количество и итоги неутверждённого заказа.",
+    responses=errors(404, 409, 422),
+)
 def patch_line(
     run_id: str, line_id: str, patch: LinePatch, store: Store = Depends(get_store)
 ) -> OrderLine:
@@ -192,7 +254,12 @@ def patch_line(
         return line.model_copy(deep=True)
 
 
-@router.post("/runs/{run_id}/suppliers/{supplier}/approve", response_model=SupplierSummary)
+@router.post(
+    "/runs/{run_id}/suppliers/{supplier}/approve", response_model=SupplierSummary,
+    tags=["Заказы"], summary="Утвердить заказ поставщику",
+    description="Сохраняет утверждение и состав заказа; повторное утверждение возвращает прежний результат.",
+    responses=errors(404),
+)
 def approve_supplier(
     run_id: str, supplier: str, store: Store = Depends(get_store)
 ) -> SupplierSummary:
@@ -221,7 +288,19 @@ def approve_supplier(
         return summary.model_copy(deep=True)
 
 
-@router.get("/runs/{run_id}/export.xlsx")
+@router.get(
+    "/runs/{run_id}/export.xlsx",
+    tags=["Заказы"], summary="Скачать заказ в Excel для 1С",
+    description="Выгружает положительные строки выбранного поставщика без отправки заказа поставщику.",
+    responses={
+        200: {"description": "Файл Excel", "content": {
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {"type": "string", "format": "binary"}
+            }
+        }},
+        **errors(404, 422),
+    },
+)
 def export_run(
     run_id: str, supplier: str, store: Store = Depends(get_store)
 ) -> Response:
@@ -263,7 +342,12 @@ def export_run(
     )
 
 
-@router.get("/sku/{supplier}/{sku}/history", response_model=SkuHistory)
+@router.get(
+    "/sku/{supplier}/{sku}/history", response_model=SkuHistory,
+    tags=["История"], summary="Получить историю товара",
+    description="Возвращает продажи, восстановленный спрос и прогноз выбранного товара.",
+    responses=errors(404),
+)
 def sku_history(
     supplier: str, sku: str, run_id: str | None = None, store: Store = Depends(get_store)
 ) -> SkuHistory:
@@ -281,7 +365,12 @@ def sku_history(
         raise HTTPException(status_code=404, detail="Товар не найден") from exc
 
 
-@router.post("/datasets/{supplier}", response_model=DatasetUploaded)
+@router.post(
+    "/datasets/{supplier}", response_model=DatasetUploaded,
+    tags=["Данные"], summary="Загрузить выгрузки поставщика",
+    description="Принимает файлы Excel по ролям для IEK или Systeme Electric, не более 30 МБ на файл.",
+    responses=errors(404, 422), openapi_extra=UPLOAD_REQUEST_BODY,
+)
 async def upload_dataset(
     supplier: str, request: Request, store: Store = Depends(get_store)
 ) -> DatasetUploaded:
@@ -308,7 +397,12 @@ async def upload_dataset(
     return DatasetUploaded(dataset_id=dataset_id, supplier=selected, warnings=list(warnings))
 
 
-@router.post("/runs/{run_id}/summary", response_model=SummaryResponse)
+@router.post(
+    "/runs/{run_id}/summary", response_model=SummaryResponse,
+    tags=["ИИ"], summary="Составить текстовую сводку расчёта",
+    description="Возвращает сохранённое или созданное ИИ объяснение заказа выбранного поставщика.",
+    responses=errors(404, 422, 503),
+)
 def summarize_run(
     run_id: str, supplier: str, store: Store = Depends(get_store)
 ) -> SummaryResponse:
