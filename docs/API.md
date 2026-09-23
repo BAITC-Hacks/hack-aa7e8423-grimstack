@@ -27,6 +27,9 @@
 | `GET` | `/api/sku/{supplier}/{sku}/history` | Поставщик, код 1С и необязательный `run_id` | `SkuHistory` с сырым, очищенным и восстановленным рядом |
 | `POST` | `/api/datasets/{supplier}` | `multipart/form-data`, поле на роль файла | `DatasetUploaded` с `dataset_id`; набор хранится в памяти |
 | `POST` | `/api/runs/{run_id}/summary?supplier=SE` | Поставщик | `SummaryResponse` из LLM или кэша |
+| `POST` | `/api/runs/compare` | JSON `{"base": RunParams, "scenario": RunParams}` | `CompareResult`: оба прогона сохраняются, разница KPI и товары с наибольшим изменением заказа |
+| `GET` | `/api/approvals` | Нет | История утверждённых заказов из SQLite, последние сверху |
+| `GET` | `/api/backtest` | Нет | Отчёт бэктеста `data/backtest/report.json` без пересчёта |
 
 Для загрузки обязательны поля `monthly_sales`, `monthly_stock`, `in_transit`, `moq`. Поля `sales_tx` и `seasonality` необязательны. Без `sales_tx` ответ содержит предупреждение: анализ разовых заказов и дней наличия ограничен. Каждый файл — XLSX до 30 МБ. После загрузки передайте `dataset_id` в `POST /api/runs`; иначе используется встроенный набор `data/raw/`.
 
@@ -39,6 +42,7 @@
 | HTTP | `code` | Условие |
 | :-- | :-- | :-- |
 | 404 | `not_found` | Неизвестный прогон, строка, SKU, поставщик или набор |
+| 404 | `backtest_not_found` | Нет файла `data/backtest/report.json` |
 | 409 | `conflict` | Правка утверждённого заказа |
 | 422 | `validation_error` | Некорректные поля JSON |
 | 422 | `invalid_input` | Некратное количество, слишком большой файл или неверная форма |
