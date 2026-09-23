@@ -1,6 +1,7 @@
 """API contract checks with isolated sample responses from the calculation core."""
 
 import json
+import logging
 from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
@@ -69,6 +70,15 @@ def assert_error(response, status):
     assert set(body) == {"detail", "code", "meta"}
     assert isinstance(body["detail"], str) and body["detail"]
     return body
+
+
+def test_startup_and_request_logging(tmp_path, caplog):
+    with caplog.at_level(logging.INFO, logger="app.main"):
+        with TestClient(create_app(approval_path=tmp_path / "approvals.json")) as client:
+            assert client.get("/health").status_code == 200
+    messages = [record.getMessage() for record in caplog.records if record.name == "app.main"]
+    assert any("Данные загружены за" in message for message in messages)
+    assert any("GET /health -> 200 за" in message for message in messages)
 
 
 def test_health_meta_and_saved_filtered_run(client):
