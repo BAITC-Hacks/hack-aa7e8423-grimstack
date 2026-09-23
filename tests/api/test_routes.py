@@ -14,6 +14,7 @@ from app import ai, engine, ingest
 from app.api.routes import EXPORT_COLUMNS, MAX_UPLOAD_BYTES
 from app.contracts import Meta, RunResult, SkuHistory
 from app.main import create_app
+from tests.engine.factory import make_dataset, noisy
 
 
 CONTRACTS = Path(__file__).resolve().parents[2] / "contracts"
@@ -46,8 +47,7 @@ def sample_core(monkeypatch):
     monkeypatch.setattr(engine, "run", run)
     monkeypatch.setattr(engine, "meta", lambda _data: Meta.model_validate(sample("sample_meta.json")))
     monkeypatch.setattr(engine, "history", history)
-    monkeypatch.setitem(ingest._LOADERS, "IEK", lambda _folder, _as_of: {"source": "upload"})
-    monkeypatch.setattr(ingest, "apply_product_groups", lambda _data, _csv: None)
+    monkeypatch.setitem(ingest._LOADERS, "IEK", lambda _folder, _as_of: make_dataset({"A": noisy(10)}))
     monkeypatch.setattr(ai, "summary", lambda _run, _supplier: None)
 
 
