@@ -61,11 +61,12 @@
 .workspace { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; gap: 18px; }
 .withDetail { grid-template-columns: minmax(0, 1fr) minmax(360px, 420px); }
 .orders { min-width: 0; }
-.ordersHeading { display: flex; justify-content: space-between; align-items: end; gap: 20px; flex-wrap: wrap; margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid var(--border); }
+.ordersHeading { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid var(--border); }
+.ordersHeading > :first-child { flex: 1 1 200px; min-width: 0; }
 .ordersHeading h2 { margin: 0; font-size: 20px; font-weight: 700; }
-.filters { display: flex; flex: none; align-items: end; gap: 10px; flex-wrap: wrap; }
-.filters > :first-child { width: min(100%, 300px); }
-.filters > :last-child { width: 145px; }
+.filters { display: flex; flex: 0 1 560px; align-items: end; gap: 10px; min-width: 0; }
+.filters > :first-child { flex: 1 1 300px; min-width: 0; }
+.filters > :last-child { flex: 0 0 145px; }
 .supplier { padding: 18px; border: 1px solid var(--border); border-radius: var(--radius-panel); background: var(--surface); box-shadow: var(--shadow-panel); }
 .supplier + .supplier { margin-top: 18px; }
 .supplierHeader, .supplierTitle, .supplierActions { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
@@ -150,7 +151,7 @@
   .navShort { display: block; font-size: 11px; line-height: 1.2; }
   .topbar { min-height: 48px; }
 }
-@media (max-width: 700px) { .content { padding: 26px 16px 48px; } .topbar { padding-inline: 16px; } .topbarBrands, .topbarDate { display: none; } .pageHeader { align-items: start; flex-direction: column; gap: 18px; } .pageHeader button { width: 100%; } .kpis, .overviewGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .ordersHeading { align-items: stretch; } .filters { width: 100%; } .filters > :first-child { flex: 1 1 210px; width: auto; } .filters > :last-child { flex: 1 1 140px; width: auto; } .historyPanel .sectionHeading { align-items: stretch; flex-direction: column; } .analysisPicker { width: 100%; grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 700px) { .content { padding: 26px 16px 48px; } .topbar { padding-inline: 16px; } .topbarBrands, .topbarDate { display: none; } .pageHeader { align-items: start; flex-direction: column; gap: 18px; } .pageHeader button { width: 100%; } .kpis, .overviewGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .ordersHeading { flex-wrap: wrap; } .ordersHeading > :first-child { flex-basis: 100%; } .filters { flex: 1 1 100%; flex-wrap: wrap; } .filters > :first-child { flex: 1 1 210px; } .filters > :last-child { flex: 1 1 140px; } .historyPanel .sectionHeading { align-items: stretch; flex-direction: column; } .analysisPicker { width: 100%; grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 639px) {
   .supplier { padding: 12px; }
   .supplierHeader { align-items: start; }
