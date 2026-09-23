@@ -4,15 +4,28 @@
 
 Планирование заказов поставщикам по выгрузкам 1С: прогноз спроса, рекомендации по SKU и контроль решений менеджера.
 
-![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.12%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.141.1-009688?style=for-the-badge&logo=fastapi&logoColor=white)
 ![React](https://img.shields.io/badge/React-19.3.0-20232A?style=for-the-badge&logo=react&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-8.3.0-646CFF?style=for-the-badge&logo=vite&logoColor=white)
 
 </div>
 
+## Запуск за минуту
+
+Нужен Python 3.12 или новее; Node.js и API-ключ не нужны. Из корня проекта:
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m app
+```
+
+Через 10–15 секунд, после строки `Application startup complete`, откройте `http://localhost:8000`. Windows, Docker и запуск на другом порту описаны в разделе [«Быстрый старт»](#быстрый-старт), сценарий для проверки — в разделе [«Проверка работы»](#проверка-работы).
+
 ## Содержание
 
+- [Запуск за минуту](#запуск-за-минуту)
 - [Назначение](#назначение)
 - [Возможности](#возможности)
 - [Сценарий работы](#сценарий-работы)
@@ -43,6 +56,7 @@ GrimStack помогает менеджеру закупок подготови�
 | Работа с заказом | История SKU, объяснение рекомендации, правка количества с проверкой кратности, утверждение и экспорт XLSX |
 | Сводка | Запрос к OpenAI-совместимому API или подготовленный образец из `samples/cache/` |
 | Проверка метода | Бэктест прогноза на шести контрольных точках в `data/backtest/report.json` |
+| Сценарий «что если» | «Аналитика» → «Что если» → «Задержка поставщика»: второй расчёт с увеличенным сроком поставки и изменения количества, срочности и суммы (`POST /api/runs/compare`) |
 
 ## Сценарий работы
 
@@ -79,7 +93,7 @@ flowchart LR
 
 | Область | Технологии | Назначение |
 | :-- | :-- | :-- |
-| Сервер и API | Python 3.12, FastAPI, Pydantic, Uvicorn | HTTP-контракт, валидация и выдача интерфейса |
+| Сервер и API | Python 3.12+, FastAPI, Pydantic, Uvicorn | HTTP-контракт, валидация и выдача интерфейса |
 | Расчёт и файлы | pandas, NumPy, openpyxl | Обработка выгрузок, прогноз и экспорт XLSX |
 | Интерфейс | React, TypeScript, Vite, TanStack Query, ApexCharts | Работа с расчётом, заказами и графиками |
 | Запуск | Docker или локальный Python | Один серверный процесс с готовым `frontend/dist` |
@@ -93,7 +107,7 @@ flowchart LR
 
 ## Быстрый старт
 
-Для запуска готового приложения достаточно Docker или Python 3.12. Node.js не нужен: собранный интерфейс `frontend/dist` уже находится в репозитории. Все команды выполняются из корня проекта; остановка сервера — `Ctrl+C`.
+Для запуска готового приложения достаточно Docker или Python 3.12 и новее (проверено на 3.12 и 3.14). Node.js не нужен: собранный интерфейс `frontend/dist` уже находится в репозитории. Все команды выполняются из корня проекта; остановка сервера — `Ctrl+C`.
 
 ### Docker: macOS, Linux и Windows
 
@@ -108,10 +122,10 @@ Docker выбирает поддерживаемый вариант базово
 
 ### Python: macOS, Linux и Windows WSL
 
-Установите Python 3.12 с модулями `venv` и `pip`. В macOS в терминале zsh/bash, а в Linux и Windows WSL в bash выполните из корня проекта:
+Установите Python 3.12 или новее с модулями `venv` и `pip`; версию покажет `python3 --version`. В macOS в терминале zsh/bash, а в Linux и Windows WSL в bash выполните из корня проекта:
 
 ```bash
-python3.12 -m venv .venv
+python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
 .venv/bin/python -m app
 ```
@@ -120,15 +134,23 @@ python3.12 -m venv .venv
 
 ### Python: Windows CMD
 
-Установите Python 3.12 с Python Launcher (`py`) и `pip`. В CMD из корня проекта выполните:
+Установите Python 3.12 или новее с Python Launcher (`py`) и `pip`. В CMD из корня проекта выполните:
 
 ```bat
-py -3.12 -m venv .venv
+py -3 -m venv .venv
 .venv\Scripts\python.exe -m pip install -r requirements.txt
 .venv\Scripts\python.exe -m app
 ```
 
 После сообщения Uvicorn о старте откройте `http://localhost:8000`. Адрес `http://localhost:8000/health` должен вернуть `{"status":"ok"}`. Первая загрузка встроенных XLSX может занять время; дождитесь сообщения о старте перед проверкой.
+
+Если порт 8000 занят (в логе `address already in use`), запустите сервис на другом порту и откройте `http://localhost:8001`:
+
+```bash
+PORT=8001 .venv/bin/python -m app
+```
+
+В Windows CMD сначала выполните `set PORT=8001`, затем `.venv\Scripts\python.exe -m app`.
 
 Необязательные настройки задаются переменными окружения или файлом `.env` в корне проекта. Для локального Python можно скопировать `.env.example` и заполнить нужные значения. Для Docker в macOS zsh/bash, Linux/WSL bash или Windows CMD добавьте `--env-file .env` перед именем образа:
 
@@ -179,9 +201,9 @@ npm run build --prefix frontend
 
 | HTTP | `code` | Ситуация |
 | :-- | :-- | :-- |
-| 404 | `not_found` | Нет прогона, SKU, поставщика, набора данных или маршрута API |
+| 404 | `not_found` | Нет прогона, SKU, поставщика, набора данных или маршрута API; неверный метод у маршрута `/api/*` |
 | 404 | `backtest_not_found` | Файл отчёта бэктеста отсутствует |
-| 405 и другие HTTP-ошибки | `http_error` | Метод или запрос не поддерживается |
+| 405 и другие HTTP-ошибки | `http_error` | Неподдерживаемый запрос вне `/api`, например неверный метод у `/health` |
 | 409 | `conflict` | Заказ уже утверждён |
 | 422 | `validation_error` | Запрос не прошёл проверку схемы |
 | 422 | `invalid_input` | Некорректное количество или форма загрузки, файл больше 30 МБ |
