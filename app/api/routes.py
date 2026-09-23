@@ -3,17 +3,19 @@
 import math
 from datetime import datetime, timezone
 from io import BytesIO
+from pathlib import Path
 from typing import cast, get_args
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import Response
+from fastapi.responses import FileResponse, JSONResponse, Response
 from openpyxl import Workbook
 from starlette.datastructures import UploadFile
 
 from app import ai, engine, ingest
 from app.contracts import (
     DatasetUploaded,
+    ErrorBody,
     LinePatch,
     Meta,
     OrderLine,
@@ -28,6 +30,7 @@ from app.store import Store
 
 
 router = APIRouter()
+BACKTEST_REPORT_PATH = Path(__file__).resolve().parents[2] / "data" / "backtest" / "report.json"
 MAX_UPLOAD_BYTES = 30 * 1024 * 1024
 EXPORT_COLUMNS = (
     "Код 1С", "Артикул поставщика", "Наименование", "Ед.", "Количество",
@@ -63,6 +66,14 @@ def get_supplier(run: RunResult, supplier: Supplier) -> SupplierSummary:
 @router.get("/meta", response_model=Meta)
 def meta(store: Store = Depends(get_store)) -> Meta:
     return engine.meta(store.default_dataset)
+
+
+@router.get("/backtest", responses={404: {"model": ErrorBody}})
+def backtest_report() -> Response:
+    if not BACKTEST_REPORT_PATH.is_file():
+        error = ErrorBody(detail="Отчёт бэктеста не найден", code="backtest_not_found")
+        return JSONResponse(status_code=404, content=error.model_dump(mode="json"))
+    return FileResponse(BACKTEST_REPORT_PATH, media_type="application/json")
 
 
 @router.post("/runs", response_model=RunResult)

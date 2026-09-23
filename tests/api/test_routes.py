@@ -12,6 +12,7 @@ from fastapi.testclient import TestClient
 from openpyxl import load_workbook
 
 from app import ai, engine, ingest
+from app.api import routes as api_routes
 from app.api.routes import EXPORT_COLUMNS, MAX_UPLOAD_BYTES
 from app.contracts import Meta, RunResult, SkuHistory
 from app.main import create_app
@@ -79,6 +80,16 @@ def test_startup_and_request_logging(tmp_path, caplog):
     messages = [record.getMessage() for record in caplog.records if record.name == "app.main"]
     assert any("Данные загружены за" in message for message in messages)
     assert any("GET /health -> 200 за" in message for message in messages)
+
+
+def test_backtest_report_and_missing_file(client, tmp_path, monkeypatch):
+    report = client.get("/api/backtest")
+    assert report.status_code == 200
+    assert {"suppliers", "checkpoints"} <= report.json().keys()
+
+    monkeypatch.setattr(api_routes, "BACKTEST_REPORT_PATH", tmp_path / "missing.json")
+    error = assert_error(client.get("/api/backtest"), 404)
+    assert error["code"] == "backtest_not_found"
 
 
 def test_health_meta_and_saved_filtered_run(client):
