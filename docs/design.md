@@ -33,8 +33,9 @@ Demo Day 29.09 — только для финалистов: ценность 25
 
 Один контейнер, один процесс, один порт. FastAPI отдаёт `/api/*` и раздаёт собранный
 React, `frontend/dist` закоммичен. Жюри запускает только Python:
-`pip install -r requirements.txt && python -m app`. Деплой — один сервис на Northflank
-Sandbox, без базы данных. Второй слот остаётся свободным.
+`pip install -r requirements.txt && python -m app`. Запасной способ — Docker-образ из того
+же репозитория. Базы данных нет. Развёрнутой публичной версии нет: проект проверяется
+локальным запуском.
 
 ```mermaid
 flowchart LR
@@ -103,7 +104,7 @@ scripts/classify_laya.py                                              [А]
 contracts/sample_run.json, sample_sku_history.json                    [А]
 tests/engine/  приёмка must-have        tests/api/  тесты API          [А] / [Б]
 requirements.txt, .env.example                                        [Б]
-Dockerfile, деплой Northflank                                         [А]
+Dockerfile (запасной способ запуска)                                  [А]
 README.md                                                             [Ф]
 docs/                                                                 [А]
 ```
@@ -465,7 +466,7 @@ must-have:
 | 2:00 | Сквозной путь на `baseline`: реальные данные → API → экран | все |
 | 3:00 | `analyze` целиком, приёмка зелёная, боковая панель с графиком | все |
 | 4:00 | Стоп фичам. `npm run build`, `dist/` закоммичен, кэш LLM заполнен | все |
-| 4:00–5:00 | README (Ф), проверка на чистом клоне (Б), Docker и деплой на Northflank (А) | все |
+| 4:00–5:00 | README (Ф), проверка на чистом клоне (Б), проверка Docker-образа и прогрев кэша LLM (А) | все |
 
 ## 11. Ограничения (для README)
 
