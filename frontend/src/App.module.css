@@ -28,7 +28,7 @@
 .supplierActions button { min-height: var(--control-height-dense); }
 .supplierMeta { margin: var(--space-2) 0 var(--space-3); color: var(--text-muted); font-size: var(--font-sm); }
 .tableScroll { max-width: 100%; overflow-x: auto; }
-.tableScroll table { width: 100%; border-collapse: collapse; font-size: var(--font-sm); }
+.tableScroll table { width: 100%; min-width: 82rem; border-collapse: collapse; font-size: var(--font-sm); }
 .tableScroll th, .tableScroll td { padding: var(--space-3) var(--space-2); border-bottom: var(--border-width) solid var(--border); vertical-align: middle; }
 .tableScroll th { color: var(--text-muted); text-align: left; white-space: nowrap; font-weight: 500; }
 .productCell { min-width: 16rem; max-width: 23rem; }
@@ -36,6 +36,7 @@
 .productButton:hover { color: var(--accent); }
 .sku { display: block; margin-bottom: var(--space-1); color: var(--text-muted); font: var(--font-xs)/var(--line-body) var(--font-code); overflow-wrap: anywhere; }
 .number { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.explanation { min-width: 12rem; max-width: 16rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); }
 .compare, .cellError { color: var(--critical); }
 .selected { background: var(--accent-soft); }
 .editor { min-width: 8rem; }
@@ -72,6 +73,7 @@
   .cardFacts div { min-width: 0; }
   .cardFacts span { display: block; color: var(--text-muted); font-size: var(--font-xs); }
   .cardFacts strong { display: block; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .cardExplanation { color: var(--text-muted); font-size: var(--font-sm); overflow-wrap: anywhere; }
   .editor { margin-bottom: var(--space-3); }
 }
 @media (max-width: 359px) { .kpis { grid-template-columns: minmax(0, 1fr); } }

@@ -4,7 +4,7 @@ const numberFormatter = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 
 const moneyFormatter = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 });
 
 export function formatNumber(value: number | null | undefined): string {
-  return value == null ? 'Нет данных' : numberFormatter.format(value);
+  return value == null ? 'Нет данных' : numberFormatter.format(Object.is(value, -0) ? 0 : value);
 }
 
 export function formatMoney(value: number | null | undefined): string {
