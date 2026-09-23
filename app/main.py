@@ -3,6 +3,7 @@
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
+from time import perf_counter
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
@@ -43,10 +44,27 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        app.state.store = Store(default_dataset=ingest.load_default(), approvals_path=approvals)
+        started = perf_counter()
+        dataset = ingest.load_default()
+        logger.info("Данные загружены за %.2f с", perf_counter() - started)
+        app.state.store = Store(default_dataset=dataset, approvals_path=approvals)
         yield
 
     app = FastAPI(title="GrimStack закупки", lifespan=lifespan)
+
+    @app.middleware("http")
+    async def log_request(request: Request, call_next):
+        started = perf_counter()
+        status = 500
+        try:
+            response = await call_next(request)
+            status = response.status_code
+            return response
+        finally:
+            logger.info(
+                "%s %s -> %s за %.3f с",
+                request.method, request.url.path, status, perf_counter() - started,
+            )
 
     @app.exception_handler(IngestError)
     async def ingest_error(_request: Request, exc: IngestError) -> JSONResponse:
