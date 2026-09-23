@@ -1,4 +1,4 @@
-import { ApiError, type ProcurementApi } from './ProcurementApi';
+import { ApiError, type BacktestReport, type ProcurementApi } from './ProcurementApi';
 import type { ErrorBody, Supplier } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -29,6 +29,10 @@ const query = (supplier: Supplier) => `?supplier=${id(supplier)}`;
 
 export const liveClient: ProcurementApi = {
   getMeta: () => request('/meta'),
+  async getBacktest() {
+    try { return await request<BacktestReport>('/backtest'); }
+    catch (cause) { if (cause instanceof ApiError && cause.status === 404) return null; throw cause; }
+  },
   createRun: (params) => request('/runs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(params) }),
   getRun: (runId) => request(`/runs/${id(runId)}`),
   patchLine: (runId, lineId, patch) => request(`/runs/${id(runId)}/lines/${id(lineId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch) }),

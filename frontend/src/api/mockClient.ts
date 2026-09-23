@@ -36,6 +36,7 @@ function totals(run: RunResult): void {
 
 export const mockClient: ProcurementApi = {
   async getMeta() { await pause(); return clone(meta); },
+  async getBacktest() { return null; },
   async createRun(params: RunParams) {
     await pause();
     const run = clone(fixture);
