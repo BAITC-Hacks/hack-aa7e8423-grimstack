@@ -273,7 +273,7 @@ def _filter_mask(ds, idx: pd.Index, params: RunParams) -> pd.Series:
     return mask
 
 
-def _order_lines(ds, prepared: Prepared, params: RunParams) -> tuple[list[OrderLine], pd.Series]:
+def _order_lines(ds, prepared: Prepared, params: RunParams) -> tuple[list[OrderLine], pd.Series, int]:
     analyze_r = _scenario_analyze(ds, prepared, params)
     baseline_r = _scenario_baseline(ds, prepared, params)
     primary = analyze_r if params.method == "analyze" else baseline_r
@@ -345,7 +345,8 @@ def _order_lines(ds, prepared: Prepared, params: RunParams) -> tuple[list[OrderL
                 category=category, sl=float(primary["sl"].loc[key]), horizon=horizon, ss=ss, floor=floor,
                 stock=stock, transit=transit, moq=mq, qty=q, approx_stock=approx)
             explanation = explain.explanation_analyze(
-                unit=unit, forecast_monthly=fm, qty=q, moq=mq, seasonal=bool(prepared.seasonal_flag.loc[key]),
+                unit=unit, forecast_monthly=fm, qty=q, moq=mq, month=month,
+                seasonal=bool(prepared.seasonal_flag.loc[key]),
                 season_val=season_val, trend_up=bool(prepared.trend_up.loc[key]),
                 trend_down=bool(prepared.trend_down.loc[key]), trend_val=trend_val,
                 stockout_restored=rs > 0, oneoff_excluded=oe > 0, in_transit=transit)
@@ -367,7 +368,9 @@ def _order_lines(ds, prepared: Prepared, params: RunParams) -> tuple[list[OrderL
             days_of_cover=cover, unit_cost=unit_cost, amount=(round(q * unit_cost, 2) if unit_cost is not None else None),
             explanation=explanation, components=comps, flags=flags))
 
-    return lines, filter_mask
+    # излишек — по всем SKU выборки: у строки с излишком заказа нет, в lines она не попадает
+    overstock = int((filter_mask & primary["overstock"] & ~prepared.do_not_order).sum())
+    return lines, filter_mask, overstock
 
 
 _URGENCY_ORDER = {"critical": 0, "high": 1, "planned": 2, "none": 3}
@@ -393,7 +396,7 @@ def _suppliers_summary(lines: list[OrderLine]) -> list[SupplierSummary]:
     return out
 
 
-def _kpi(lines: list[OrderLine], prepared: Prepared) -> RunKpi:
+def _kpi(lines: list[OrderLine], prepared: Prepared, overstock_lines: int) -> RunKpi:
     keys = [(l.supplier, l.sku) for l in lines]
     amounts = [l.amount for l in lines if l.amount is not None]
     return RunKpi(
@@ -401,13 +404,19 @@ def _kpi(lines: list[OrderLine], prepared: Prepared) -> RunKpi:
         total_amount=(round(sum(amounts), 2) if amounts else None),
         oneoff_units_excluded=round(float(prepared.oneoff_excess_total.reindex(keys).sum()), 1) if keys else 0.0,
         stockout_units_restored=round(float(prepared.restored_12.reindex(keys).sum()), 1) if keys else 0.0,
-        overstock_lines=sum(1 for l in lines if "overstock" in l.flags))
+        overstock_lines=overstock_lines)
 
 
 def _warnings(lines: list[OrderLine], prepared: Prepared, filter_mask: pd.Series) -> list[str]:
     out = []
     if any("approx_stock" in l.flags for l in lines):
         out.append("IEK: текущий остаток — нижняя оценка (остаток на 01.09 минус продажи сентября)")
+    for supplier in SUPPLIERS:  # префикс «IEK:»/«SE:» — сводка по поставщику берёт только свои предупреждения
+        critical = [l for l in lines if l.supplier == supplier and l.urgency == "critical"]
+        estimated = sum("approx_stock" in l.flags for l in critical)
+        if estimated:
+            out.append(f"{supplier}: из {len(critical)} срочных позиций у {estimated} остаток оценочный "
+                       "(приходы после 01.09 неизвестны) — сверьте фактический остаток в 1С перед утверждением")
     skipped = int((prepared.do_not_order & filter_mask).sum())
     if skipped:
         out.append(f"Не заказываем {skipped} SKU: списаны с закупки, не подлежат заказу или нет истории продаж")
@@ -419,10 +428,10 @@ def _warnings(lines: list[OrderLine], prepared: Prepared, filter_mask: pd.Series
 
 def run(ds, params: RunParams) -> RunResult:
     prepared = _prepare(ds)
-    lines, filter_mask = _order_lines(ds, prepared, params)
+    lines, filter_mask, overstock_lines = _order_lines(ds, prepared, params)
     lines = _sort_lines(lines)
     return RunResult(run_id=uuid4().hex[:12], created_at=datetime.now(), params=params, data_as_of=ds.as_of,
-                      kpi=_kpi(lines, prepared), suppliers=_suppliers_summary(lines), lines=lines,
+                      kpi=_kpi(lines, prepared, overstock_lines), suppliers=_suppliers_summary(lines), lines=lines,
                       warnings=_warnings(lines, prepared, filter_mask))
 
 

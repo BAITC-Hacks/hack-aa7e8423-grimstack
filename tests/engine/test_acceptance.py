@@ -148,3 +148,22 @@ def test_intermittent_floor_is_its_own_component():
     assert "intermittent" in found.flags
     assert keys.get("min_order_floor", 0) > 0
     assert abs(keys["moq_rounding"]) < found.moq
+
+
+def test_explanation_names_the_forecast_month():
+    found = line(make_dataset({"A": seasonal(100, PEAK_IN_OCTOBER)}))
+    assert found.explanation.startswith("Октябрь — сезонный пик"), found.explanation
+
+
+def test_overstock_is_counted_even_when_nothing_is_ordered():
+    result = engine.run(make_dataset({"A": noisy(100)}, stock_now=10_000), RunParams())
+    assert not result.lines
+    assert result.kpi.overstock_lines == 1
+
+
+def test_warns_when_urgency_rests_on_estimated_stock():
+    ds = make_dataset({"A": noisy(100)}, stock_now=0)
+    ds.stock_now["source"] = "estimate_lower_bound"
+    result = engine.run(ds, RunParams())
+    assert result.lines[0].urgency == "critical"
+    assert any("срочных" in w and "оценочн" in w for w in result.warnings), result.warnings
