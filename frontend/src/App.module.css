@@ -1,10 +1,10 @@
-.appLayout { display: grid; grid-template-columns: 208px minmax(0, 1fr); width: min(calc(100% - 72px), 1580px); min-height: calc(100dvh - 80px); margin: 40px auto; overflow: clip; border: 1px solid var(--border); border-radius: var(--radius-panel); background: var(--surface-raised); box-shadow: 0 18px 50px rgb(20 37 28 / .12); }
+.appLayout { display: grid; grid-template-columns: 208px minmax(0, 1fr); width: 100%; min-height: 100dvh; margin: 0; overflow: clip; background: var(--surface-raised); }
 .sidebar { position: sticky; top: 0; display: flex; flex-direction: column; height: 100dvh; padding: 0 0 22px; border-right: 1px solid var(--border); background: var(--surface); color: var(--text); }
-.brand { display: flex; align-items: center; gap: 11px; min-height: 62px; padding: 8px 17px; background: linear-gradient(110deg, var(--accent), var(--nav-bg)); color: var(--on-accent); }
+.brand { display: flex; align-items: center; gap: 11px; min-height: 62px; padding: 8px 17px; border-bottom: 1px solid var(--border); color: var(--text); }
 .brandMark { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border: 1px solid rgb(255 255 255 / .55); border-radius: 50%; font-size: 20px; font-weight: 700; letter-spacing: -.08em; }
 .brandMark span { color: var(--warning-soft); }
-.brand strong { display: block; font-size: 13px; letter-spacing: .1em; }
-.brand small { display: block; margin-top: 2px; color: rgb(255 255 255 / .8); font-size: 9px; letter-spacing: .16em; }
+.brand strong { display: block; font-size: 15px; }
+.brand small { display: block; margin-top: 2px; color: var(--text-muted); font-size: 12px; }
 .navCaption { padding: 27px 20px 12px; color: var(--text-muted); font-size: 10px; letter-spacing: .15em; }
 .nav { display: grid; gap: 5px; padding: 0 10px; }
 .nav a { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border: 1px solid transparent; border-left: 3px solid transparent; border-radius: var(--radius-control); color: var(--text-muted); font-size: 13px; font-weight: 500; text-decoration: none; transition: background var(--motion-quick), color var(--motion-quick); }
@@ -17,7 +17,7 @@
 .sidebarBottom small { display: block; margin-top: 6px; color: var(--nav-muted); }
 .statusDot { display: inline-block; width: 6px; height: 6px; margin-right: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px var(--success-soft); vertical-align: middle; }
 .mainColumn { min-width: 0; }
-.topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 58px; padding: 0 40px; border-bottom: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-size: 10px; font-weight: 600; letter-spacing: .12em; }
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 58px; padding: 0 40px; border-bottom: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-size: 12px; }
 .topbar > div { display: flex; align-items: center; gap: 16px; }
 .topbarSlash { padding: 0 8px; color: var(--border-strong); }
 .topbarDate { white-space: nowrap; }
@@ -71,7 +71,7 @@
 .tableScroll { max-width: 100%; overflow-x: auto; }
 .tableScroll table { width: 100%; min-width: 60rem; border-collapse: collapse; font-size: 12px; }
 .tableScroll th, .tableScroll td { padding: 11px 7px; border-bottom: 1px solid var(--border); vertical-align: middle; }
-.tableScroll th { background: var(--nav-bg); color: var(--nav-text); text-align: left; white-space: nowrap; font-size: 11px; font-weight: 600; }
+.tableScroll th { background: var(--surface-raised); color: var(--text-muted); border-bottom: 1px solid var(--border-strong); text-align: left; white-space: nowrap; font-size: 11px; font-weight: 600; }
 .tableScroll th:first-child { border-radius: var(--radius-control) 0 0 0; }
 .tableScroll th:last-child { border-radius: 0 var(--radius-control) 0 0; }
 .tableScroll tbody tr:hover { background: var(--accent-soft); }
