@@ -1,3 +1,5 @@
+import Chart from 'react-apexcharts';
+import type { ApexOptions } from 'apexcharts';
 import type { BacktestReport } from '../api/ProcurementApi';
 import type { Supplier } from '../api/types';
 import { SectionPanel } from '../shared/ui';
@@ -30,9 +32,52 @@ export function BacktestPanel({ report }: { report: BacktestReport }) {
   const first = report.checkpoints[0];
   const last = report.checkpoints.at(-1);
   const period = first && last ? `${monthLabel(first)}–${monthLabel(last)} ${last.slice(0, 4)}` : '';
+  const tokens = getComputedStyle(document.documentElement);
+  const color = (name: string) => tokens.getPropertyValue(name).trim();
+  const chartBase: ApexOptions = {
+    chart: { background: 'transparent', toolbar: { show: false }, animations: { enabled: false }, fontFamily: color('--font-body') },
+    theme: { mode: 'light' },
+    colors: [color('--accent'), color('--border-strong'), color('--series-1')],
+    grid: { borderColor: color('--border'), strokeDashArray: 3 },
+    legend: { position: 'bottom', fontSize: color('--font-xs'), labels: { colors: color('--text-muted') } },
+    tooltip: { theme: 'light', y: { formatter: (value) => percentFormatter.format(value) } },
+    dataLabels: { enabled: false },
+  };
+  const wapeOptions: ApexOptions = {
+    ...chartBase,
+    colors: [color('--accent'), color('--border-strong')],
+    plotOptions: { bar: { borderRadius: 3, columnWidth: '48%' } },
+    xaxis: { categories: suppliers, labels: { style: { colors: color('--text-muted') } } },
+    yaxis: { min: 0, labels: { formatter: (value) => percentFormatter.format(value), style: { colors: color('--text-muted') } } },
+  };
+  const serviceOptions: ApexOptions = {
+    ...chartBase,
+    plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '68%' } },
+    xaxis: { categories: suppliers, min: 0, max: 1, tickAmount: 4, labels: { formatter: (value) => percentFormatter.format(Number(value)), style: { colors: color('--text-muted') } } },
+    yaxis: { labels: { style: { colors: color('--text') } } },
+  };
 
   return <SectionPanel className={styles.panel} aria-labelledby="backtest-heading">
     <header className={styles.heading}><p className={styles.kicker}>ПРОВЕРКА НА ИСТОРИИ</p><h2 id="backtest-heading">Наш метод против Excel-метода</h2></header>
+    <div className={styles.charts}>
+      <section className={styles.chartPanel} aria-labelledby="backtest-wape-heading">
+        <h3 id="backtest-wape-heading">Ошибка прогноза WAPE</h3>
+        <p>Ниже — точнее. Продажи после очистки разовых заказов.</p>
+        <div aria-hidden="true"><Chart type="bar" height={280} options={wapeOptions} series={[
+          { name: 'Наш расчёт', data: suppliers.map((supplier) => report.suppliers[supplier].wape.cleaned.analyze.wape) },
+          { name: 'Excel-метод', data: suppliers.map((supplier) => report.suppliers[supplier].wape.cleaned.baseline.wape) },
+        ]} /></div>
+      </section>
+      <section className={styles.chartPanel} aria-labelledby="backtest-service-heading">
+        <h3 id="backtest-service-heading">Уровень сервиса</h3>
+        <p>Доля SKU и контрольных точек, где запас покрыл спрос за L+R дней.</p>
+        <div aria-hidden="true"><Chart type="bar" height={280} options={serviceOptions} series={[
+          { name: 'Наш расчёт', data: suppliers.map((supplier) => report.suppliers[supplier].service_level.analyze.share) },
+          { name: 'Excel-метод', data: suppliers.map((supplier) => report.suppliers[supplier].service_level.baseline.share) },
+          { name: 'Цель', data: suppliers.map((supplier) => report.suppliers[supplier].service_level.target) },
+        ]} /></div>
+      </section>
+    </div>
     <div className={styles.tableScroll} role="region" aria-label="Результаты бэктеста по поставщикам" tabIndex={0}>
       <table>
         <thead><tr><th scope="col">Поставщик</th><th scope="col">Ошибка прогноза: наш / Excel</th><th scope="col">Лучше на</th><th scope="col">Уровень сервиса: наш / Excel / цель</th></tr></thead>
