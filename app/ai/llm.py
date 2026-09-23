@@ -18,7 +18,7 @@ from app.contracts import OrderLine, RunResult, SummaryResponse, Supplier
 log = logging.getLogger(__name__)
 
 CACHE_DIR = Path(__file__).resolve().parents[2] / "samples" / "cache"
-PROMPT_VERSION = "v1"  # меняется вместе с промптом — старый кэш перестаёт совпадать
+PROMPT_VERSION = "v2"  # меняется вместе с промптом — старый кэш перестаёт совпадать
 TOP_LINES = 8
 DEFAULT_MODEL = "gpt-4o-mini"
 DEFAULT_BASE_URL = "https://api.openai.com/v1"
@@ -28,9 +28,12 @@ SYSTEM_PROMPT = """Ты аналитик отдела закупа дистри�
 Напиши сводку для менеджера закупа на русском: 4–6 коротких пунктов, не больше 120 слов.
 1. Итог заказа: сколько позиций, из них срочных, сумма, если она есть.
 2. Что срочно и почему: товары из urgent с причиной из explanation.
-3. Где наш расчёт сильнее всего расходится с Excel-методом (vs_excel) и почему.
-4. На что обратить внимание перед утверждением: warnings и флаги (оценочный остаток, разовые заказы, дефицит).
+3. Где наш расчёт сильнее всего расходится с Excel-методом (vs_excel): назови товар, наш заказ (qty) и заказ Excel-метода
+(excel_qty) и причину из explanation. Если vs_excel пуст, пункт 3 не пиши совсем.
+4. На что обратить внимание перед утверждением: warnings (пересказывай точно, не сокращая смысл) и флаги
+(оценочный остаток, разовые заказы, дефицит).
 Используй только числа из JSON, ничего не пересчитывай и не придумывай.
+Суммы — в тенге (₸), никогда не в рублях. Числа пиши с пробелом между тысячами: 14 800, а не 14,800.
 Не предлагай отправить заказ поставщику: его утверждает менеджер."""
 
 
@@ -50,13 +53,18 @@ def build_facts(result: RunResult, supplier: Supplier) -> dict | None:
     rank = {"critical": 0, "high": 1, "planned": 2, "none": 3}
     urgent = sorted((l for l in lines if l.urgency in ("critical", "high")),
                     key=lambda l: (rank[l.urgency], -(l.amount if l.amount is not None else l.final_qty), l.sku))
-    vs_excel = sorted((l for l in lines if l.baseline_qty is not None and l.final_qty != l.baseline_qty),
-                      key=lambda l: (-abs(l.final_qty - l.baseline_qty), l.sku))
+    excel_run = result.params.method == "baseline"  # сравнивать Excel-метод с самим собой бессмысленно
+    vs_excel = [] if excel_run else sorted(
+        (l for l in lines if l.baseline_qty is not None and l.final_qty != l.baseline_qty),
+        key=lambda l: (-abs(l.final_qty - l.baseline_qty), l.sku))
     return {
         "supplier": supplier,
         "supplier_name": head.supplier_name,
         "data_as_of": result.data_as_of.isoformat(),
         "method": result.params.method,
+        "note": "Это расчёт Excel-методом менеджера: сравнение с Excel не применимо." if excel_run
+                else "Это наш расчёт; vs_excel — строки, где он сильнее всего отличается от Excel-метода.",
+        "currency": "тенге (₸)",
         "lines_count": head.lines_count,
         "critical_count": head.critical_count,
         "total_qty": round(head.total_qty),

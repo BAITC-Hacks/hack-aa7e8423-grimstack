@@ -129,3 +129,16 @@ def test_empty_base_url_env_falls_back_to_openai(monkeypatch):
     assert summary_mod._base_url() == summary_mod.DEFAULT_BASE_URL
     monkeypatch.setenv("OPENAI_BASE_URL", "https://integrate.api.nvidia.com/v1")
     assert summary_mod._base_url() == "https://integrate.api.nvidia.com/v1"
+
+
+def test_facts_state_currency_and_prompt_forbids_rubles(result):
+    assert summary_mod.build_facts(result, "SE")["currency"] == "тенге (₸)"
+    assert "тенге" in summary_mod.SYSTEM_PROMPT and "руб" in summary_mod.SYSTEM_PROMPT  # явный запрет рублей
+    assert "пробел" in summary_mod.SYSTEM_PROMPT  # 14 800, а не 14,800
+
+
+def test_excel_method_run_has_no_comparison_with_itself(result):
+    baseline = result.model_copy(update={"params": result.params.model_copy(update={"method": "baseline"})})
+    facts = summary_mod.build_facts(baseline, "SE")
+    assert facts["vs_excel"] == []
+    assert "Excel" in facts["note"]
