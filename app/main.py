@@ -46,6 +46,7 @@ def create_app(
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         started = perf_counter()
+        logger.info("Начинаю загрузку данных для расчёта")
         dataset = ingest.load_default()
         logger.info("Данные загружены за %.2f с", perf_counter() - started)
         app.state.store = Store(default_dataset=dataset, approvals_path=approvals)

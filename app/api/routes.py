@@ -109,8 +109,14 @@ def patch_line(
         multiple = line.moq
         if not math.isfinite(quantity) or multiple <= 0 or not math.isfinite(multiple):
             raise HTTPException(status_code=422, detail="Некорректное количество или кратность")
+        quantity_limit = max(100 * line.recommended_qty, 100 * multiple, 1000)
+        if quantity > quantity_limit:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Количество не должно превышать {quantity_limit:g} для этого товара",
+            )
         rounded = round(quantity / multiple) * multiple
-        if not math.isclose(quantity, rounded, rel_tol=0, abs_tol=1e-7):
+        if not math.isclose(quantity, rounded, rel_tol=1e-9):
             raise HTTPException(
                 status_code=422, detail=f"Количество должно быть кратно {multiple:g}"
             )
