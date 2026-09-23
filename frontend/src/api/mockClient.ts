@@ -1,7 +1,7 @@
 import rawMeta from './mock-data/meta.json';
 import rawRun from './mock-data/run.json';
 import rawHistory from './mock-data/sku-history.json';
-import { ApiError, type ProcurementApi } from './ProcurementApi';
+import { ApiError, type ChangedLine, type ProcurementApi } from './ProcurementApi';
 import type { Meta, RunParams, RunResult, SkuHistory, Supplier } from './types';
 
 const meta = rawMeta as Meta;
@@ -51,6 +51,37 @@ export const mockClient: ProcurementApi = {
     totals(run);
     runs.set(run.run_id, run);
     return clone(run);
+  },
+  async compareRuns(request) {
+    const base = await mockClient.createRun(request.base);
+    const scenario = await mockClient.createRun(request.scenario);
+    const before = new Map(base.lines.map((line) => [line.line_id, line]));
+    const after = new Map(scenario.lines.map((line) => [line.line_id, line]));
+    const changed: ChangedLine[] = [];
+    for (const lineId of new Set([...before.keys(), ...after.keys()])) {
+      const baseLine = before.get(lineId);
+      const scenarioLine = after.get(lineId);
+      const baseQty = baseLine?.recommended_qty ?? 0;
+      const scenarioQty = scenarioLine?.recommended_qty ?? 0;
+      const baseUrgency = baseLine?.urgency ?? 'none';
+      const scenarioUrgency = scenarioLine?.urgency ?? 'none';
+      if (baseQty === scenarioQty && baseUrgency === scenarioUrgency) continue;
+      const line = scenarioLine ?? baseLine;
+      if (!line) continue;
+      changed.push({ line_id: lineId, name: line.name, supplier: line.supplier, base_qty: baseQty, scenario_qty: scenarioQty, base_urgency: baseUrgency, scenario_urgency: scenarioUrgency });
+    }
+    changed.sort((a, b) => Math.abs(b.scenario_qty - b.base_qty) - Math.abs(a.scenario_qty - a.base_qty) || a.line_id.localeCompare(b.line_id));
+    return {
+      base_run_id: base.run_id,
+      scenario_run_id: scenario.run_id,
+      delta: {
+        lines_to_order: scenario.kpi.lines_to_order - base.kpi.lines_to_order,
+        critical: scenario.kpi.critical - base.kpi.critical,
+        total_qty: scenario.suppliers.reduce((sum, item) => sum + item.total_qty, 0) - base.suppliers.reduce((sum, item) => sum + item.total_qty, 0),
+        total_amount: base.kpi.total_amount === null || scenario.kpi.total_amount === null ? null : scenario.kpi.total_amount - base.kpi.total_amount,
+      },
+      changed: changed.slice(0, 20),
+    };
   },
   async getRun(runId) { await pause(); return clone(getStored(runId)); },
   async patchLine(runId, lineId, patch) {

@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError, type DatasetFiles } from './api/ProcurementApi';
 import { getApi } from './api/client';
 import type { FileRole, Meta, OrderLine, RunParams, Supplier, SupplierSummary, Urgency } from './api/types';
-import { BacktestPanel } from './features/BacktestPanel';
 import { SkuPanel } from './features/SkuPanel';
 import { saveBlob } from './shared/download';
 import { formatDate, formatMoney, formatNumber, formatQty } from './shared/format';
@@ -20,6 +19,8 @@ const HistoryChart = lazy(() => import('./features/historyChart'));
 const RiskChart = lazy(() => import('./features/RunCharts').then((module) => ({ default: module.RiskChart })));
 const SupplierChart = lazy(() => import('./features/RunCharts').then((module) => ({ default: module.SupplierChart })));
 const ComparisonChart = lazy(() => import('./features/RunCharts').then((module) => ({ default: module.ComparisonChart })));
+const BacktestPanel = lazy(() => import('./features/BacktestPanel').then((module) => ({ default: module.BacktestPanel })));
+const ScenarioPanel = lazy(() => import('./features/ScenarioPanel'));
 type View = 'overview' | 'orders' | 'analytics' | 'data';
 const viewItems: { id: View; label: string; number: string }[] = [
   { id: 'overview', label: 'Обзор', number: '01' },
@@ -272,7 +273,8 @@ export default function App() {
 
         {view === 'analytics' && run && !calculating && <>
           <div className={styles.chartGrid}><SectionPanel className={styles.chartPanel}><div className={styles.sectionHeading}><div><h2>Где расчёты расходятся</h2></div><span>4 больше и 4 меньше Excel-метода</span></div><Suspense fallback={<Skeleton label="Загрузка сравнения методов" />}><ComparisonChart run={run} /></Suspense></SectionPanel><SectionPanel className={styles.chartPanel}><div className={styles.sectionHeading}><div><h2>Распределение позиций</h2></div></div><Suspense fallback={<Skeleton label="Загрузка структуры заказов" />}><RiskChart run={run} /></Suspense><div className={styles.analysisFacts}><div><span>Исключено разовых</span><strong>{formatNumber(Math.round(run.kpi.oneoff_units_excluded))} шт</strong></div><div><span>Восстановлено при дефиците</span><strong>{formatNumber(Math.round(run.kpi.stockout_units_restored))} шт</strong></div></div></SectionPanel></div>
-          {backtestQuery.isPending ? <SectionPanel><Skeleton label="Загрузка результатов бэктеста" /></SectionPanel> : backtestQuery.isError ? <InlineAlert tone="error">Не удалось загрузить бэктест: {backtestQuery.error.message} <Button type="button" onClick={() => void backtestQuery.refetch()}>Повторить</Button></InlineAlert> : backtestQuery.data ? <BacktestPanel report={backtestQuery.data} /> : null}
+          {backtestQuery.isPending ? <SectionPanel><Skeleton label="Загрузка результатов бэктеста" /></SectionPanel> : backtestQuery.isError ? <InlineAlert tone="error">Не удалось загрузить бэктест: {backtestQuery.error.message} <Button type="button" onClick={() => void backtestQuery.refetch()}>Повторить</Button></InlineAlert> : backtestQuery.data ? <Suspense fallback={<SectionPanel><Skeleton label="Загрузка графиков бэктеста" /></SectionPanel>}><BacktestPanel report={backtestQuery.data} /></Suspense> : null}
+          <Suspense fallback={<SectionPanel><Skeleton label="Загрузка сравнения сценариев" /></SectionPanel>}><ScenarioPanel key={run.run_id} run={run} meta={metaQuery.data} /></Suspense>
           <SectionPanel className={styles.historyPanel}><div className={styles.sectionHeading}><div><h2>Продажи и прогноз</h2></div><div className={styles.analysisPicker}><Field id="analysis-search" label="Найти SKU" value={analysisSearch} onChange={(event) => setAnalysisSearch(event.target.value)} placeholder="Код, артикул или название" /><Select id="analysis-sku" label="Позиция" value={analysisLine?.line_id ?? ''} onChange={(event) => setAnalysisId(event.target.value)}>{analysisOptions.map((line) => <option key={line.line_id} value={line.line_id}>{line.supplier} · {line.sku} · {line.name}</option>)}</Select></div></div>{analysisLine && <p className={styles.historyDescription}>{analysisLine.explanation}</p>}{analysisLine && (analysisHistory.isPending ? <Skeleton label="Загрузка истории продаж" /> : analysisHistory.isError ? <InlineAlert tone="error">{analysisHistory.error.message}</InlineAlert> : <Suspense fallback={<Skeleton label="Загрузка графика" />}><HistoryChart history={analysisHistory.data} /></Suspense>)}</SectionPanel>
         </>}
 

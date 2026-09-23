@@ -1,0 +1,29 @@
+.panel { margin: var(--space-6) 0; min-width: 0; }
+.heading { margin-bottom: var(--space-4); }
+.kicker { margin: 0 0 var(--space-2); color: var(--accent); font-size: 10px; font-weight: 700; letter-spacing: .12em; }
+.heading h2 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -.025em; }
+.heading > p:last-child, .context, .lead, .note, .empty { color: var(--text-muted); font-size: var(--font-sm); }
+.heading > p:last-child { margin: var(--space-2) 0 0; }
+.controls { display: flex; flex-wrap: wrap; align-items: end; gap: var(--space-3); }
+.controls label { flex: 1 1 180px; max-width: 320px; }
+.controls button { min-width: 132px; }
+.lead { margin: var(--space-3) 0 var(--space-4); }
+.metrics { display: flex; flex-wrap: wrap; gap: var(--space-3); margin: var(--space-4) 0; }
+.metrics > div { min-width: 160px; flex: 1 1 170px; display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-3) var(--space-4); background: var(--surface-raised); border: 1px solid var(--border); border-radius: var(--radius-control); }
+.metrics span { color: var(--text-muted); font-size: var(--font-xs); }
+.metrics strong { color: var(--text); font-size: var(--font-lg); font-variant-numeric: tabular-nums; }
+.context { margin: 0 0 var(--space-4); }
+.chartHeading { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: var(--space-3); }
+.chartHeading h3 { margin: 0; font-size: var(--font-md); }
+.chartHeading label { min-width: 170px; }
+.note { margin: var(--space-2) 0; }
+.chart { min-width: 0; max-width: 100%; }
+.empty { margin: var(--space-4) 0; }
+.tableScroll { max-width: 100%; overflow-x: auto; margin-top: var(--space-4); }
+.tableScroll table { width: 100%; min-width: 720px; border-collapse: collapse; font-size: var(--font-sm); }
+.tableScroll caption { text-align: left; color: var(--text-muted); font-size: var(--font-xs); padding: 0 0 var(--space-2); }
+.tableScroll th, .tableScroll td { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border); text-align: left; font-variant-numeric: tabular-nums; }
+.tableScroll thead th { background: var(--nav-bg); color: var(--nav-text); font-size: var(--font-xs); font-weight: 600; }
+.tableScroll tbody th { font-weight: 600; }
+.tableScroll tbody td:nth-child(2), .tableScroll tbody td:nth-child(3), .tableScroll tbody td:nth-child(4) { white-space: nowrap; }
+@media (max-width: 560px) { .controls label, .controls button { flex-basis: 100%; max-width: none; } .chartHeading label { width: 100%; } }

@@ -1,4 +1,4 @@
-import { ApiError, type BacktestReport, type ProcurementApi } from './ProcurementApi';
+import { ApiError, type BacktestReport, type CompareResult, type ProcurementApi } from './ProcurementApi';
 import type { ErrorBody, Supplier } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -34,6 +34,7 @@ export const liveClient: ProcurementApi = {
     catch (cause) { if (cause instanceof ApiError && cause.status === 404) return null; throw cause; }
   },
   createRun: (params) => request('/runs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(params) }),
+  compareRuns: (comparison) => request<CompareResult>('/runs/compare', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(comparison) }),
   getRun: (runId) => request(`/runs/${id(runId)}`),
   patchLine: (runId, lineId, patch) => request(`/runs/${id(runId)}/lines/${id(lineId)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch) }),
   approveSupplier: (runId, supplier) => request(`/runs/${id(runId)}/suppliers/${id(supplier)}/approve`, { method: 'POST' }),
