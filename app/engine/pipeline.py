@@ -353,7 +353,9 @@ def _order_lines(ds, prepared: Prepared, params: RunParams) -> tuple[list[OrderL
                 seasonal=bool(prepared.seasonal_flag.loc[key]),
                 season_val=season_val, trend_up=bool(prepared.trend_up.loc[key]),
                 trend_down=bool(prepared.trend_down.loc[key]), trend_val=trend_val,
-                stockout_restored=rs > 0, oneoff_excluded=oe > 0, in_transit=transit)
+                stockout_restored=rs > 0, in_transit=transit,
+                # причиной разовый заказ становится, только если попал в окно базы (12 закрытых месяцев)
+                oneoff_excluded=float(prepared.excess.loc[key, prepared.last12_cols].sum()) > 0)
             baseline_qty = float(baseline_r["qty"].loc[key])
         else:
             comps = explain.components_baseline(base=float(prepared.base_baseline.loc[key]), horizon=horizon,

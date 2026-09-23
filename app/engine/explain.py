@@ -78,6 +78,10 @@ def _lead_reason(*, month, seasonal, season_val, trend_up, trend_down, trend_val
         return "Разовый крупный заказ исключён из базового спроса"
     if in_transit > 0:
         return "Товар уже в пути"
+    drift = season_val * trend_val  # ни одна причина не сработала — называем факторы прогноза, если они заметны
+    if abs(drift - 1) >= 0.10:
+        return (f"Прогноз {'выше' if drift > 1 else 'ниже'} среднего "
+                f"(сезон ×{season_val:.2f}, тренд ×{trend_val:.2f})")
     return "Регулярный спрос"
 
 

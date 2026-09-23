@@ -178,3 +178,19 @@ def test_warns_when_urgency_rests_on_estimated_stock():
     result = engine.run(ds, RunParams())
     assert result.lines[0].urgency == "critical"
     assert any("срочных" in w and "оценочн" in w for w in result.warnings), result.warnings
+
+
+def test_old_oneoff_outside_base_window_is_not_the_lead_reason():
+    ds = make_dataset({"A": noisy(100)})
+    add_oneoff(ds, "A", date(2025, 2, 10), 2000)  # вне 12 закрытых месяцев базы (2025-09…2026-08)
+    found = line(ds)
+    assert not found.explanation.startswith("Разовый"), found.explanation
+
+
+def test_fallback_reason_names_forecast_drivers():
+    from app.engine.explain import _lead_reason
+
+    reason = _lead_reason(month=pd.Period("2026-10", "M"), seasonal=False, season_val=1.21, trend_up=False,
+                          trend_down=False, trend_val=1.046, stockout_restored=False, oneoff_excluded=False,
+                          in_transit=0)
+    assert "×1.21" in reason and "выше" in reason, reason
