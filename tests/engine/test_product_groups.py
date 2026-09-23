@@ -15,3 +15,15 @@ def test_product_groups_without_file_leave_data_untouched(tmp_path):
     ds = make_dataset({"A": noisy(10)})
     apply_product_groups(ds, tmp_path / "missing.csv")
     assert ds.skus.loc[("IEK", "A"), "product_group"] is None
+
+
+def test_uploaded_dataset_gets_product_groups_too(tmp_path, monkeypatch):
+    import app.ingest as ingest
+
+    csv = tmp_path / "sku_categories.csv"
+    csv.write_text("supplier,sku,group,prob\nIEK,A,Кабель и провод,0.91\n", encoding="utf-8")
+    monkeypatch.setattr(ingest, "_CATEGORIES_CSV", csv)
+    monkeypatch.setitem(ingest._LOADERS, "IEK", lambda folder, as_of: make_dataset({"A": noisy(10)}))
+    files = {role: b"PK-xlsx" for role in ingest.REQUIRED_ROLES}
+    ds = ingest.load_uploaded("IEK", files)
+    assert ds.skus.loc[("IEK", "A"), "product_group"] == "Кабель и провод"
