@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChartLineUp, ClipboardText, Database, SquaresFour } from '@phosphor-icons/react';
 import { ApiError, type DatasetFiles } from './api/ProcurementApi';
 import { getApi } from './api/client';
-import type { FileRole, Meta, OrderLine, RunParams, Supplier, SupplierSummary, Urgency } from './api/types';
+import type { DatasetUploaded, FileRole, Meta, OrderLine, RunParams, Supplier, SupplierSummary, Urgency } from './api/types';
 import { SkuPanel } from './features/SkuPanel';
 import { saveBlob } from './shared/download';
 import { formatDate, formatMoney, formatNumber, formatQty } from './shared/format';
@@ -39,7 +39,7 @@ function Parameters({ meta, params, setParams, onCalculate, calculating, onOpenU
   const supplierInfo = meta?.suppliers.find((item) => item.supplier === params.supplier);
   return <div className={styles.parameterPanel} aria-label="Параметры расчёта">
     <div className={styles.parameterGrid}>
-      <Select id="supplier" label="Поставщик" value={params.supplier ?? ''} onChange={(event) => setParams({ ...params, supplier: (event.target.value || null) as Supplier | null, dataset_id: null, category: params.category && meta?.product_groups.includes(params.category) ? params.category : null, lead_time_days: null, review_period_days: null })}><option value="">Все поставщики</option>{meta?.suppliers.map((item) => <option key={item.supplier} value={item.supplier}>{item.supplier_name}</option>)}</Select>
+      <Select id="supplier" label="Поставщик" value={params.supplier ?? ''} onChange={(event) => setParams({ ...params, supplier: event.target.value || null, category: params.category && meta?.product_groups.includes(params.category) ? params.category : null, lead_time_days: null, review_period_days: null })}><option value="">Все поставщики</option>{meta?.suppliers.map((item) => <option key={item.supplier} value={item.supplier}>{item.supplier_name}</option>)}</Select>
       <Select id="category" label="Категория" value={params.category ?? ''} onChange={(event) => setParams({ ...params, category: event.target.value || null })}><option value="">Все категории</option>{(meta?.product_groups.length ?? 0) > 0 && <optgroup label="Товарные группы">{meta?.product_groups.map((group) => <option key={group} value={group}>{group}</option>)}</optgroup>}{supplierInfo && <optgroup label={`Класс ${supplierInfo.supplier_name}`}>{supplierInfo.categories.map((category) => <option key={category} value={category}>{category}</option>)}</optgroup>}</Select>
       <Select id="method" label="Метод" value={params.method} onChange={(event) => setParams({ ...params, method: event.target.value as RunParams['method'] })}><option value="analyze">Наш расчёт</option><option value="baseline">Excel-метод</option></Select>
       <Field id="lead" label="Срок поставки L, дни" type="number" min={1} max={365} placeholder={supplierInfo ? `По умолчанию: ${supplierInfo.lead_time_days}` : 'По поставщику'} value={params.lead_time_days ?? ''} onChange={(event) => setParams({ ...params, lead_time_days: event.target.value ? Number(event.target.value) : null })} />
@@ -113,17 +113,26 @@ function SupplierOrders({ summary, lines, supplierLines, selectedId, onSelect, o
   </section>;
 }
 
-function UploadDialog({ open, onOpenChange, onUploaded }: { open: boolean; onOpenChange: (open: boolean) => void; onUploaded: (datasetId: string, supplier: Supplier, warnings: string[]) => void }) {
-  const [supplier, setSupplier] = useState<Supplier>('IEK');
+function UploadDialog({ open, onOpenChange, onUploaded }: { open: boolean; onOpenChange: (open: boolean) => void; onUploaded: (uploaded: DatasetUploaded) => void }) {
+  const [mode, setMode] = useState<'IEK' | 'SE' | 'new'>('IEK');
+  const [name, setName] = useState('');
+  const [template, setTemplate] = useState<'IEK' | 'SE'>('IEK');
+  const [nameError, setNameError] = useState('');
   const [files, setFiles] = useState<DatasetFiles>({});
   const [error, setError] = useState('');
   const [fieldError, setFieldError] = useState<Partial<Record<FileRole, string>>>({});
   const [busy, setBusy] = useState(false);
   async function submit() {
+    if (mode === 'new' && (name.trim().length < 2 || name.trim().length > 80)) { setNameError('Введите название от 2 до 80 символов'); return; }
     for (const role of requiredRoles) if (!files[role]) { setError(`Выберите файл: ${roleLabels[role]}`); return; }
     for (const file of Object.values(files)) if (file && (!file.name.toLowerCase().endsWith('.xlsx') || file.size === 0 || file.size > 30 * 1024 * 1024)) { setError('Нужны непустые .xlsx-файлы размером до 30 МБ каждый'); return; }
     setBusy(true); setError(''); setFieldError({});
-    try { const uploaded = await (await getApi()).uploadDataset(supplier, files); onUploaded(uploaded.dataset_id, uploaded.supplier, uploaded.warnings); setFiles({}); onOpenChange(false); }
+    try {
+      const api = await getApi();
+      const uploaded = mode === 'new' ? await api.uploadNewSupplier(name.trim(), template, files) : await api.uploadDataset(mode, files);
+      onUploaded(uploaded);
+      setFiles({}); setName(''); setNameError(''); onOpenChange(false);
+    }
     catch (cause) {
       const message = cause instanceof Error ? cause.message : 'Не удалось загрузить файлы';
       const role = cause instanceof ApiError ? cause.meta.file_role : undefined;
@@ -132,7 +141,18 @@ function UploadDialog({ open, onOpenChange, onUploaded }: { open: boolean; onOpe
     }
     finally { setBusy(false); }
   }
-  return <Dialog open={open} onOpenChange={onOpenChange} title="Загрузка выгрузок"><p>Загрузите файлы одного поставщика. Первые четыре обязательны.</p><Select id="upload-supplier" label="Поставщик" value={supplier} onChange={(event) => { setSupplier(event.target.value as Supplier); setFiles({}); setError(''); setFieldError({}); }}><option value="IEK">IEK</option><option value="SE">Systeme Electric</option></Select><div className={styles.uploadFields}>{allRoles.map((role) => <Field key={`${supplier}-${role}`} id={`file-${role}`} label={`${roleLabels[role]}${requiredRoles.includes(role) ? ' *' : ''}`} error={fieldError[role]} type="file" accept=".xlsx" onChange={(event) => setFiles({ ...files, [role]: event.target.files?.[0] })} />)}</div>{error && <InlineAlert tone="error">{error}</InlineAlert>}<div className={styles.dialogActions}><Button type="button" onClick={() => onOpenChange(false)}>Отмена</Button><Button type="button" variant="primary" loading={busy} onClick={() => void submit()}>Загрузить</Button></div></Dialog>;
+  return <Dialog open={open} onOpenChange={onOpenChange} title="Загрузка выгрузок">
+    <p>Загрузите файлы одного поставщика. Первые четыре обязательны.</p>
+    <Select id="upload-supplier" label="Поставщик" value={mode} onChange={(event) => { setMode(event.target.value as 'IEK' | 'SE' | 'new'); setFiles({}); setError(''); setNameError(''); setFieldError({}); }}><option value="IEK">IEK</option><option value="SE">Systeme Electric</option><option value="new">+ Новый поставщик</option></Select>
+    {mode === 'new' && <div className={styles.newSupplierFields}>
+      <Field id="new-supplier-name" label="Название нового поставщика *" placeholder="Например, ЭлектроМаркет" maxLength={80} value={name} error={nameError} onChange={(event) => { setName(event.target.value); setNameError(''); }} />
+      <Select id="new-supplier-template" label="Формат выгрузок 1С" value={template} onChange={(event) => { setTemplate(event.target.value as 'IEK' | 'SE'); setFiles({}); setFieldError({}); }}><option value="IEK">Как у IEK</option><option value="SE">Как у Systeme Electric</option></Select>
+      <p className={styles.uploadHint}>Выберите формат, которому соответствуют колонки ваших файлов. Имя появится в расчёте и заказе.</p>
+    </div>}
+    <div className={styles.uploadFields}>{allRoles.map((role) => <Field key={`${mode}-${template}-${role}`} id={`file-${role}`} label={`${roleLabels[role]}${requiredRoles.includes(role) ? ' *' : ''}`} error={fieldError[role]} type="file" accept=".xlsx" onChange={(event) => setFiles({ ...files, [role]: event.target.files?.[0] })} />)}</div>
+    {error && <InlineAlert tone="error">{error}</InlineAlert>}
+    <div className={styles.dialogActions}><Button type="button" onClick={() => onOpenChange(false)}>Отмена</Button><Button type="button" variant="primary" loading={busy} onClick={() => void submit()}>Загрузить</Button></div>
+  </Dialog>;
 }
 
 export default function App() {
@@ -144,6 +164,7 @@ export default function App() {
   const [view, setView] = useState<View>(readView);
   const [params, setParams] = useState<RunParams>(initialParams);
   const [runId, setRunId] = useState<string | null>(() => import.meta.env.VITE_MOCK === '1' ? null : sessionStorage.getItem('grimstack-run-id'));
+  const initialRunId = useRef(runId);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [summary, setSummary] = useState<{ text: string; cached: boolean; unavailable?: boolean } | null>(null);
@@ -153,8 +174,13 @@ export default function App() {
   const [bootstrapping, setBootstrapping] = useState(false);
   const [search, setSearch] = useState('');
   const [urgency, setUrgency] = useState<Urgency | ''>('');
-  const metaQuery = useQuery({ queryKey: ['meta'], queryFn: async () => (await getApi()).getMeta() });
+  const metaQuery = useQuery({ queryKey: ['meta', params.dataset_id], queryFn: async () => (await getApi()).getMeta(params.dataset_id) });
   const runQuery = useQuery({ queryKey: ['run', runId], enabled: Boolean(runId), queryFn: async () => (await getApi()).getRun(runId!) });
+  useEffect(() => {
+    if (!initialRunId.current || runQuery.data?.run_id !== initialRunId.current) return;
+    setParams(runQuery.data.params);
+    initialRunId.current = null;
+  }, [runQuery.data]);
   useEffect(() => {
     const onPopState = () => setView(readView());
     window.addEventListener('popstate', onPopState);
@@ -192,7 +218,7 @@ export default function App() {
     return analysisLine && !matches.some((line) => line.line_id === analysisLine.line_id) ? [analysisLine, ...matches] : matches;
   }, [analysisLine, analysisSearch, run]);
   const analysisHistory = useQuery({ queryKey: ['history', run?.run_id, analysisLine?.supplier, analysisLine?.sku], enabled: view === 'analytics' && Boolean(analysisLine), queryFn: async () => (await getApi()).getSkuHistory(analysisLine!.supplier, analysisLine!.sku, run!.run_id) });
-  const backtestQuery = useQuery({ queryKey: ['backtest'], enabled: view === 'analytics' && Boolean(run), queryFn: async () => (await getApi()).getBacktest() });
+  const backtestQuery = useQuery({ queryKey: ['backtest'], enabled: view === 'analytics' && Boolean(run) && !run?.params.dataset_id, queryFn: async () => (await getApi()).getBacktest() });
   useEffect(() => {
     if (import.meta.env.VITE_MOCK !== '1' || view !== 'analytics' || !run || !analysisHistory.isError || historyProbeAttempted.current === run.run_id) return;
     historyProbeAttempted.current = run.run_id;
@@ -236,7 +262,8 @@ export default function App() {
   }
 
   const title = { overview: 'Обзор закупок', orders: 'Заказы поставщикам', analytics: 'Аналитика спроса', data: 'Данные и расчёт' }[view];
-  const subtitle = { overview: 'Что и сколько заказать у IEK и Systeme Electric, что срочно', orders: 'Проверьте количество, при необходимости поправьте и утвердите', analytics: 'Чем расчёт отличается от Excel-метода и насколько точен прогноз', data: 'Данные и параметры, на которых построен расчёт' }[view];
+  const subtitle = { overview: 'Что и сколько заказать у поставщиков, что срочно', orders: 'Проверьте количество, при необходимости поправьте и утвердите', analytics: 'Чем расчёт отличается от Excel-метода и насколько точен прогноз', data: 'Данные и параметры, на которых построен расчёт' }[view];
+  const supplierNames = (run?.suppliers ?? metaQuery.data?.suppliers ?? []).map((item) => item.supplier_name).join(' · ');
 
   return <div className={styles.appLayout}>
     <a className={styles.skipLink} href="#main-content">К содержанию</a>
@@ -251,7 +278,7 @@ export default function App() {
     </aside>
 
     <div className={styles.mainColumn}>
-      <header className={styles.topbar}><span className={styles.topbarOrg}>Электрокомплект<span className={styles.topbarBrands}> · IEK и Systeme Electric</span></span><div>{import.meta.env.VITE_MOCK === '1' && <span className={styles.demoBadge}>Демо-данные</span>}<span className={styles.topbarDate}>Обновлено {formatDate(run?.created_at ?? metaQuery.data?.data_as_of)}</span></div></header>
+      <header className={styles.topbar}><span className={styles.topbarOrg}>Электрокомплект{supplierNames && <span className={styles.topbarBrands}> · {supplierNames}</span>}</span><div>{import.meta.env.VITE_MOCK === '1' && <span className={styles.demoBadge}>Демо-данные</span>}<span className={styles.topbarDate}>Обновлено {formatDate(run?.created_at ?? metaQuery.data?.data_as_of)}</span></div></header>
       <main id="main-content" className={styles.content}>
         <header className={styles.pageHeader}><div><h1>{title}</h1><p className={styles.subtitle}>{subtitle}</p></div>{view !== 'data' && <Button type="button" variant="primary" onClick={() => navigate('data')}>Параметры расчёта</Button>}</header>
         {metaQuery.isError && <InlineAlert tone="error">Не удалось загрузить параметры: {metaQuery.error.message} <Button type="button" onClick={() => void metaQuery.refetch()}>Повторить</Button></InlineAlert>}
@@ -269,7 +296,7 @@ export default function App() {
             <SectionPanel className={styles.chartPanel}><div className={styles.sectionHeading}><div><h2>Риск по позициям</h2></div><span>{formatNumber(run.lines.length)} SKU</span></div><Suspense fallback={<Skeleton label="Загрузка структуры заказов" />}><RiskChart run={run} /></Suspense></SectionPanel>
           </div>
           <div className={styles.overviewSecondary}><span>Исключено разовых<strong>{formatNumber(Math.round(run.kpi.oneoff_units_excluded))} шт</strong></span><span>Восстановлено спроса<strong>{formatNumber(Math.round(run.kpi.stockout_units_restored))} шт</strong></span></div>
-          <section className={styles.kpis} aria-label="Главные показатели"><KpiMetric label="Позиций к заказу" value={formatNumber(run.kpi.lines_to_order)} /><KpiMetric label="Срочные позиции" value={formatNumber(run.kpi.critical)} hint={(() => { const count = run.lines.filter((line) => line.urgency === 'critical' && line.flags.includes('approx_stock')).length; return count ? `из них ${formatNumber(count)} — по оценочному остатку` : undefined; })()} critical /><KpiMetric label="Сумма заказа SE" value={run.kpi.total_amount === null ? 'Нет цены' : `${new Intl.NumberFormat('ru-RU', { notation: 'compact', maximumFractionDigits: 1 }).format(run.kpi.total_amount).replace(/\s+/, ' ')}\u00a0₸`} hint="у IEK нет цен" /><KpiMetric label="Позиции с излишком" value={formatNumber(run.kpi.overstock_lines)} hint="запас выше целевого уровня" /></section>
+          <section className={styles.kpis} aria-label="Главные показатели"><KpiMetric label="Позиций к заказу" value={formatNumber(run.kpi.lines_to_order)} /><KpiMetric label="Срочные позиции" value={formatNumber(run.kpi.critical)} hint={(() => { const count = run.lines.filter((line) => line.urgency === 'critical' && line.flags.includes('approx_stock')).length; return count ? `из них ${formatNumber(count)} — по оценочному остатку` : undefined; })()} critical /><KpiMetric label="Оценочная сумма" value={run.kpi.total_amount === null ? 'Нет цены' : `${new Intl.NumberFormat('ru-RU', { notation: 'compact', maximumFractionDigits: 1 }).format(run.kpi.total_amount).replace(/\s+/, ' ')}\u00a0₸`} hint="по позициям с ценой" /><KpiMetric label="Позиции с излишком" value={formatNumber(run.kpi.overstock_lines)} hint="запас выше целевого уровня" /></section>
           <div className={styles.overviewGrid}>
             <SectionPanel><div className={styles.sectionHeading}><div><h2>Срочные позиции</h2></div><button className={styles.textAction} type="button" onClick={() => { setUrgency('critical'); navigate('orders'); }}>Все заказы</button></div><div className={styles.priorityList}>{run.lines.filter((line) => line.urgency === 'critical').slice(0, 5).map((line) => <button key={line.line_id} type="button" onClick={() => { navigate('orders'); setSelectedId(line.line_id); }}><span><small>{line.supplier} · {line.sku}</small><strong>{line.name}</strong></span><span className={styles.priorityQty}>{formatQty(line.final_qty, line.unit)}<small>к заказу</small></span></button>)}{run.kpi.critical === 0 && <p className={styles.muted}>Срочных позиций нет.</p>}</div></SectionPanel>
             <SectionPanel><div className={styles.sectionHeading}><div><h2>Состояние заказов</h2></div></div><div className={styles.supplierOverview}>{run.suppliers.map((supplier) => <button key={supplier.supplier} type="button" onClick={() => navigate('orders')}><span><strong>{supplier.supplier_name}</strong><small>{formatNumber(supplier.lines_count)} поз. · {formatNumber(supplier.critical_count)} срочных</small></span><OrderStatus status={supplier.status} /></button>)}</div></SectionPanel>
@@ -280,17 +307,17 @@ export default function App() {
 
         {view === 'analytics' && run && !calculating && <>
           <div className={styles.chartGrid}><SectionPanel className={styles.chartPanel}><div className={styles.sectionHeading}><div><h2>Где расчёты расходятся</h2></div><span>4 больше и 4 меньше Excel-метода</span></div><Suspense fallback={<Skeleton label="Загрузка сравнения методов" />}><ComparisonChart run={run} /></Suspense></SectionPanel><SectionPanel className={styles.chartPanel}><div className={styles.sectionHeading}><div><h2>Распределение позиций</h2></div></div><Suspense fallback={<Skeleton label="Загрузка структуры заказов" />}><RiskChart run={run} /></Suspense><div className={styles.analysisFacts}><div><span>Исключено разовых</span><strong>{formatNumber(Math.round(run.kpi.oneoff_units_excluded))} шт</strong></div><div><span>Восстановлено при дефиците</span><strong>{formatNumber(Math.round(run.kpi.stockout_units_restored))} шт</strong></div></div></SectionPanel></div>
-          {backtestQuery.isPending ? <SectionPanel><Skeleton label="Загрузка результатов бэктеста" /></SectionPanel> : backtestQuery.isError ? <InlineAlert tone="error">Не удалось загрузить бэктест: {backtestQuery.error.message} <Button type="button" onClick={() => void backtestQuery.refetch()}>Повторить</Button></InlineAlert> : backtestQuery.data ? <Suspense fallback={<SectionPanel><Skeleton label="Загрузка графиков бэктеста" /></SectionPanel>}><BacktestPanel report={backtestQuery.data} /></Suspense> : null}
+          {run.params.dataset_id ? <InlineAlert tone="info">Бэктест построен по встроенным данным IEK и Systeme Electric; для загруженного набора он недоступен.</InlineAlert> : backtestQuery.isPending ? <SectionPanel><Skeleton label="Загрузка результатов бэктеста" /></SectionPanel> : backtestQuery.isError ? <InlineAlert tone="error">Не удалось загрузить бэктест: {backtestQuery.error.message} <Button type="button" onClick={() => void backtestQuery.refetch()}>Повторить</Button></InlineAlert> : backtestQuery.data ? <Suspense fallback={<SectionPanel><Skeleton label="Загрузка графиков бэктеста" /></SectionPanel>}><BacktestPanel report={backtestQuery.data} /></Suspense> : null}
           <Suspense fallback={<SectionPanel><Skeleton label="Загрузка сравнения сценариев" /></SectionPanel>}><ScenarioPanel key={run.run_id} run={run} meta={metaQuery.data} /></Suspense>
           <SectionPanel className={styles.historyPanel}><div className={styles.sectionHeading}><div><h2>Продажи и прогноз</h2></div><div className={styles.analysisPicker}><Field id="analysis-search" label="Найти SKU" value={analysisSearch} onChange={(event) => setAnalysisSearch(event.target.value)} placeholder="Код, артикул или название" /><Select id="analysis-sku" label="Позиция" value={analysisLine?.line_id ?? ''} onChange={(event) => setAnalysisId(event.target.value)}>{analysisOptions.map((line) => <option key={line.line_id} value={line.line_id}>{line.supplier} · {line.sku} · {line.name}</option>)}</Select></div></div>{analysisLine && <p className={styles.historyDescription}>{analysisLine.explanation}</p>}{analysisLine && (analysisHistory.isPending ? <Skeleton label="Загрузка истории продаж" /> : analysisHistory.isError ? <InlineAlert tone="error">{analysisHistory.error.message}</InlineAlert> : <Suspense fallback={<Skeleton label="Загрузка графика" />}><HistoryChart history={analysisHistory.data} /></Suspense>)}</SectionPanel>
         </>}
 
-        {view === 'data' && <div className={styles.dataLayout}><div><SectionPanel><div className={styles.sectionHeading}><div><h2>Параметры расчёта</h2></div></div><Parameters meta={metaQuery.data} params={params} setParams={setParams} onCalculate={() => void calculate()} calculating={calculating} onOpenUpload={() => setUploadOpen(true)} /></SectionPanel></div><div className={styles.dataAside}><SectionPanel><h2>Набор данных</h2><p className={styles.muted}>{params.dataset_id ? `Загруженный набор ${params.dataset_id}` : 'Встроенные выгрузки поставщиков'}</p><dl><div><dt>Дата данных</dt><dd>{formatDate(run?.data_as_of ?? metaQuery.data?.data_as_of)}</dd></div><div><dt>Поставщиков</dt><dd>{formatNumber(metaQuery.data?.suppliers.length ?? null)}</dd></div><div><dt>Активный расчёт</dt><dd>{run ? formatDate(run.created_at) : 'Нет'}</dd></div></dl><Button type="button" onClick={() => setUploadOpen(true)}>Загрузить выгрузки</Button></SectionPanel>{run && <SectionPanel><h2>Текущий расчёт</h2><p className={styles.muted}>{formatNumber(run.kpi.lines_to_order)} позиций к заказу · {formatNumber(run.kpi.critical)} срочных</p><Button type="button" variant="primary" onClick={() => navigate('orders')}>Открыть заказы</Button></SectionPanel>}</div></div>}
+        {view === 'data' && <div className={styles.dataLayout}><div><SectionPanel><div className={styles.sectionHeading}><div><h2>Параметры расчёта</h2></div></div><Parameters meta={metaQuery.data} params={params} setParams={setParams} onCalculate={() => void calculate()} calculating={calculating} onOpenUpload={() => setUploadOpen(true)} /></SectionPanel></div><div className={styles.dataAside}><SectionPanel><h2>Набор данных</h2><p className={styles.muted}>{params.dataset_id ? `Загруженный набор ${params.dataset_id}` : 'Встроенные выгрузки поставщиков'}</p><dl><div><dt>Дата данных</dt><dd>{formatDate(run?.data_as_of ?? metaQuery.data?.data_as_of)}</dd></div><div><dt>Поставщиков</dt><dd>{formatNumber(metaQuery.data?.suppliers.length ?? null)}</dd></div><div><dt>Активный расчёт</dt><dd>{run ? formatDate(run.created_at) : 'Нет'}</dd></div></dl><div className={styles.dataActions}><Button type="button" onClick={() => setUploadOpen(true)}>Загрузить выгрузки</Button>{params.dataset_id && <Button type="button" variant="ghost" onClick={() => { resetRun(); setParams({ ...initialParams }); setNotice('Выбраны встроенные выгрузки. Запустите новый расчёт.'); }}>Встроенные данные</Button>}</div></SectionPanel>{run && <SectionPanel><h2>Текущий расчёт</h2><p className={styles.muted}>{formatNumber(run.kpi.lines_to_order)} позиций к заказу · {formatNumber(run.kpi.critical)} срочных</p><Button type="button" variant="primary" onClick={() => navigate('orders')}>Открыть заказы</Button></SectionPanel>}</div></div>}
 
         {!run && !calculating && !bootstrapping && !runQuery.isError && view !== 'data' && <SectionPanel className={styles.empty}><h2>Данные готовы к планированию</h2><p>Запустите расчёт по текущим выгрузкам, чтобы увидеть заказы и аналитику.</p><Button type="button" variant="primary" onClick={() => navigate('data')}>Перейти к расчёту</Button></SectionPanel>}
       </main>
     </div>
-    <UploadDialog open={uploadOpen} onOpenChange={setUploadOpen} onUploaded={(datasetId, supplier, warnings) => { resetRun(); setParams((current) => ({ ...current, supplier, category: null, lead_time_days: null, review_period_days: null, dataset_id: datasetId })); setNotice(`Набор ${datasetId} загружен. Запустите новый расчёт. ${warnings.join(' ')}`); }} />
+    <UploadDialog open={uploadOpen} onOpenChange={setUploadOpen} onUploaded={(uploaded) => { resetRun(); setParams((current) => ({ ...current, supplier: uploaded.supplier, category: null, lead_time_days: null, review_period_days: null, dataset_id: uploaded.dataset_id })); setNotice(`${uploaded.supplier_name} добавлен. Запустите новый расчёт. ${uploaded.warnings.join(' ')}`); }} />
     <Dialog open={summary !== null} onOpenChange={(open) => { if (!open) setSummary(null); }} title={summary?.unavailable ? 'Сводка для этого расчёта не готова' : 'Сводка по заказу'}>{summary && <>{summary.unavailable ? <InlineAlert tone="info">{summary.text}</InlineAlert> : <p className={styles.summaryText}>{summary.text}</p>}{summary.cached && <p className={styles.muted}>Из кэша</p>}<div className={styles.dialogActions}><Button type="button" onClick={() => setSummary(null)}>Закрыть</Button></div></>}</Dialog>
   </div>;
 }

@@ -1,11 +1,10 @@
 import Chart from 'react-apexcharts';
 import type { ApexOptions } from 'apexcharts';
 import type { BacktestReport } from '../api/ProcurementApi';
-import type { Supplier } from '../api/types';
 import { SectionPanel } from '../shared/ui';
 import styles from './BacktestPanel.module.css';
 
-const suppliers: Supplier[] = ['SE', 'IEK'];
+const suppliers: ('SE' | 'IEK')[] = ['SE', 'IEK'];
 const percentFormatter = new Intl.NumberFormat('ru-RU', { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const millionsFormatter = new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const countFormatter = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 });

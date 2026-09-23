@@ -9,7 +9,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-Supplier = Literal["IEK", "SE"]
+Supplier = str  # IEK, SE or a safe code issued for a newly uploaded supplier
 Urgency = Literal["critical", "high", "planned", "none"]
 FileRole = Literal["monthly_sales", "monthly_stock", "sales_tx", "in_transit", "moq", "seasonality"]
 
@@ -149,6 +149,7 @@ class LinePatch(BaseModel):
 class DatasetUploaded(BaseModel):
     dataset_id: str
     supplier: Supplier
+    supplier_name: str
     warnings: list[str]
 
 

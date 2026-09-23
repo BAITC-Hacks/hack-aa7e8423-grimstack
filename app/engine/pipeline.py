@@ -17,7 +17,8 @@ import pandas as pd
 from app.contracts import (Meta, OneoffEvent, OrderLine, RunKpi, RunParams, RunResult,
                             SkuHistory, Supplier, SupplierInfo, SupplierSummary)
 from app.engine import explain, forecast, policy
-from app.engine.config import DEFAULT_SERVICE_LEVEL, DO_NOT_ORDER_CATEGORIES, SERVICE_LEVEL, SUPPLIERS
+from app.engine.config import (DEFAULT_SERVICE_LEVEL, DO_NOT_ORDER_CATEGORIES, SERVICE_LEVEL,
+                               SUPPLIERS, se_template_suppliers, suppliers_for_dataset)
 
 from app.engine.cleaning import detect_oneoffs, monthly_excess
 from app.engine.stockout import restore
@@ -71,7 +72,8 @@ def _build(ds) -> Prepared:
     last18 = closed[-18:]
     raw = ds.sales_monthly.reindex(index=idx, columns=closed, fill_value=0.0).clip(lower=0.0)
 
-    events = detect_oneoffs(ds.sales_tx, ds.skus, ds.sales_monthly, ds.as_of)
+    events = detect_oneoffs(ds.sales_tx, ds.skus, ds.sales_monthly, ds.as_of,
+                            se_suppliers=se_template_suppliers(ds))
     excess = monthly_excess(events, raw)
     cleaned = (raw - excess).clip(lower=0.0)
 
@@ -147,10 +149,10 @@ def _prepare(ds) -> Prepared:
 # --- параметры, применяемые к prepared -----------------------------------------------------
 
 
-def _lr_series(idx: pd.Index, params: RunParams) -> tuple[pd.Series, pd.Series]:
+def _lr_series(idx: pd.Index, params: RunParams, supplier_configs: dict[str, dict]) -> tuple[pd.Series, pd.Series]:
     supplier = pd.Series(idx.get_level_values("supplier"), index=idx)
-    default_l = supplier.map(lambda s: float(SUPPLIERS[s]["lead_time_days"]))
-    default_r = supplier.map(lambda s: float(SUPPLIERS[s]["review_period_days"]))
+    default_l = supplier.map(lambda s: float(supplier_configs[s]["lead_time_days"]))
+    default_r = supplier.map(lambda s: float(supplier_configs[s]["review_period_days"]))
     L = default_l if params.lead_time_days is None else pd.Series(float(params.lead_time_days), index=idx)
     R = default_r if params.review_period_days is None else pd.Series(float(params.review_period_days), index=idx)
     return L, R
@@ -170,7 +172,7 @@ def _z_series(sl: pd.Series) -> pd.Series:
 def _scenario(ds, prepared: Prepared, params: RunParams, *, base, season, trend_s, sigma_s,
               growth_pct: float) -> dict:
     idx = prepared.idx
-    L, R = _lr_series(idx, params)
+    L, R = _lr_series(idx, params, suppliers_for_dataset(ds))
     sl = _sl_series(ds.skus, params)
     z = _z_series(sl)
     keep_1m = ds.skus["keep_1m"].fillna(False).astype(bool)
@@ -353,7 +355,7 @@ def _sort_lines(lines: list[OrderLine]) -> list[OrderLine]:
                                           -(l.amount if l.amount is not None else l.final_qty)))
 
 
-def _suppliers_summary(lines: list[OrderLine]) -> list[SupplierSummary]:
+def _suppliers_summary(lines: list[OrderLine], supplier_configs: dict[str, dict]) -> list[SupplierSummary]:
     by_supplier: dict[str, list[OrderLine]] = {}
     for l in lines:
         by_supplier.setdefault(l.supplier, []).append(l)
@@ -361,7 +363,7 @@ def _suppliers_summary(lines: list[OrderLine]) -> list[SupplierSummary]:
     for supplier, rows in by_supplier.items():
         amounts = [r.amount for r in rows if r.amount is not None]
         out.append(SupplierSummary(
-            supplier=supplier, supplier_name=SUPPLIERS[supplier]["name"], lines_count=len(rows),
+            supplier=supplier, supplier_name=supplier_configs[supplier]["name"], lines_count=len(rows),
             critical_count=sum(1 for r in rows if r.urgency == "critical"),
             total_qty=sum(r.final_qty for r in rows),
             total_amount=(round(sum(amounts), 2) if amounts else None)))
@@ -381,9 +383,9 @@ def _kpi(lines: list[OrderLine], prepared: Prepared, overstock_lines: int) -> Ru
 
 def _warnings(lines: list[OrderLine], prepared: Prepared, filter_mask: pd.Series) -> list[str]:
     out = []
-    if any("approx_stock" in l.flags for l in lines):
-        out.append("IEK: текущий остаток — нижняя оценка (остаток на 01.09 минус продажи сентября)")
-    for supplier in SUPPLIERS:  # префикс «IEK:»/«SE:» — сводка по поставщику берёт только свои предупреждения
+    for supplier in dict.fromkeys([*SUPPLIERS, *(l.supplier for l in lines)]):
+        if any(l.supplier == supplier and "approx_stock" in l.flags for l in lines):
+            out.append(f"{supplier}: текущий остаток — нижняя оценка (остаток на 01.09 минус продажи сентября)")
         critical = [l for l in lines if l.supplier == supplier and l.urgency == "critical"]
         estimated = sum("approx_stock" in l.flags for l in critical)
         if estimated:
@@ -403,7 +405,8 @@ def run(ds, params: RunParams) -> RunResult:
     lines, filter_mask, overstock_lines = _order_lines(ds, prepared, params)
     lines = _sort_lines(lines)
     return RunResult(run_id=uuid4().hex[:12], created_at=datetime.now(), params=params, data_as_of=ds.as_of,
-                      kpi=_kpi(lines, prepared, overstock_lines), suppliers=_suppliers_summary(lines), lines=lines,
+                      kpi=_kpi(lines, prepared, overstock_lines),
+                      suppliers=_suppliers_summary(lines, suppliers_for_dataset(ds)), lines=lines,
                       warnings=_warnings(lines, prepared, filter_mask))
 
 
@@ -439,12 +442,11 @@ def history(ds, supplier: Supplier, sku: str, params: RunParams) -> SkuHistory:
 def meta(ds) -> Meta:
     suppliers = []
     present = set(ds.skus.index.get_level_values("supplier"))
-    for code, cfg in SUPPLIERS.items():
-        if code in present:
-            cats = ds.skus.xs(code, level="supplier")["category"]
-            categories = sorted({c for c in cats.dropna().unique() if c})
-        else:
-            categories = []
+    for code, cfg in suppliers_for_dataset(ds).items():
+        if code not in present:
+            continue
+        cats = ds.skus.xs(code, level="supplier")["category"]
+        categories = sorted({c for c in cats.dropna().unique() if c})
         suppliers.append(SupplierInfo(supplier=code, supplier_name=cfg["name"],
                                         lead_time_days=cfg["lead_time_days"],
                                         review_period_days=cfg["review_period_days"], categories=categories))

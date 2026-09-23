@@ -13,6 +13,7 @@ from fastapi.testclient import TestClient
 from openpyxl import load_workbook
 
 from app import ai, engine, ingest, store as store_module
+from app.engine import pipeline
 from app.api import routes as api_routes
 from app.api.routes import EXPORT_COLUMNS, MAX_UPLOAD_BYTES
 from app.contracts import Meta, RunResult, SkuHistory
@@ -93,6 +94,7 @@ def test_swagger_documents_routes_errors_and_upload(client):
     assert schema["info"]["description"]
     assert schema["info"]["version"]
     expected_errors = {
+        ("/api/meta", "get"): {404},
         ("/api/backtest", "get"): {404},
         ("/api/runs", "post"): {404, 422},
         ("/api/runs/compare", "post"): {404, 422},
@@ -102,6 +104,7 @@ def test_swagger_documents_routes_errors_and_upload(client):
         ("/api/runs/{run_id}/export.xlsx", "get"): {404, 422},
         ("/api/sku/{supplier}/{sku}/history", "get"): {404},
         ("/api/datasets/{supplier}", "post"): {404, 422},
+        ("/api/datasets/new", "post"): {422},
         ("/api/runs/{run_id}/summary", "post"): {404, 422, 503},
     }
     for path, methods in schema["paths"].items():
@@ -115,6 +118,9 @@ def test_swagger_documents_routes_errors_and_upload(client):
     form = upload["content"]["multipart/form-data"]["schema"]
     assert set(form["required"]) == {"monthly_sales", "monthly_stock", "in_transit", "moq"}
     assert form["properties"]["monthly_sales"]["format"] == "binary"
+    new_form = schema["paths"]["/api/datasets/new"]["post"]["requestBody"]["content"]["multipart/form-data"]["schema"]
+    assert {"name", "template", "monthly_sales", "monthly_stock", "in_transit", "moq"} <= set(new_form["required"])
+    assert new_form["properties"]["template"]["enum"] == ["IEK", "SE"]
 
 
 def test_backtest_report_and_missing_file(client, tmp_path, monkeypatch):
@@ -394,6 +400,82 @@ def test_upload_validation_and_uploaded_dataset_selection(client):
     assert new_run(client, dataset_id=uploaded.json()["dataset_id"])["params"][
         "dataset_id"
     ] == uploaded.json()["dataset_id"]
+
+
+@pytest.mark.parametrize("template,lead,review", [("IEK", 24, 7), ("SE", 40, 30)])
+def test_new_supplier_upload_meta_run_history_approval_and_export(
+    client, monkeypatch, template, lead, review,
+):
+    monkeypatch.setitem(
+        ingest._LOADERS, template,
+        lambda _folder, _as_of: make_dataset(
+            {"A": noisy(10)}, supplier=template, stock_now=0, in_transit=2,
+        ),
+    )
+    monkeypatch.setattr(engine, "run", pipeline.run)
+    monkeypatch.setattr(engine, "meta", pipeline.meta)
+    monkeypatch.setattr(engine, "history", pipeline.history)
+    files = [
+        (role, (f"{role}.xlsx", b"PKsample"))
+        for role in ("monthly_sales", "monthly_stock", "in_transit", "moq", "sales_tx")
+    ]
+    uploaded = client.post(
+        "/api/datasets/new", data={"name": "Тестовый поставщик", "template": template},
+        files=files,
+    )
+    assert uploaded.status_code == 200, uploaded.text
+    payload = uploaded.json()
+    code = payload["supplier"]
+    assert code.startswith("CUSTOM_") and len(code) == 15
+    assert payload["supplier_name"] == "Тестовый поставщик"
+    dataset_id = payload["dataset_id"]
+
+    info = client.get("/api/meta", params={"dataset_id": dataset_id})
+    assert info.status_code == 200, info.text
+    assert [(item["supplier"], item["supplier_name"], item["lead_time_days"],
+             item["review_period_days"]) for item in info.json()["suppliers"]] == [
+        (code, "Тестовый поставщик", lead, review),
+    ]
+    assert_error(client.get("/api/meta", params={"dataset_id": "missing"}), 404)
+    assert_error(client.post(
+        "/api/runs", json={"dataset_id": dataset_id, "supplier": template},
+    ), 422)
+
+    run_response = client.post("/api/runs", json={"dataset_id": dataset_id, "supplier": code})
+    assert run_response.status_code == 200, run_response.text
+    run = run_response.json()
+    assert run["suppliers"][0]["supplier_name"] == "Тестовый поставщик"
+    assert run["lines"] and all(line["supplier"] == code for line in run["lines"])
+    line = run["lines"][0]
+    history = client.get(f"/api/sku/{code}/{line['sku']}/history", params={"run_id": run["run_id"]})
+    assert history.status_code == 200, history.text
+    assert history.json()["supplier"] == code
+    approved = client.post(f"/api/runs/{run['run_id']}/suppliers/{code}/approve")
+    assert approved.status_code == 200, approved.text
+    assert any(item["supplier"] == code for item in client.get("/api/approvals").json())
+
+    exported = client.get(f"/api/runs/{run['run_id']}/export.xlsx", params={"supplier": code})
+    assert exported.status_code == 200, exported.text
+    assert f"order_{code}_" in exported.headers["content-disposition"]
+    workbook = load_workbook(BytesIO(exported.content), read_only=True)
+    assert code in workbook.sheetnames
+    settings = dict(list(workbook["Параметры расчёта"].values)[1:])
+    assert settings["Поставщик"] == "Тестовый поставщик"
+    assert (settings["L, дни"], settings["R, дни"]) == (lead, review)
+    workbook.close()
+
+
+def test_new_supplier_upload_rejects_missing_name_and_unknown_template(client):
+    files = [(role, (f"{role}.xlsx", b"PKsample")) for role in (
+        "monthly_sales", "monthly_stock", "in_transit", "moq",
+    )]
+    missing = assert_error(client.post("/api/datasets/new", data={"template": "IEK"}, files=files), 422)
+    assert "название" in missing["detail"]
+    invalid = assert_error(client.post(
+        "/api/datasets/new", data={"name": "Поставщик", "template": "XYZ"}, files=files,
+    ), 422)
+    assert "формат" in invalid["detail"]
+    assert_error(client.post("/api/runs", json={"supplier": "UNKNOWN"}), 422)
 
 
 def test_history_and_summary_errors(client, monkeypatch):

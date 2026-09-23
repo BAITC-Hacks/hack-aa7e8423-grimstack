@@ -117,6 +117,7 @@
 .dataAside dl div { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
 .dataAside dt { color: var(--text-muted); }
 .dataAside dd { margin: 0; color: var(--text); font-weight: 600; text-align: right; overflow-wrap: anywhere; }
+.dataActions { display: flex; flex-wrap: wrap; gap: 8px; }
 .parameterPanel { margin-top: 20px; }
 .parameterGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; align-items: end; }
 .parameterGrid > button { justify-self: start; min-width: 160px; }
@@ -131,6 +132,8 @@
 .empty h2 { font-size: 24px; }
 .empty p { color: var(--text-muted); }
 .dialogActions { position: sticky; bottom: 0; display: flex; justify-content: end; gap: 12px; flex-wrap: wrap; margin-top: 24px; padding-top: 12px; background: var(--surface); }
+.newSupplierFields { display: grid; gap: 14px; margin-top: 14px; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface-raised); }
+.uploadHint { margin: 0; color: var(--text-muted); font-size: var(--font-xs); }
 .uploadFields { display: grid; gap: 14px; margin-block: 16px; }
 @media (max-width: 1799px) { .withDetail { grid-template-columns: minmax(0, 1fr); } .backdrop { display: block; position: fixed; z-index: calc(var(--z-drawer) - 1); inset: 0; width: 100%; border: 0; background: var(--scrim); } }
 @media (max-width: 1200px) { .content { padding-inline: 28px; } .topbar { padding-inline: 28px; } .chartGrid { grid-template-columns: minmax(0, 1fr); } .dataLayout { grid-template-columns: minmax(0, 1fr); } .dataAside { grid-template-columns: repeat(2, minmax(0, 1fr)); } .parameterGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

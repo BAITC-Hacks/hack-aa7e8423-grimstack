@@ -112,7 +112,8 @@ export const mockClient: ProcurementApi = {
   },
   async uploadDataset(supplier) {
     await pause();
-    return { dataset_id: `demo-${supplier}-${Date.now()}`, supplier, warnings: ['Демо-режим: файлы не разбирались, расчёт использует образец.'] };
+    return { dataset_id: `demo-${supplier}-${Date.now()}`, supplier, supplier_name: supplier === 'IEK' ? 'IEK (ИЭК)' : 'Systeme Electric', warnings: ['Демо-режим: файлы не разбирались, расчёт использует образец.'] };
   },
+  async uploadNewSupplier() { throw new ApiError(503, 'upload_unavailable', 'Добавление поставщика доступно при подключённом backend API'); },
   async getSummary() { await pause(); throw new ApiError(503, 'summary_unavailable', 'В демонстрационном образце нет сводки'); },
 };

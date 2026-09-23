@@ -28,7 +28,7 @@ const id = encodeURIComponent;
 const query = (supplier: Supplier) => `?supplier=${id(supplier)}`;
 
 export const liveClient: ProcurementApi = {
-  getMeta: () => request('/meta'),
+  getMeta: (datasetId) => request(`/meta${datasetId ? `?dataset_id=${id(datasetId)}` : ''}`),
   async getBacktest() {
     try { return await request<BacktestReport>('/backtest'); }
     catch (cause) { if (cause instanceof ApiError && cause.status === 404) return null; throw cause; }
@@ -53,6 +53,13 @@ export const liveClient: ProcurementApi = {
     const form = new FormData();
     for (const [role, file] of Object.entries(files)) if (file) form.append(role, file);
     return request(`/datasets/${id(supplier)}`, { method: 'POST', body: form });
+  },
+  async uploadNewSupplier(name, template, files) {
+    const form = new FormData();
+    form.append('name', name);
+    form.append('template', template);
+    for (const [role, file] of Object.entries(files)) if (file) form.append(role, file);
+    return request('/datasets/new', { method: 'POST', body: form });
   },
   getSummary: (runId, supplier) => request(`/runs/${id(runId)}/summary${query(supplier)}`, { method: 'POST' }),
 };

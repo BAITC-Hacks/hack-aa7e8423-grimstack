@@ -1,5 +1,6 @@
 """Очистка ряда продаж: паллетный поток SE и разовые крупные строки (docs/design.md §4 п.1-2)."""
 
+from collections.abc import Collection
 from datetime import date
 
 import numpy as np
@@ -11,27 +12,29 @@ MAX_B_MONTHS, SE_MAX_B_MONTHS = 3, 4  # больше месяцев с B-стр�
 _EVENT_COLUMNS = ["supplier", "sku", "date", "doc", "month", "qty", "capped_to", "excess", "project"]
 
 
-def pallet_mask(tx: pd.DataFrame, skus: pd.DataFrame) -> pd.Series:
-    """Строки паллетного потока SE: supplier=='SE', MOQ ≥ 50, qty ≥ MOQ, qty кратно MOQ.
+def pallet_mask(tx: pd.DataFrame, skus: pd.DataFrame,
+                se_suppliers: Collection[str] = ("SE",)) -> pd.Series:
+    """Строки паллетного потока шаблона SE: MOQ ≥ 50, qty ≥ MOQ, qty кратно MOQ.
 
     Регулярный канал, в помесячный файл не входит и в статистику разовых строк не берётся.
     """
     idx = pd.MultiIndex.from_arrays([tx["supplier"], tx["sku"]])
     moq = skus["moq"].reindex(idx).to_numpy()
     qty = tx["qty"].to_numpy()
-    is_se = (tx["supplier"] == "SE").to_numpy()
+    is_se = tx["supplier"].isin(se_suppliers).to_numpy()
     with np.errstate(invalid="ignore"):
         pallet = is_se & (moq >= 50) & (qty >= moq) & (qty % moq == 0)
     return pd.Series(pallet, index=tx.index)
 
 
-def detect_oneoffs(tx: pd.DataFrame, skus: pd.DataFrame, sales_monthly: pd.DataFrame, as_of: date) -> pd.DataFrame:
+def detect_oneoffs(tx: pd.DataFrame, skus: pd.DataFrame, sales_monthly: pd.DataFrame, as_of: date,
+                   se_suppliers: Collection[str] = ("SE",)) -> pd.DataFrame:
     """Отмечает разовые крупные строки по правилу B/U (design.md §4 п.2).
 
     Статистика — по SKU, только строки без паллетного потока. Отмеченная строка
     заменяется типичной (capped_to = медиана строк SKU), excess = qty − capped_to.
     """
-    rows = tx.loc[~pallet_mask(tx, skus)].copy()
+    rows = tx.loc[~pallet_mask(tx, skus, se_suppliers)].copy()
     if rows.empty:
         return pd.DataFrame(columns=_EVENT_COLUMNS)
     rows["month"] = rows["date"].dt.to_period("M")
@@ -39,11 +42,11 @@ def detect_oneoffs(tx: pd.DataFrame, skus: pd.DataFrame, sales_monthly: pd.DataF
     by_sku = rows.groupby(["supplier", "sku"])["qty"]
     stats = pd.DataFrame({"median": by_sku.median(), "q1": by_sku.quantile(0.25),
                            "q3": by_sku.quantile(0.75), "count": by_sku.size()})
-    is_se = stats.index.get_level_values("supplier") == "SE"
+    is_se = stats.index.get_level_values("supplier").isin(se_suppliers)
     stats["min_rows"] = np.where(is_se, SE_MIN_ROWS, MIN_ROWS)
     stats["max_b_months"] = np.where(is_se, SE_MAX_B_MONTHS, MAX_B_MONTHS)
     stats["second"] = _second_largest(rows)
-    stats["stat3"] = _stat3(sales_monthly, as_of).reindex(stats.index)
+    stats["stat3"] = _stat3(sales_monthly, as_of, se_suppliers).reindex(stats.index)
 
     rows = rows.join(stats, on=["supplier", "sku"])
     idx = pd.MultiIndex.from_arrays([rows["supplier"], rows["sku"]])
@@ -73,11 +76,12 @@ def _second_largest(rows: pd.DataFrame) -> pd.Series:
     return second
 
 
-def _stat3(sales_monthly: pd.DataFrame, as_of: date) -> pd.Series:
+def _stat3(sales_monthly: pd.DataFrame, as_of: date,
+           se_suppliers: Collection[str] = ("SE",)) -> pd.Series:
     """Медиана (у SE — среднее) ненулевых ЗАКРЫТЫХ месяцев SKU из sales_monthly."""
     closed_cols = [c for c in sales_monthly.columns if c < pd.Period(as_of, "M")]
     closed = sales_monthly[closed_cols].where(sales_monthly[closed_cols] > 0)
-    is_se = sales_monthly.index.get_level_values("supplier") == "SE"
+    is_se = sales_monthly.index.get_level_values("supplier").isin(se_suppliers)
     return pd.Series(np.where(is_se, closed.mean(axis=1), closed.median(axis=1)), index=sales_monthly.index)
 
 

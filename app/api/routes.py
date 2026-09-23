@@ -1,10 +1,10 @@
 """Procurement API. Business calculations stay in app.engine."""
 
 import math
+import re
 from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
-from typing import cast, get_args
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -17,6 +17,7 @@ from starlette.datastructures import UploadFile
 from app import ai, engine, ingest
 from app.api.schemas import ApprovalRecord, ChangedLine, CompareDelta, CompareRequest, CompareResult
 from app.engine.config import SUPPLIERS
+from app.ingest.dataset import rename_supplier
 from app.contracts import (
     DatasetUploaded,
     ErrorBody,
@@ -67,6 +68,26 @@ UPLOAD_REQUEST_BODY = {
         },
     }
 }
+NEW_SUPPLIER_UPLOAD_BODY = {
+    "requestBody": {
+        "required": True,
+        "content": {
+            "multipart/form-data": {
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "name": {"type": "string", "description": "Название нового поставщика"},
+                        "template": {"type": "string", "enum": ["IEK", "SE"],
+                                     "description": "Формат выгрузки 1С"},
+                        **UPLOAD_REQUEST_BODY["requestBody"]["content"]["multipart/form-data"]["schema"]["properties"],
+                    },
+                    "required": ["name", "template", "monthly_sales", "monthly_stock", "in_transit", "moq"],
+                }
+            }
+        },
+    }
+}
+CUSTOM_SUPPLIER_CODE = re.compile(r"CUSTOM_[0-9a-f]{8}\Z")
 
 
 def errors(*statuses: int) -> dict[int, dict]:
@@ -88,9 +109,9 @@ def get_store(request: Request) -> Store:
 
 def parse_supplier(raw: str) -> Supplier:
     # Path values are checked here instead of Literal validation: unknown paths are 404.
-    if raw not in get_args(Supplier):
+    if raw not in SUPPLIERS and not CUSTOM_SUPPLIER_CODE.fullmatch(raw):
         raise HTTPException(status_code=404, detail="Поставщик не найден")
-    return cast(Supplier, raw)
+    return raw
 
 
 def get_run(store: Store, run_id: str) -> RunResult:
@@ -107,13 +128,58 @@ def get_supplier(run: RunResult, supplier: Supplier) -> SupplierSummary:
     return found
 
 
+def validate_run_supplier(dataset, supplier: str | None) -> None:
+    if supplier is None:
+        return
+    skus = getattr(dataset, "skus", None)
+    available = (
+        set(skus.index.get_level_values("supplier"))
+        if skus is not None else set(SUPPLIERS)
+    )
+    if supplier not in available:
+        raise HTTPException(status_code=422, detail="Поставщик отсутствует в выбранном наборе данных")
+
+
+async def read_upload_files(request: Request, *, new_supplier: bool = False) -> tuple[dict[str, bytes], dict[str, str]]:
+    form = await request.form()
+    files: dict[str, bytes] = {}
+    fields: dict[str, str] = {}
+    for role, item in form.multi_items():
+        if role in files or role in fields:
+            raise HTTPException(status_code=422, detail=f"Поле {role} передано дважды")
+        if new_supplier and role in ("name", "template"):
+            if not isinstance(item, str):
+                raise HTTPException(status_code=422, detail=f"Поле {role} должно быть текстом")
+            fields[role] = item
+            continue
+        if not isinstance(item, UploadFile):
+            raise HTTPException(status_code=422, detail=f"Поле {role} должно быть файлом")
+        content = await item.read(MAX_UPLOAD_BYTES + 1)
+        if len(content) > MAX_UPLOAD_BYTES:
+            raise HTTPException(status_code=422, detail=f"Файл {role} больше 30 МБ")
+        files[role] = content
+    return files, fields
+
+
+def upload_warnings(dataset, files: dict[str, bytes]) -> list[str]:
+    warnings = dataset.get("warnings", []) if isinstance(dataset, dict) else getattr(dataset, "warnings", [])
+    if "sales_tx" not in files:
+        warnings = [*warnings, "Без строк продаж очистка разовых заказов и оценка дней наличия ограничены"]
+    return list(warnings)
+
+
 @router.get(
     "/meta", response_model=Meta,
     tags=["Данные"], summary="Получить параметры исходных данных",
-    description="Показывает дату данных, доступных поставщиков и параметры по умолчанию.",
+    description="Показывает дату данных и поставщиков выбранного набора; без dataset_id использует встроенные данные.",
+    responses=errors(404),
 )
-def meta(store: Store = Depends(get_store)) -> Meta:
-    return engine.meta(store.default_dataset)
+def meta(dataset_id: str | None = None, store: Store = Depends(get_store)) -> Meta:
+    try:
+        dataset = store.dataset_for(dataset_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Набор данных не найден") from exc
+    return engine.meta(dataset)
 
 
 @router.get(
@@ -142,6 +208,7 @@ def create_run(params: RunParams, store: Store = Depends(get_store)) -> RunResul
         dataset = store.dataset_for(params.dataset_id)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail="Набор данных не найден") from exc
+    validate_run_supplier(dataset, params.supplier)
     result = engine.run(dataset, params)
     store.save_run(result, dataset)
     return result
@@ -159,6 +226,9 @@ def compare_runs(request: CompareRequest, store: Store = Depends(get_store)) -> 
         scenario_dataset = store.dataset_for(request.scenario.dataset_id)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail="Набор данных не найден") from exc
+
+    validate_run_supplier(base_dataset, request.base.supplier)
+    validate_run_supplier(scenario_dataset, request.scenario.supplier)
 
     base = engine.run(base_dataset, request.base)
     scenario = engine.run(scenario_dataset, request.scenario)
@@ -331,6 +401,9 @@ def export_run(
         summary = get_supplier(run, selected).model_copy(deep=True)
         params = run.params.model_copy(deep=True)
         data_as_of = run.data_as_of
+        dataset = store.run_datasets[run_id]
+        custom = getattr(dataset, "metadata", {}).get("custom_suppliers", {}).get(selected)
+        defaults = custom or SUPPLIERS.get(selected, {})
         lines = [
             line.model_copy(deep=True)
             for line in run.lines
@@ -372,14 +445,17 @@ def export_run(
     settings_rows = (
         ("Дата данных", data_as_of.isoformat()),
         ("Метод", params.method),
-        ("L, дни", params.lead_time_days or SUPPLIERS[selected]["lead_time_days"]),
-        ("R, дни", params.review_period_days or SUPPLIERS[selected]["review_period_days"]),
-        ("Поставщик", selected),
+        ("L, дни", params.lead_time_days or defaults.get("lead_time_days")),
+        ("R, дни", params.review_period_days or defaults.get("review_period_days")),
+        ("Поставщик", summary.supplier_name if custom else selected),
         ("Статус", summary.status),
         ("Дата утверждения", summary.approved_at.isoformat() if summary.approved_at else None),
     )
     for row in settings_rows:
         settings.append(row)
+        value = settings.cell(settings.max_row, 2)
+        if isinstance(value.value, str):
+            value.data_type = "s"
     for cell in settings[1]:
         cell.font = Font(bold=True)
     settings.freeze_panes = "A2"
@@ -418,6 +494,47 @@ def sku_history(
 
 
 @router.post(
+    "/datasets/new", response_model=DatasetUploaded,
+    tags=["Данные"], summary="Добавить нового поставщика из выгрузок 1С",
+    description="Создаёт отдельного поставщика по файлам в формате IEK или Systeme Electric; файлы до 30 МБ каждый.",
+    responses=errors(422), openapi_extra=NEW_SUPPLIER_UPLOAD_BODY,
+)
+async def upload_new_supplier(
+    request: Request, store: Store = Depends(get_store)
+) -> DatasetUploaded:
+    files, fields = await read_upload_files(request, new_supplier=True)
+    name = fields.get("name", "").strip()
+    template = fields.get("template", "")
+    if len(name) < 2 or len(name) > 80 or any(ord(char) < 32 for char in name):
+        raise HTTPException(status_code=422, detail="Укажите название поставщика длиной от 2 до 80 символов")
+    if template not in SUPPLIERS:
+        raise HTTPException(status_code=422, detail="Выберите формат выгрузки IEK или Systeme Electric")
+
+    dataset = ingest.load_uploaded(template, files)
+    with store.lock:
+        supplier_code = f"CUSTOM_{uuid4().hex[:8]}"
+        while any(
+            supplier_code in getattr(item, "metadata", {}).get("custom_suppliers", {})
+            for item in store.datasets.values()
+        ):
+            supplier_code = f"CUSTOM_{uuid4().hex[:8]}"
+        dataset_id = uuid4().hex[:12]
+        while dataset_id in store.datasets:
+            dataset_id = uuid4().hex[:12]
+        config = SUPPLIERS[template]
+        rename_supplier(
+            dataset, supplier_code, name=name, template=template,
+            lead_time_days=config["lead_time_days"],
+            review_period_days=config["review_period_days"],
+        )
+        store.datasets[dataset_id] = dataset
+    return DatasetUploaded(
+        dataset_id=dataset_id, supplier=supplier_code, supplier_name=name,
+        warnings=upload_warnings(dataset, files),
+    )
+
+
+@router.post(
     "/datasets/{supplier}", response_model=DatasetUploaded,
     tags=["Данные"], summary="Загрузить выгрузки поставщика",
     description="Принимает файлы Excel по ролям для IEK или Systeme Electric, не более 30 МБ на файл.",
@@ -427,26 +544,18 @@ async def upload_dataset(
     supplier: str, request: Request, store: Store = Depends(get_store)
 ) -> DatasetUploaded:
     selected = parse_supplier(supplier)
-    form = await request.form()
-    files: dict[str, bytes] = {}
-    for role, item in form.multi_items():
-        if role in files:
-            raise HTTPException(status_code=422, detail=f"Файл {role} передан дважды")
-        if not isinstance(item, UploadFile):
-            raise HTTPException(status_code=422, detail=f"Поле {role} должно быть файлом")
-        content = await item.read(MAX_UPLOAD_BYTES + 1)
-        if len(content) > MAX_UPLOAD_BYTES:
-            raise HTTPException(status_code=422, detail=f"Файл {role} больше 30 МБ")
-        files[role] = content
+    if selected not in SUPPLIERS:
+        raise HTTPException(status_code=404, detail="Для нового поставщика используйте /api/datasets/new")
+    files, _ = await read_upload_files(request)
 
     dataset = ingest.load_uploaded(selected, files)
     dataset_id = uuid4().hex[:12]
     with store.lock:
         store.datasets[dataset_id] = dataset
-    warnings = dataset.get("warnings", []) if isinstance(dataset, dict) else getattr(dataset, "warnings", [])
-    if "sales_tx" not in files:
-        warnings = [*warnings, "Без строк продаж очистка разовых заказов и оценка дней наличия ограничены"]
-    return DatasetUploaded(dataset_id=dataset_id, supplier=selected, warnings=list(warnings))
+    return DatasetUploaded(
+        dataset_id=dataset_id, supplier=selected, supplier_name=SUPPLIERS[selected]["name"],
+        warnings=upload_warnings(dataset, files),
+    )
 
 
 @router.post(

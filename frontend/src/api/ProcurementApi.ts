@@ -11,7 +11,7 @@ interface BacktestSupplier {
 
 export interface BacktestReport {
   checkpoints: string[];
-  suppliers: Record<Supplier, BacktestSupplier>;
+  suppliers: { IEK: BacktestSupplier; SE: BacktestSupplier };
 }
 
 export interface CompareRequest { base: RunParams; scenario: RunParams }
@@ -33,7 +33,7 @@ export interface CompareResult {
 }
 
 export interface ProcurementApi {
-  getMeta(): Promise<Meta>;
+  getMeta(datasetId?: string | null): Promise<Meta>;
   getBacktest(): Promise<BacktestReport | null>;
   createRun(params: RunParams): Promise<RunResult>;
   compareRuns(request: CompareRequest): Promise<CompareResult>;
@@ -43,6 +43,7 @@ export interface ProcurementApi {
   exportXlsx(runId: string, supplier: Supplier): Promise<ExportFile>;
   getSkuHistory(supplier: Supplier, sku: string, runId?: string): Promise<SkuHistory>;
   uploadDataset(supplier: Supplier, files: DatasetFiles): Promise<DatasetUploaded>;
+  uploadNewSupplier(name: string, template: 'IEK' | 'SE', files: DatasetFiles): Promise<DatasetUploaded>;
   getSummary(runId: string, supplier: Supplier): Promise<SummaryResponse>;
 }
 

@@ -11,7 +11,6 @@ import logging
 import os
 from collections import Counter
 from pathlib import Path
-from typing import get_args
 
 from app.contracts import OrderLine, RunResult, SummaryResponse, Supplier
 
@@ -72,13 +71,14 @@ def build_facts(result: RunResult, supplier: Supplier) -> dict | None:
         "flags": dict(sorted(Counter(f for l in lines for f in l.flags).items())),
         "urgent": [_line_brief(l) for l in urgent[:TOP_LINES]],
         "vs_excel": [_line_brief(l) for l in vs_excel[:TOP_LINES]],
-        "warnings": [w for w in result.warnings if not _addressed_to_other(w, supplier)],
+        "warnings": [w for w in result.warnings if not _addressed_to_other(
+            w, supplier, {s.supplier for s in result.suppliers})],
     }
 
 
-def _addressed_to_other(warning: str, supplier: Supplier) -> bool:
+def _addressed_to_other(warning: str, supplier: Supplier, known_suppliers: set[str]) -> bool:
     """Предупреждения вида «IEK: …» относятся к одному поставщику — в сводку по другому их не несём."""
-    return any(warning.startswith(f"{other}:") for other in get_args(Supplier) if other != supplier)
+    return any(warning.startswith(f"{other}:") for other in known_suppliers if other != supplier)
 
 
 def cache_key(facts: dict) -> str:

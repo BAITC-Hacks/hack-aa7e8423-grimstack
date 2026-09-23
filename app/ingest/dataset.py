@@ -1,7 +1,8 @@
 """Канонический набор данных, общий для всех поставщиков. Индекс SKU — (supplier, sku)."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
+from typing import Any
 
 import pandas as pd
 
@@ -24,6 +25,30 @@ class Dataset:
     stock_now: pd.DataFrame
     # колонки: supplier, sku, qty (> 0), eta (datetime64)
     in_transit: pd.DataFrame
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+def rename_supplier(data: Dataset, supplier: str, *, name: str, template: str,
+                    lead_time_days: int, review_period_days: int) -> Dataset:
+    """Assign an uploaded template's entire SKU universe to one independent supplier."""
+    for attribute in ("skus", "sales_monthly", "stock_monthly", "stock_now"):
+        frame = getattr(data, attribute).copy()
+        frame.index = pd.MultiIndex.from_arrays(
+            [[supplier] * len(frame), frame.index.get_level_values("sku")],
+            names=["supplier", "sku"],
+        )
+        setattr(data, attribute, frame)
+    for attribute in ("sales_tx", "in_transit"):
+        frame = getattr(data, attribute).copy()
+        frame["supplier"] = supplier
+        setattr(data, attribute, frame)
+    data.metadata.setdefault("custom_suppliers", {})[supplier] = {
+        "name": name,
+        "template": template,
+        "lead_time_days": lead_time_days,
+        "review_period_days": review_period_days,
+    }
+    return data
 
 
 def concat(parts: list[Dataset]) -> Dataset:
@@ -41,4 +66,9 @@ def concat(parts: list[Dataset]) -> Dataset:
         sales_tx=rows("sales_tx"),
         stock_now=by_sku("stock_now"),
         in_transit=rows("in_transit"),
+        metadata={"custom_suppliers": {
+            code: config
+            for part in parts
+            for code, config in part.metadata.get("custom_suppliers", {}).items()
+        }},
     )

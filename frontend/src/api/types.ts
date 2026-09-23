@@ -1,5 +1,5 @@
 // Зеркало моделей app/contracts.py. Даты и даты-время приходят строками ISO.
-export type Supplier = 'IEK' | 'SE';
+export type Supplier = string;
 export type Urgency = 'critical' | 'high' | 'planned' | 'none';
 export type FileRole = 'monthly_sales' | 'monthly_stock' | 'sales_tx' | 'in_transit' | 'moq' | 'seasonality';
 
@@ -99,6 +99,6 @@ export interface SkuHistory {
 export interface SupplierInfo { supplier: Supplier; supplier_name: string; lead_time_days: number; review_period_days: number; categories: string[] }
 export interface Meta { data_as_of: string; suppliers: SupplierInfo[]; product_groups: string[]; llm_available: boolean }
 export interface LinePatch { final_qty: number }
-export interface DatasetUploaded { dataset_id: string; supplier: Supplier; warnings: string[] }
+export interface DatasetUploaded { dataset_id: string; supplier: Supplier; supplier_name: string; warnings: string[] }
 export interface SummaryResponse { text: string; cached: boolean }
 export interface ErrorBody { detail: string; code: string; meta: Record<string, unknown> }
