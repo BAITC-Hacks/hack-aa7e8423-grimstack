@@ -27,6 +27,7 @@
 .kpi:nth-child(4) { background: linear-gradient(120deg, var(--warning), var(--critical)); }
 .kpi span { display: block; color: inherit; font-size: var(--font-sm); opacity: .85; }
 .kpi strong { display: block; margin-top: var(--space-3); font-size: var(--font-kpi); line-height: var(--line-heading); letter-spacing: -.045em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.kpiHint { display: block; margin-top: var(--space-2); font-size: var(--font-xs); line-height: 1.35; opacity: .85; }
 .criticalValue { color: var(--critical); }
 .alert { padding: var(--space-3) var(--space-4); border: var(--border-width) solid var(--border); border-radius: var(--radius-control); font-size: var(--font-sm); }
 .warning { border-color: var(--warning); background: var(--warning-soft); }

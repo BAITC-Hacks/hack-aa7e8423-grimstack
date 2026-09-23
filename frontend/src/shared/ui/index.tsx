@@ -24,7 +24,7 @@ export function Select({ label, children, id, className = '', ...props }: Select
 
 export function StatusBadge({ urgency }: { urgency: Urgency }) { return <span className={`${styles.badge} ${styles[urgency]}`}>{urgencyLabels[urgency]}</span>; }
 export function OrderStatus({ status }: { status: 'draft' | 'approved' }) { return <span className={`${styles.badge} ${styles[status]}`}>{status === 'approved' ? 'Утверждён' : 'Черновик'}</span>; }
-export function KpiMetric({ label, value, critical = false }: { label: string; value: string; critical?: boolean }) { return <div className={styles.kpi}><span>{label}</span><strong className={critical ? styles.criticalValue : ''}>{value}</strong></div>; }
+export function KpiMetric({ label, value, hint, critical = false }: { label: string; value: string; hint?: string; critical?: boolean }) { return <div className={styles.kpi}><span>{label}</span><strong className={critical ? styles.criticalValue : ''}>{value}</strong>{hint && <small className={styles.kpiHint}>{hint}</small>}</div>; }
 export function InlineAlert({ children, tone = 'warning' }: { children: ReactNode; tone?: 'warning' | 'error' | 'info' }) { return <div role={tone === 'error' ? 'alert' : 'status'} className={`${styles.alert} ${styles[tone]}`}>{children}</div>; }
 export function Skeleton({ label = 'Загрузка данных' }: { label?: string }) { return <div role="status" aria-label={label} className={styles.skeleton}>{label}…</div>; }
 

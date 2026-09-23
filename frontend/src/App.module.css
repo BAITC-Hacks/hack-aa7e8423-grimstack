@@ -32,6 +32,8 @@
 .warningLink { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 18px; padding: 0; border: 0; background: transparent; color: var(--warning); font-size: 12px; font-weight: 600; }
 .content > [role='alert'], .content > [role='status'] { margin-bottom: 16px; }
 .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 20px; }
+.overviewSecondary { display: flex; flex-wrap: wrap; gap: 8px 24px; margin: -6px 0 20px; color: var(--text-muted); font-size: var(--font-sm); }
+.overviewSecondary strong { color: var(--text); font-variant-numeric: tabular-nums; }
 .chartGrid, .overviewGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin-bottom: 20px; }
 .chartPanel { min-height: 335px; }
 .sectionHeading { display: flex; align-items: start; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
