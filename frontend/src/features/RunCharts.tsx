@@ -63,16 +63,23 @@ export function SupplierChart({ run }: { run: RunResult }) {
 
 export function ComparisonChart({ run }: { run: RunResult }) {
   const color = palette();
-  const divergence = (recommended: number, baseline: number | null) => Math.abs(recommended - (baseline ?? 0)) / Math.max(recommended, baseline ?? 0, 1);
-  const lines = [...run.lines].filter((line) => line.baseline_qty !== null).sort((a, b) => divergence(b.recommended_qty, b.baseline_qty) - divergence(a.recommended_qty, a.baseline_qty)).slice(0, 8);
-  if (lines.length === 0) return <p className={styles.noData}>Нет сопоставимых значений Excel-метода.</p>;
+  const comparable = run.lines.filter((line) => line.baseline_qty !== null);
+  const difference = (line: typeof comparable[number]) => line.recommended_qty - (line.baseline_qty ?? 0);
+  const less = comparable.filter((line) => difference(line) < 0).sort((a, b) => difference(a) - difference(b));
+  const more = comparable.filter((line) => difference(line) > 0).sort((a, b) => difference(b) - difference(a));
+  const lines = [...less.slice(0, 4), ...more.slice(0, 4)];
+  if (comparable.length === 0) return <p className={styles.noData}>Нет сопоставимых значений Excel-метода.</p>;
+  const summary = <p className={styles.comparisonSummary}>Меньше Excel-метода: {formatNumber(less.length)} позиций · больше: {formatNumber(more.length)}</p>;
+  if (lines.length === 0) return <>{summary}<p className={styles.noData}>Расхождений с Excel-методом нет.</p></>;
+  const maxValue = Math.max(...lines.flatMap((line) => [line.recommended_qty, line.baseline_qty ?? 0]));
   const options: ApexOptions = {
     ...baseOptions(),
     colors: [color('--accent'), color('--border-strong')],
-    plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '65%' } },
-    xaxis: { categories: lines.map((line) => line.sku), labels: { formatter: (value) => formatNumber(Number(value)), style: { colors: color('--text-muted') } } },
-    yaxis: { labels: { style: { colors: color('--text') }, maxWidth: 120 } },
-    tooltip: { theme: 'light', y: { formatter: (value) => formatNumber(value) } },
+    plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '65%', dataLabels: { position: 'center' } } },
+    dataLabels: { enabled: true, formatter: (value) => formatNumber(Math.round(Number(value))), style: { fontSize: '11px', colors: [color('--text')] }, background: { enabled: true, foreColor: color('--text'), backgroundColor: color('--surface'), borderRadius: 2, opacity: 0.9, padding: 2 } },
+    xaxis: { categories: lines.map((line) => line.name), max: maxValue * 1.2, labels: { formatter: (value) => formatNumber(Number(value)), style: { colors: color('--text-muted') } } },
+    yaxis: { labels: { style: { colors: color('--text') }, maxWidth: 150 } },
+    tooltip: { theme: 'light', y: { formatter: (value) => formatNumber(Math.round(value)) } },
   };
-  return <><div className={styles.comparison} aria-hidden="true"><Chart type="bar" height={Math.max(320, lines.length * 48)} options={options} series={[{ name: 'Наш расчёт', data: lines.map((line) => line.recommended_qty) }, { name: 'Excel-метод', data: lines.map((line) => line.baseline_qty ?? 0) }]} /></div><div className={styles.seriesLegend}><span><i className={styles.green} />Наш расчёт</span><span><i className={styles.gray} />Excel-метод</span></div><table className={styles.dataTable}><caption>Сравнение методов для позиций с наибольшим расхождением</caption><thead><tr><th>Код</th><th>Наш расчёт</th><th>Excel</th></tr></thead><tbody>{lines.map((line) => <tr key={line.line_id}><th>{line.sku}</th><td>{formatNumber(line.recommended_qty)}</td><td>{formatNumber(line.baseline_qty)}</td></tr>)}</tbody></table></>;
+  return <>{summary}<div className={styles.comparison} aria-hidden="true"><Chart type="bar" height={Math.max(320, lines.length * 48)} options={options} series={[{ name: 'Наш расчёт', data: lines.map((line) => line.recommended_qty) }, { name: 'Excel-метод', data: lines.map((line) => line.baseline_qty ?? 0) }]} /></div><div className={styles.seriesLegend}><span><i className={styles.green} />Наш расчёт</span><span><i className={styles.gray} />Excel-метод</span></div><table className={styles.dataTable}><caption>Четыре наибольших расхождения в каждую сторону относительно Excel-метода</caption><thead><tr><th>Товар</th><th>Наш расчёт</th><th>Excel</th><th>Разница</th></tr></thead><tbody>{lines.map((line) => <tr key={line.line_id}><th>{line.name}</th><td>{formatNumber(Math.round(line.recommended_qty))}</td><td>{formatNumber(Math.round(line.baseline_qty ?? 0))}</td><td>{difference(line) > 0 ? '+' : '−'}{formatNumber(Math.round(Math.abs(difference(line))))}</td></tr>)}</tbody></table></>;
 }
