@@ -15,7 +15,7 @@ from openpyxl.utils import get_column_letter
 from starlette.datastructures import UploadFile
 
 from app import ai, engine, ingest
-from app.api.schemas import ChangedLine, CompareDelta, CompareRequest, CompareResult
+from app.api.schemas import ApprovalRecord, ChangedLine, CompareDelta, CompareRequest, CompareResult
 from app.engine.config import SUPPLIERS
 from app.contracts import (
     DatasetUploaded,
@@ -288,7 +288,7 @@ def approve_supplier(
             for line in run.lines
             if line.supplier == selected and line.final_qty > 0
         ]
-        store.append_approval({
+        saved = store.append_approval({
             "run_id": run_id,
             "supplier": selected,
             "approved_at": approved_at.isoformat(),
@@ -296,8 +296,17 @@ def approve_supplier(
             "lines": lines,
         })
         summary.status = "approved"
-        summary.approved_at = approved_at
+        summary.approved_at = datetime.fromisoformat(saved["approved_at"])
         return summary.model_copy(deep=True)
+
+
+@router.get(
+    "/approvals", response_model=list[ApprovalRecord],
+    tags=["Заказы"], summary="Получить историю утверждённых заказов",
+    description="Возвращает сохранённые в SQLite утверждения и состав заказов, начиная с последних.",
+)
+def approval_history(store: Store = Depends(get_store)) -> list[dict]:
+    return store.list_approvals()
 
 
 @router.get(

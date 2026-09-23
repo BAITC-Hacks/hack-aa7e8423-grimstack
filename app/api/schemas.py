@@ -1,8 +1,10 @@
 """Дополнительные модели API, не входящие в общий контракт ядра и фронта."""
 
+from datetime import date, datetime
+
 from pydantic import BaseModel
 
-from app.contracts import RunParams, Supplier, Urgency
+from app.contracts import OrderLine, RunParams, Supplier, Urgency
 
 
 class CompareRequest(BaseModel):
@@ -32,3 +34,11 @@ class CompareResult(BaseModel):
     scenario_run_id: str
     delta: CompareDelta
     changed: list[ChangedLine]
+
+
+class ApprovalRecord(BaseModel):
+    run_id: str
+    supplier: Supplier
+    approved_at: datetime
+    data_as_of: date
+    lines: list[OrderLine]

@@ -26,7 +26,7 @@ def client(tmp_path, monkeypatch):
         return run
 
     monkeypatch.setattr(engine, "run", fake_run)
-    with TestClient(create_app(approval_path=tmp_path / "approvals.json")) as test_client:
+    with TestClient(create_app(approval_path=tmp_path / "app.db")) as test_client:
         yield test_client
 
 
@@ -67,6 +67,6 @@ def test_startup_logs_beginning_before_loading(tmp_path, monkeypatch, caplog):
 
     monkeypatch.setattr(ingest, "load_default", load_default)
     with caplog.at_level(logging.INFO, logger="app.main"):
-        with TestClient(create_app(approval_path=tmp_path / "approvals.json")) as client:
+        with TestClient(create_app(approval_path=tmp_path / "app.db")) as client:
             assert client.get("/health").status_code == 200
     assert any("Данные загружены за" in record.getMessage() for record in caplog.records)

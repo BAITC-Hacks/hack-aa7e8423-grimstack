@@ -56,7 +56,7 @@ def test_patch_recalculates_totals_and_rejects_invalid(client, run):
 
 
 def test_export_approve_and_conflict(client, run, tmp_path, monkeypatch):
-    monkeypatch.setattr(client.app.state.store, "approvals_path", tmp_path / "approvals.json")
+    monkeypatch.setattr(client.app.state.store, "approvals_path", tmp_path / "app.db")
     run_id = run["run_id"]
     response = client.get(f"/api/runs/{run_id}/export.xlsx", params={"supplier": "SE"})
     assert response.status_code == 200
@@ -65,7 +65,7 @@ def test_export_approve_and_conflict(client, run, tmp_path, monkeypatch):
     assert sheet.max_row == 2 + sum(line["final_qty"] > 0 for line in run["lines"])
     assert sheet.cell(sheet.max_row, 1).value == "Итого"
     assert client.post(f"/api/runs/{run_id}/suppliers/SE/approve").json()["status"] == "approved"
-    assert (tmp_path / "approvals.json").exists()
+    assert (tmp_path / "app.db").exists()
     line = run["lines"][0]
     assert client.patch(f"/api/runs/{run_id}/lines/{line['line_id']}", json={"final_qty": 0}).status_code == 409
     assert client.post(f"/api/runs/{run_id}/suppliers/SE/approve").status_code == 200

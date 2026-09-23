@@ -2,6 +2,7 @@
 
 import json
 import logging
+import sqlite3
 from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
@@ -11,7 +12,7 @@ import pytest
 from fastapi.testclient import TestClient
 from openpyxl import load_workbook
 
-from app import ai, engine, ingest
+from app import ai, engine, ingest, store as store_module
 from app.api import routes as api_routes
 from app.api.routes import EXPORT_COLUMNS, MAX_UPLOAD_BYTES
 from app.contracts import Meta, RunResult, SkuHistory
@@ -55,7 +56,7 @@ def sample_core(monkeypatch):
 
 @pytest.fixture
 def client(tmp_path):
-    with TestClient(create_app(approval_path=tmp_path / "approvals.json")) as test_client:
+    with TestClient(create_app(approval_path=tmp_path / "app.db")) as test_client:
         yield test_client
 
 
@@ -75,7 +76,7 @@ def assert_error(response, status):
 
 def test_startup_and_request_logging(tmp_path, caplog):
     with caplog.at_level(logging.INFO, logger="app.main"):
-        with TestClient(create_app(approval_path=tmp_path / "approvals.json")) as client:
+        with TestClient(create_app(approval_path=tmp_path / "app.db")) as client:
             assert client.get("/health").status_code == 200
     messages = [record.getMessage() for record in caplog.records if record.name == "app.main"]
     assert any("Данные загружены за" in message for message in messages)
@@ -242,8 +243,9 @@ def test_patch_recalculates_totals_and_checks_quantity(client):
 
 
 def test_approval_is_persisted_once_and_blocks_changes(tmp_path):
-    approval_path = tmp_path / "approvals.json"
+    approval_path = tmp_path / "app.db"
     with TestClient(create_app(approval_path=approval_path)) as client:
+        assert client.get("/api/approvals").json() == []
         run = new_run(client)
         endpoint = f"/api/runs/{run['run_id']}/suppliers/IEK/approve"
         first = client.post(endpoint)
@@ -251,10 +253,14 @@ def test_approval_is_persisted_once_and_blocks_changes(tmp_path):
         assert first.json()["status"] == "approved"
         assert first.json()["approved_at"]
         assert client.post(endpoint).status_code == 200
-        records = json.loads(approval_path.read_text(encoding="utf-8"))
+        records = client.get("/api/approvals").json()
         assert len(records) == 1
+        assert records[0]["run_id"] == run["run_id"]
         assert records[0]["supplier"] == "IEK"
+        assert records[0]["approved_at"] == first.json()["approved_at"]
         assert len(records[0]["lines"]) == sum(line["supplier"] == "IEK" for line in run["lines"])
+        with sqlite3.connect(approval_path) as database:
+            assert database.execute("SELECT COUNT(*) FROM approvals").fetchone()[0] == 1
 
         line_id = next(line["line_id"] for line in run["lines"] if line["supplier"] == "IEK")
         assert_error(
@@ -262,6 +268,31 @@ def test_approval_is_persisted_once_and_blocks_changes(tmp_path):
             409,
         )
         assert_error(client.post(f"/api/runs/{run['run_id']}/suppliers/XYZ/approve"), 404)
+
+    with TestClient(create_app(approval_path=approval_path)) as restarted:
+        assert restarted.get("/api/approvals").json() == records
+        assert_error(restarted.get(f"/api/runs/{run['run_id']}"), 404)
+
+
+def test_existing_json_approvals_are_imported_once(tmp_path, monkeypatch):
+    legacy = tmp_path / "approvals.json"
+    legacy.write_text(json.dumps([{
+        "run_id": "old-run", "supplier": "IEK",
+        "approved_at": "2026-09-22T12:00:00+00:00",
+        "data_as_of": "2026-09-22", "lines": [],
+    }]), encoding="utf-8")
+    database_path = tmp_path / "app.db"
+    monkeypatch.setattr(store_module, "DEFAULT_APPROVALS_PATH", database_path)
+    monkeypatch.setattr(store_module, "LEGACY_APPROVALS_PATH", legacy)
+
+    for _ in range(2):
+        with TestClient(create_app(approval_path=database_path)) as client:
+            records = client.get("/api/approvals").json()
+            assert len(records) == 1
+            assert records[0]["run_id"] == "old-run"
+    assert legacy.exists()
+    with sqlite3.connect(database_path) as database:
+        assert database.execute("SELECT COUNT(*) FROM approvals").fetchone()[0] == 1
 
 
 def test_export_contains_only_positive_order_lines_and_blank_iek_prices(client):
@@ -373,7 +404,7 @@ def test_spa_fallback_does_not_mask_api_errors(tmp_path):
     dist.mkdir()
     (dist / "index.html").write_text("<h1>app</h1>", encoding="utf-8")
     (dist / "favicon.txt").write_text("icon", encoding="utf-8")
-    with TestClient(create_app(approval_path=tmp_path / "approvals.json", frontend_dist=dist)) as client:
+    with TestClient(create_app(approval_path=tmp_path / "app.db", frontend_dist=dist)) as client:
         assert "<h1>app</h1>" in client.get("/orders/123").text
         assert client.get("/favicon.txt").text == "icon"
         assert_error(client.get("/api/not-a-route"), 404)

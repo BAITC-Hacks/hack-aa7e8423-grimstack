@@ -1,7 +1,10 @@
-"""In-memory datasets and runs, with a durable log of approved orders."""
+"""In-memory datasets and runs, with SQLite history of approved orders."""
 
 import json
+import logging
 import math
+import sqlite3
+from contextlib import closing, contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from threading import RLock
@@ -10,7 +13,19 @@ from typing import Any
 from app.contracts import RunResult
 
 
-DEFAULT_APPROVALS_PATH = Path(__file__).resolve().parents[1] / "var" / "approvals.json"
+DEFAULT_APPROVALS_PATH = Path(__file__).resolve().parents[1] / "var" / "app.db"
+LEGACY_APPROVALS_PATH = DEFAULT_APPROVALS_PATH.with_name("approvals.json")
+CREATE_APPROVALS_TABLE = """
+CREATE TABLE IF NOT EXISTS approvals (
+    run_id TEXT NOT NULL,
+    supplier TEXT NOT NULL,
+    approved_at TEXT NOT NULL,
+    data_as_of TEXT NOT NULL,
+    lines_json TEXT NOT NULL,
+    PRIMARY KEY (run_id, supplier)
+)
+"""
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -21,6 +36,59 @@ class Store:
     runs: dict[str, RunResult] = field(default_factory=dict)
     run_datasets: dict[str, Any] = field(default_factory=dict)
     lock: RLock = field(default_factory=RLock, repr=False)
+
+    def __post_init__(self) -> None:
+        with self._approval_db() as db:
+            if self.approvals_path != DEFAULT_APPROVALS_PATH or not LEGACY_APPROVALS_PATH.is_file():
+                return
+            try:
+                content = LEGACY_APPROVALS_PATH.read_text(encoding="utf-8")
+                try:
+                    records = json.loads(content)
+                except json.JSONDecodeError:
+                    records = [json.loads(line) for line in content.splitlines() if line.strip()]
+                if not isinstance(records, list):
+                    raise ValueError("Ожидался список утверждений")
+            except (OSError, UnicodeError, ValueError) as exc:
+                logger.warning("Не удалось прочитать старую историю утверждений: %s", type(exc).__name__)
+                return
+            for index, record in enumerate(records, start=1):
+                try:
+                    self._insert_approval(db, record)
+                except (KeyError, TypeError, ValueError, sqlite3.Error) as exc:
+                    logger.warning("Не удалось импортировать утверждение №%s: %s", index, type(exc).__name__)
+
+    @contextmanager
+    def _approval_db(self):
+        self.approvals_path.parent.mkdir(parents=True, exist_ok=True)
+        with closing(sqlite3.connect(self.approvals_path, timeout=10)) as db:
+            with db:
+                db.execute(CREATE_APPROVALS_TABLE)
+                db.execute("CREATE INDEX IF NOT EXISTS approvals_by_date ON approvals(approved_at)")
+                yield db
+
+    @staticmethod
+    def _insert_approval(db: sqlite3.Connection, record: dict[str, Any]) -> None:
+        db.execute(
+            """INSERT OR IGNORE INTO approvals
+               (run_id, supplier, approved_at, data_as_of, lines_json)
+               VALUES (?, ?, ?, ?, ?)""",
+            (
+                record["run_id"], record["supplier"], record["approved_at"],
+                record["data_as_of"], json.dumps(record["lines"], ensure_ascii=False),
+            ),
+        )
+
+    @staticmethod
+    def _approval_record(row: tuple[str, str, str, str, str]) -> dict[str, Any]:
+        run_id, supplier, approved_at, data_as_of, lines_json = row
+        return {
+            "run_id": run_id,
+            "supplier": supplier,
+            "approved_at": approved_at,
+            "data_as_of": data_as_of,
+            "lines": json.loads(lines_json),
+        }
 
     def dataset_for(self, dataset_id: str | None) -> Any:
         if dataset_id is None:
@@ -55,24 +123,23 @@ class Store:
         priced = [s.total_amount for s in result.suppliers if s.total_amount is not None]
         result.kpi.total_amount = round(sum(priced), 2) if priced else None
 
-    def append_approval(self, record: dict[str, Any]) -> None:
-        """Write the entire JSON list atomically so a failed write keeps the old log."""
-        self.approvals_path.parent.mkdir(parents=True, exist_ok=True)
-        existing = []
-        if self.approvals_path.exists():
-            content = self.approvals_path.read_text(encoding="utf-8")
-            try:
-                existing = json.loads(content)
-            except json.JSONDecodeError:
-                existing = [json.loads(line) for line in content.splitlines() if line.strip()]
-        if not isinstance(existing, list):
-            raise ValueError("Файл утверждений повреждён")
-        existing.append(record)
-        temporary = self.approvals_path.with_suffix(".tmp")
-        try:
-            temporary.write_text(
-                json.dumps(existing, ensure_ascii=False, indent=2), encoding="utf-8"
-            )
-            temporary.replace(self.approvals_path)
-        finally:
-            temporary.unlink(missing_ok=True)
+    def append_approval(self, record: dict[str, Any]) -> dict[str, Any]:
+        """Commit an approval before marking the in-memory order as approved."""
+        with self._approval_db() as db:
+            self._insert_approval(db, record)
+            row = db.execute(
+                """SELECT run_id, supplier, approved_at, data_as_of, lines_json
+                   FROM approvals WHERE run_id = ? AND supplier = ?""",
+                (record["run_id"], record["supplier"]),
+            ).fetchone()
+        if row is None:
+            raise RuntimeError("Утверждение не сохранено")
+        return self._approval_record(row)
+
+    def list_approvals(self) -> list[dict[str, Any]]:
+        with self._approval_db() as db:
+            rows = db.execute(
+                """SELECT run_id, supplier, approved_at, data_as_of, lines_json
+                   FROM approvals ORDER BY approved_at DESC, run_id, supplier"""
+            ).fetchall()
+        return [self._approval_record(row) for row in rows]
