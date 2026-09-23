@@ -32,4 +32,4 @@ export function Dialog({ open, onOpenChange, title, children }: { open: boolean;
   return <RadixDialog.Root open={open} onOpenChange={onOpenChange}><RadixDialog.Portal><RadixDialog.Overlay className={styles.dialogOverlay} /><RadixDialog.Content className={styles.dialog}><RadixDialog.Title className={styles.dialogTitle}>{title}</RadixDialog.Title>{children}</RadixDialog.Content></RadixDialog.Portal></RadixDialog.Root>;
 }
 
-export function Tooltip({ text, children }: { text: string; children: ReactNode }) { return <span title={text} aria-label={text} className={styles.tooltip}>{children}</span>; }
+export function Tooltip({ text, children }: { text: string; children: ReactNode }) { return <span title={text} aria-label={text} tabIndex={0} className={styles.tooltip}>{children}</span>; }
