@@ -19,17 +19,8 @@ from app.contracts import (Meta, OneoffEvent, OrderLine, RunKpi, RunParams, RunR
 from app.engine import explain, forecast, policy
 from app.engine.config import DEFAULT_SERVICE_LEVEL, DO_NOT_ORDER_CATEGORIES, SERVICE_LEVEL, SUPPLIERS
 
-try:
-    from app.engine.cleaning import detect_oneoffs as _detect_oneoffs_impl
-    from app.engine.cleaning import monthly_excess as _monthly_excess_impl
-except ImportError:  # cleaning.py пишет параллельный агент — до готовности нулевые поправки
-    _detect_oneoffs_impl = None
-    _monthly_excess_impl = None
-
-try:
-    from app.engine.stockout import restore as _restore_impl
-except ImportError:  # stockout.py пишет параллельный агент
-    _restore_impl = None
+from app.engine.cleaning import detect_oneoffs, monthly_excess
+from app.engine.stockout import restore
 
 
 # --- prepare: всё, что не зависит от RunParams --------------------------------------------
@@ -73,25 +64,6 @@ _CACHE_SIZE = 4
 LLM_CACHE_DIR = Path(__file__).resolve().parents[2] / "samples" / "cache"
 
 
-def _detect_oneoffs(tx, skus, sales_monthly, as_of) -> pd.DataFrame:
-    if _detect_oneoffs_impl is None:
-        return pd.DataFrame(columns=["supplier", "sku", "date", "doc", "month", "qty", "capped_to",
-                                       "excess", "project"])
-    return _detect_oneoffs_impl(tx, skus, sales_monthly, as_of)
-
-
-def _monthly_excess(events: pd.DataFrame, like: pd.DataFrame) -> pd.DataFrame:
-    if _monthly_excess_impl is None:
-        return pd.DataFrame(0.0, index=like.index, columns=like.columns)
-    return _monthly_excess_impl(events, like)
-
-
-def _restore(cleaned: pd.DataFrame, stock_monthly: pd.DataFrame, tx: pd.DataFrame):
-    if _restore_impl is None:
-        return 0, None
-    return _restore_impl(cleaned, stock_monthly, tx)
-
-
 def _build(ds) -> Prepared:
     idx = ds.skus.index
     closed = forecast.closed_columns(ds.sales_monthly.columns, ds.as_of)
@@ -99,19 +71,13 @@ def _build(ds) -> Prepared:
     last18 = closed[-18:]
     raw = ds.sales_monthly.reindex(index=idx, columns=closed, fill_value=0.0).clip(lower=0.0)
 
-    events = _detect_oneoffs(ds.sales_tx, ds.skus, ds.sales_monthly, ds.as_of)
-    excess = _monthly_excess(events, raw)
+    events = detect_oneoffs(ds.sales_tx, ds.skus, ds.sales_monthly, ds.as_of)
+    excess = monthly_excess(events, raw)
     cleaned = (raw - excess).clip(lower=0.0)
 
-    added, types = _restore(cleaned, ds.stock_monthly.reindex(index=idx), ds.sales_tx)
-    if not isinstance(added, pd.DataFrame):
-        added = pd.DataFrame(0.0, index=idx, columns=closed)
-    else:
-        added = added.reindex(index=idx, columns=closed, fill_value=0.0)
-    if isinstance(types, pd.DataFrame):
-        types = types.reindex(index=idx, columns=closed)
-    else:
-        types = pd.DataFrame(None, index=idx, columns=closed, dtype=object)
+    added, types = restore(cleaned, ds.stock_monthly.reindex(index=idx), ds.sales_tx)
+    added = added.reindex(index=idx, columns=closed, fill_value=0.0)
+    types = types.reindex(index=idx, columns=closed)
 
     demand = cleaned + added
     demand12 = demand[last12]

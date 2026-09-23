@@ -14,15 +14,10 @@ from typing import get_args
 import pandas as pd
 
 from app.contracts import FileRole, IngestError, Supplier
-from app.ingest import common, iek
+from app.ingest import common, iek, se
 from app.ingest.dataset import Dataset, concat
 
 logger = logging.getLogger(__name__)
-
-try:
-    from app.ingest import se
-except ImportError:  # загрузчик SE ещё не готов — грузим только IEK
-    se = None
 
 ROLES: tuple[str, ...] = get_args(FileRole)
 REQUIRED_ROLES = ("monthly_sales", "monthly_stock", "in_transit", "moq")
@@ -30,14 +25,11 @@ REQUIRED_ROLES = ("monthly_sales", "monthly_stock", "in_transit", "moq")
 AS_OF = date(2026, 9, 22)
 DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 _CATEGORIES_CSV = DATA_DIR / "categories" / "sku_categories.csv"
-_LOADERS = {"IEK": iek.load, "SE": getattr(se, "load", None)}
+_LOADERS = {"IEK": iek.load, "SE": se.load}
 
 
 def load_default() -> Dataset:
-    parts = [iek.load(DATA_DIR / "raw" / "iek", AS_OF)]
-    if se is not None:
-        parts.append(se.load(DATA_DIR / "raw" / "se", AS_OF))
-    data = concat(parts)
+    data = concat([iek.load(DATA_DIR / "raw" / "iek", AS_OF), se.load(DATA_DIR / "raw" / "se", AS_OF)])
     apply_product_groups(data, _CATEGORIES_CSV)
     return data
 

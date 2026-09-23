@@ -307,8 +307,8 @@ class OrderLine(BaseModel):
     explanation: str                          # одна строка для таблицы
     components: list[Component]
     flags: list[str]    # oneoff_excluded | project_order | stockout_restored | seasonal | trend_up
-                        # | trend_down | intermittent | overstock | no_history | approx_stock
-                        # | discontinued | do_not_order | keep_1m | new_item
+                        # | trend_down | intermittent | overstock | approx_stock | discontinued
+                        # | keep_1m | new_item
 
 class SupplierSummary(BaseModel):
     supplier: Supplier
