@@ -1,4 +1,4 @@
-# Задание Б: API, сборка, надёжность, деплой
+# Задание Б: API, надёжность, экспорт
 
 Промпт для Codex: вставить целиком.
 
@@ -12,7 +12,7 @@
 ## Твои файлы (правишь только их)
 
 `app/__main__.py`, `app/main.py`, `app/api/**`, `app/store.py`, `tests/api/**`,
-`requirements.txt`, `Dockerfile`, `.env.example`.
+`requirements.txt`, `.env.example`.
 
 Файлы `app/contracts.py`, `app/ingest/**`, `app/engine/**`, `app/ai/**`, `frontend/**`,
 `docs/**` принадлежат другим участникам. Их ты только читаешь.
@@ -68,19 +68,11 @@
 5. **`tests/api/`** — pytest + `fastapi.testclient`, на каждый пункт выше хотя бы один
    тест, включая негативные: 404, 409, 422 на отрицательное и некратное количество,
    пустой файл, не-xlsx, 503 на сводку.
-6. **`Dockerfile`**
-   - Базовый образ `python:3.12-slim`, установка `pip install -r requirements.txt`.
-   - Копировать `app/`, `contracts/`, `data/`, `samples/`, `frontend/dist/`.
-   - `ENV PORT=8000`, `EXPOSE 8000`, `CMD ["python", "-m", "app"]`.
-   - Проверить: `docker build` и `docker run -p 8000:8000`.
-7. **`.env.example`** — `OPENAI_API_KEY=`, `OPENAI_BASE_URL=`, `MODEL=`, `PORT=8000`.
+6. **`.env.example`** — `OPENAI_API_KEY=`, `OPENAI_BASE_URL=`, `MODEL=`, `PORT=8000`.
    Ключей не коммитить.
-8. **Деплой на Northflank Sandbox:** один сервис из Dockerfile, публичный порт 8000,
-   health-check `/health`.
-   - Если репозиторий `BAITC-Hacks/hack-aa7e8423-grimstack` не виден Northflank,
-     GitHub App на организацию должен установить её владелец.
-   - Если это невозможно, подключить личное зеркало.
-   - Ссылку отдать фронтендеру для README.
+
+Docker и деплой на Northflank делает Aliar. От тебя нужно одно: сервис запускается
+командой `python -m app` и слушает `$PORT`.
 
 ## Готово, когда
 
@@ -99,5 +91,5 @@
 
 - 1:00 — каркас и эндпоинты на моках.
 - 2:00 — сквозной путь с фронтом.
-- 4:00 — Docker и деплой.
+- 4:00 — API на реальном ядре, все тесты зелёные.
 - 4:00–5:00 — проверка чистого клона по README.
