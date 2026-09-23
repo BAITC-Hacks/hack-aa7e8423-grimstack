@@ -43,7 +43,7 @@ export const liveClient: ProcurementApi = {
     }
     return { blob: await response.blob(), filename: parseFilename(response.headers.get('Content-Disposition')) };
   },
-  getSkuHistory: (supplier, sku) => request(`/sku/${id(supplier)}/${id(sku)}/history`),
+  getSkuHistory: (supplier, sku, runId) => request(`/sku/${id(supplier)}/${id(sku)}/history${runId ? `?run_id=${id(runId)}` : ''}`),
   async uploadDataset(supplier, files) {
     const form = new FormData();
     for (const [role, file] of Object.entries(files)) if (file) form.append(role, file);

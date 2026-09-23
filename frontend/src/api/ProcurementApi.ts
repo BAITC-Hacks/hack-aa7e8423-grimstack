@@ -10,7 +10,7 @@ export interface ProcurementApi {
   patchLine(runId: string, lineId: string, patch: LinePatch): Promise<OrderLine>;
   approveSupplier(runId: string, supplier: Supplier): Promise<SupplierSummary>;
   exportXlsx(runId: string, supplier: Supplier): Promise<ExportFile>;
-  getSkuHistory(supplier: Supplier, sku: string): Promise<SkuHistory>;
+  getSkuHistory(supplier: Supplier, sku: string, runId?: string): Promise<SkuHistory>;
   uploadDataset(supplier: Supplier, files: DatasetFiles): Promise<DatasetUploaded>;
   getSummary(runId: string, supplier: Supplier): Promise<SummaryResponse>;
 }

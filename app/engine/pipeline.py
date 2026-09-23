@@ -70,6 +70,7 @@ class Prepared:
 
 _CACHE: dict[int, tuple] = {}
 _CACHE_SIZE = 4
+LLM_CACHE_DIR = Path(__file__).resolve().parents[2] / "samples" / "cache"
 
 
 def _detect_oneoffs(tx, skus, sales_monthly, as_of) -> pd.DataFrame:
@@ -467,7 +468,7 @@ def meta(ds) -> Meta:
                                         lead_time_days=cfg["lead_time_days"],
                                         review_period_days=cfg["review_period_days"], categories=categories))
     product_groups = sorted({g for g in ds.skus["product_group"].dropna().unique() if g})
-    from app.ai import has_cache
-    llm_available = bool(os.getenv("OPENAI_API_KEY") and os.getenv("MODEL")) or has_cache()
+    # только *.json — это пишет app/ai/llm.py; служебный .DS_Store не должен включать кнопку «Сводка»
+    llm_available = bool(os.getenv("OPENAI_API_KEY")) or any(LLM_CACHE_DIR.glob("*.json"))
     return Meta(data_as_of=ds.as_of, suppliers=suppliers, product_groups=product_groups,
                 llm_available=llm_available)

@@ -72,7 +72,7 @@
 6. **`.env.example`** — `OPENAI_API_KEY=`, `OPENAI_BASE_URL=`, `MODEL=`, `PORT=8000`.
    Ключей не коммитить.
 
-Docker и деплой на Northflank делает Aliar. От тебя нужно одно: сервис запускается
+Docker делает Aliar, деплоя нет. От тебя нужно одно: сервис запускается
 командой `python -m app` и слушает `$PORT`.
 
 ## Готово, когда

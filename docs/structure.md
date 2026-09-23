@@ -1,19 +1,10 @@
-<div align="center">
-
 # Структура проекта и инженерные правила
 
-Границы моносервиса, каталоги и правила совместной работы.
+Документ описывает текущую структуру репозитория и правила совместной работы.
+Как устроен расчёт, описано в [design.md](design.md), откуда берутся данные —
+в [data-profile.md](data-profile.md).
 
-![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.141.1-009688?style=for-the-badge&logo=fastapi&logoColor=white)
-![React](https://img.shields.io/badge/React-19.3.0-20232A?style=for-the-badge&logo=react&logoColor=white)
-
-</div>
-
-Документ описывает структуру репозитория и инженерные правила. Расчёт подробно описан
-в `docs/design.md`, формат исходных данных — в `docs/data-profile.md`.
-
-Владельцы: **А** — Aliar (ядро, данные, AI, Docker и деплой), **Б** — API, **Ф** — фронт и README.
+Владельцы: **А** — Aliar (ядро, данные, AI, Docker), **Б** — API, **Ф** — фронт и README.
 
 ## Дерево
 
@@ -53,22 +44,27 @@ hack-aa7e8423-grimstack/
 │   │   ├── common.py          месяцы из заголовков 1С, код, хэш документа, накладные
 │   │   └── dataset.py         канонический Dataset и concat()
 │   │
-│   └── ai/                    LLM-сводка с кэшем; группы читаются из CSV             [А]
+│   └── ai/                    AI-слой, про HTTP не знает                              [А]
+│       ├── llm.py             LLM-сводка по заказу поставщику с кэшем ответов
+│       └── groups.py          товарные группы: правила по ключевым словам + выбор между
+│                              правилом и ответом Laya
 │
 ├── frontend/                  Vite + React + TypeScript                              [Ф]
 │   ├── src/api/               types.ts (зеркало contracts.py), live- и mock-клиент
-│   ├── src/features/          детали SKU и график; остальные сценарии в App.tsx
+│   ├── src/features/          детали SKU и графики; остальные сценарии в App.tsx
 │   ├── src/shared/            форматирование, кратность, общие UI-компоненты
 │   └── dist/                  собранная SPA, коммитится: её раздаёт FastAPI
 │
 ├── data/
 │   ├── raw/{iek,se}/<role>.xlsx   выгрузки партнёра                                  [А]
-│   ├── categories/            sku_categories.csv — группы по правилам; Laya опциональна [А]
+│   ├── categories/            sku_categories.csv — товарные группы (правила + Laya),
+│   │                          laya_eval.json — замер качества Laya                   [А]
 │   └── backtest/report.json   результаты бэктеста для README и слайдов               [А]
-├── samples/cache/             два ответа Codex для запуска без ключа                [А]
+├── samples/cache/             проверенные образцы сводок для запуска без ключа       [А]
 ├── scripts/
-│   ├── classify_laya.py       правила; Laya запускается только с --model             [А]
-│   └── backtest.py            «машина времени»: прогноз против baseline              [А]
+│   ├── classify_laya.py       офлайн-классификация наименований, torch только здесь   [А]
+│   ├── warm_llm_cache.py      прогрев samples/cache/ живыми ответами LLM перед сдачей  [А]
+│   └── backtest.py            «машина времени»: наш метод против Excel на истории    [А]
 ├── contracts/*.json           примеры ответов API из реального прогона               [А]
 ├── docs/
 │   ├── design.md              архитектура, алгоритм, контракт, ограничения           [А]
@@ -81,7 +77,7 @@ hack-aa7e8423-grimstack/
     ├── test_contracts.py      моки contracts/*.json соответствуют моделям            [А]
     ├── engine/                юнит-тесты, приёмка пяти must-have, реальные данные,
     │                          бэктест без утечки будущего                           [А]
-    ├── api/                   маршруты и основные коды ответа                        [Б]
+    ├── api/                   по тесту на каждый код ответа                          [Б]
     └── test_boundaries.py     домен и инфраструктура не импортируют FastAPI           [А]
 ```
 

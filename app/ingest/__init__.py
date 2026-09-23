@@ -39,7 +39,7 @@ def load_default() -> Dataset:
 
 def apply_product_groups(data: Dataset, csv_path: Path) -> None:
     """Подмешивает товарную группу Laya из CSV (supplier?, sku, group, prob) в skus.product_group."""
-    if not csv_path.exists():
+    if not csv_path.exists() or not hasattr(data, "skus"):
         return
     cats = pd.read_csv(csv_path, dtype=str)
     if cats.empty or not {"sku", "group"} <= set(cats.columns):
@@ -77,7 +77,7 @@ def load_uploaded(supplier: Supplier, files: dict[str, bytes]) -> Dataset:
             (folder / f"{role}.xlsx").write_bytes(content)
         try:
             data = loader(folder, AS_OF)
-            apply_product_groups(data, _CATEGORIES_CSV)
-            return data
         except Exception as exc:
             raise IngestError("bad_format", f"Не удалось разобрать файл: {exc}") from exc
+    apply_product_groups(data, _CATEGORIES_CSV)  # как в load_default: группы нужны фильтру и пулу сезонности
+    return data

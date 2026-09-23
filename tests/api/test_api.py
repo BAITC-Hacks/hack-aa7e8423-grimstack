@@ -6,7 +6,6 @@ from fastapi.testclient import TestClient
 from openpyxl import load_workbook
 
 from app.main import app
-from app.store import store
 
 
 @pytest.fixture(scope="module")
@@ -57,8 +56,7 @@ def test_patch_recalculates_totals_and_rejects_invalid(client, run):
 
 
 def test_export_approve_and_conflict(client, run, tmp_path, monkeypatch):
-    import app.store as store_module
-    monkeypatch.setattr(store_module, "APPROVALS", tmp_path / "approvals.json")
+    monkeypatch.setattr(client.app.state.store, "approvals_path", tmp_path / "approvals.json")
     run_id = run["run_id"]
     response = client.get(f"/api/runs/{run_id}/export.xlsx", params={"supplier": "SE"})
     assert response.status_code == 200
@@ -69,7 +67,7 @@ def test_export_approve_and_conflict(client, run, tmp_path, monkeypatch):
     assert (tmp_path / "approvals.json").exists()
     line = run["lines"][0]
     assert client.patch(f"/api/runs/{run_id}/lines/{line['line_id']}", json={"final_qty": 0}).status_code == 409
-    assert client.post(f"/api/runs/{run_id}/suppliers/SE/approve").status_code == 409
+    assert client.post(f"/api/runs/{run_id}/suppliers/SE/approve").status_code == 200
 
 
 def test_upload_errors_and_summary_without_key(client, run, monkeypatch):

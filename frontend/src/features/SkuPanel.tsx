@@ -16,9 +16,9 @@ const flagLabels: Record<string, string> = {
   do_not_order: 'Не заказывать', keep_1m: 'Запас на месяц', new_item: 'Новая позиция',
 };
 
-export function SkuPanel({ line, onClose }: { line: OrderLine; onClose: () => void }) {
+export function SkuPanel({ line, runId, onClose }: { line: OrderLine; runId: string; onClose: () => void }) {
   const closeRef = useRef<HTMLButtonElement>(null);
-  const history = useQuery({ queryKey: ['history', line.supplier, line.sku], queryFn: async () => (await getApi()).getSkuHistory(line.supplier, line.sku) });
+  const history = useQuery({ queryKey: ['history', runId, line.supplier, line.sku], queryFn: async () => (await getApi()).getSkuHistory(line.supplier, line.sku, runId) });
   useEffect(() => { closeRef.current?.focus(); }, [line.line_id]);
   useEffect(() => {
     const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); };
