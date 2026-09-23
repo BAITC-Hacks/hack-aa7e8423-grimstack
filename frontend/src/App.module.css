@@ -3,10 +3,11 @@
 .eyebrow { margin-bottom: var(--space-1); color: var(--text-muted); font-size: var(--font-xs); letter-spacing: .08em; text-transform: uppercase; }
 .headerMeta { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; color: var(--text-muted); font-size: var(--font-sm); }
 .demoBadge { padding: var(--space-1) var(--space-3); border-radius: var(--radius-control); color: var(--warning); background: var(--warning-soft); font-weight: 700; }
-.parameterGrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, .7fr) auto; gap: var(--space-4); align-items: end; }
+.parameterGrid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)) auto; gap: var(--space-4); align-items: end; }
 .more { margin-top: var(--space-3); }
 .more summary { width: fit-content; padding: var(--space-2) 0; color: var(--accent); cursor: pointer; }
-.advancedGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-4); padding-top: var(--space-3); }
+.advancedGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); padding-top: var(--space-3); }
+@media (max-width: 1279px) { .parameterGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .uploadLink { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; margin-top: var(--space-4); color: var(--text-muted); font-size: var(--font-sm); overflow-wrap: anywhere; }
 .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-6); margin-block: var(--space-8); }
 .runMeta { display: flex; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; margin-top: var(--space-4); color: var(--text-muted); font-size: var(--font-sm); overflow-wrap: anywhere; }

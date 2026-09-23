@@ -18,7 +18,6 @@
     "@tanstack/react-query": "^5.103.2",
     "@tanstack/react-table": "^9.2.4",
     "apexcharts": "^7.5.1",
-    "exceljs": "^4.4.0",
     "react": "^19.3.0",
     "react-apexcharts": "^2.1.1",
     "react-dom": "^19.3.0"

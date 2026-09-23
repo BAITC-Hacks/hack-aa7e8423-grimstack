@@ -22,13 +22,13 @@ function Parameters({ meta, params, setParams, onCalculate, calculating, onOpenU
     <div className={styles.parameterGrid}>
       <Select id="supplier" label="Поставщик" value={params.supplier ?? ''} onChange={(event) => setParams({ ...params, supplier: (event.target.value || null) as Supplier | null, dataset_id: null, category: null, lead_time_days: null, review_period_days: null })}><option value="">Все поставщики</option>{meta?.suppliers.map((item) => <option key={item.supplier} value={item.supplier}>{item.supplier_name}</option>)}</Select>
       <Select id="method" label="Метод" value={params.method} onChange={(event) => setParams({ ...params, method: event.target.value as RunParams['method'] })}><option value="analyze">Наш расчёт</option><option value="baseline">Excel-метод</option></Select>
+      <Field id="lead" label="Срок поставки L, дни" type="number" min={1} max={365} placeholder={supplierInfo ? `По умолчанию: ${supplierInfo.lead_time_days}` : 'По поставщику'} value={params.lead_time_days ?? ''} onChange={(event) => setParams({ ...params, lead_time_days: event.target.value ? Number(event.target.value) : null })} />
+      <Field id="review" label="Период R, дни" type="number" min={1} max={365} placeholder={supplierInfo ? `По умолчанию: ${supplierInfo.review_period_days}` : 'По поставщику'} value={params.review_period_days ?? ''} onChange={(event) => setParams({ ...params, review_period_days: event.target.value ? Number(event.target.value) : null })} />
       <Field id="growth" label="Прирост, %" type="number" min={-90} max={500} value={params.growth_pct} onChange={(event) => setParams({ ...params, growth_pct: Number(event.target.value) })} />
       <Button variant="primary" type="button" loading={calculating} onClick={onCalculate}>Рассчитать</Button>
     </div>
     <details className={styles.more}><summary>Доп. параметры</summary><div className={styles.advancedGrid}>
       <Select id="category" label="Категория" value={params.category ?? ''} disabled={!supplierInfo} onChange={(event) => setParams({ ...params, category: event.target.value || null })}><option value="">Все категории</option>{supplierInfo?.categories.map((category) => <option key={category} value={category}>{category}</option>)}</Select>
-      <Field id="lead" label="Срок поставки L, дни" type="number" min={1} max={365} placeholder={supplierInfo ? `По умолчанию: ${supplierInfo.lead_time_days}` : 'По поставщику'} value={params.lead_time_days ?? ''} onChange={(event) => setParams({ ...params, lead_time_days: event.target.value ? Number(event.target.value) : null })} />
-      <Field id="review" label="Период R, дни" type="number" min={1} max={365} placeholder={supplierInfo ? `По умолчанию: ${supplierInfo.review_period_days}` : 'По поставщику'} value={params.review_period_days ?? ''} onChange={(event) => setParams({ ...params, review_period_days: event.target.value ? Number(event.target.value) : null })} />
       <Field id="service" label="Уровень сервиса, %" type="number" min={51} max={99} step="0.1" placeholder="По категории" value={params.service_level === null ? '' : params.service_level * 100} onChange={(event) => setParams({ ...params, service_level: event.target.value ? Number(event.target.value) / 100 : null })} />
     </div><div className={styles.uploadLink}><Button type="button" onClick={onOpenUpload}>Загрузить свои выгрузки</Button>{params.dataset_id && <span>Набор данных: {params.dataset_id}</span>}</div></details>
   </SectionPanel>;
@@ -128,7 +128,7 @@ export default function App() {
 
   return <PageShell>
     <header className={styles.pageHeader}><div><p className={styles.eyebrow}>GrimStack · закупки</p><h1>Планирование заказов</h1></div><div className={styles.headerMeta}>{import.meta.env.VITE_MOCK === '1' && <span className={styles.demoBadge}>Демо-данные</span>}<span>Данные на {formatDate(run?.data_as_of ?? metaQuery.data?.data_as_of)}</span></div></header>
-    {import.meta.env.VITE_MOCK === '1' && <InlineAlert tone="warning">Демонстрационный режим: числа из иллюстративного образца; загрузка файлов не влияет на расчёт.</InlineAlert>}
+    {import.meta.env.VITE_MOCK === '1' && <InlineAlert tone="warning">Демонстрационный режим: образец получен из реального расчёта. Изменение параметров и загрузка файлов не пересчитывают его.</InlineAlert>}
     {metaQuery.isError && <InlineAlert tone="error">Не удалось загрузить параметры: {metaQuery.error.message} <Button type="button" onClick={() => void metaQuery.refetch()}>Повторить</Button></InlineAlert>}
     <Parameters meta={metaQuery.data} params={params} setParams={setParams} onCalculate={() => void calculate()} calculating={calculating} onOpenUpload={() => setUploadOpen(true)} />
     {error && <InlineAlert tone="error">{error}</InlineAlert>}{notice && <InlineAlert tone="info">{notice}</InlineAlert>}

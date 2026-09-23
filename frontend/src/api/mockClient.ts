@@ -46,7 +46,7 @@ export const mockClient: ProcurementApi = {
       run.lines = run.lines.filter((line) => line.supplier === params.supplier);
       run.suppliers = run.suppliers.filter((summary) => summary.supplier === params.supplier);
     }
-    run.warnings = [...run.warnings, 'Демо-режим: числа взяты из образца; метод, сроки, сервис, прирост и загруженные файлы не пересчитывают рекомендации.'];
+    run.warnings = [...run.warnings, 'Демо-режим: образец получен из реального расчёта, но метод, сроки, сервис, прирост и загруженные файлы не пересчитывают рекомендации.'];
     if (params.supplier) run.warnings.push('Показатели разовых продаж, восстановленного спроса и излишков относятся к исходному образцу для всех поставщиков.');
     totals(run);
     runs.set(run.run_id, run);
@@ -73,23 +73,7 @@ export const mockClient: ProcurementApi = {
     summary.approved_at = new Date().toISOString();
     return clone(summary);
   },
-  async exportXlsx(runId, supplier) {
-    await pause();
-    const { default: ExcelJS } = await import('exceljs');
-    const lines = getStored(runId).lines.filter((line) => line.supplier === supplier && line.final_qty > 0);
-    const workbook = new ExcelJS.Workbook();
-    const sheet = workbook.addWorksheet('Заказ');
-    sheet.columns = [
-      { header: 'Код 1С', key: 'sku', width: 18 }, { header: 'Артикул поставщика', key: 'article', width: 24 },
-      { header: 'Наименование', key: 'name', width: 58 }, { header: 'Ед.', key: 'unit', width: 10 },
-      { header: 'Количество', key: 'qty', width: 16 }, { header: 'Цена', key: 'price', width: 16 },
-      { header: 'Сумма', key: 'amount', width: 18 }, { header: 'Поставщик', key: 'supplier', width: 20 },
-      { header: 'Срочность', key: 'urgency', width: 16 }, { header: 'Обоснование', key: 'explanation', width: 70 },
-    ];
-    for (const line of lines) sheet.addRow({ sku: line.sku, article: line.article, name: line.name, unit: line.unit, qty: line.final_qty, price: line.unit_cost, amount: line.amount, supplier: line.supplier, urgency: line.urgency, explanation: line.explanation });
-    const buffer = await workbook.xlsx.writeBuffer();
-    return { blob: new Blob([new Uint8Array(buffer)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), filename: `order_${supplier}_${new Date().toISOString().slice(0, 10)}.xlsx` };
-  },
+  async exportXlsx() { throw new ApiError(503, 'export_unavailable', 'Экспорт XLSX доступен при подключённом backend API'); },
   async getSkuHistory(supplier: Supplier, sku: string) {
     await pause();
     if (history.supplier !== supplier || history.sku !== sku) throw new ApiError(404, 'history_unavailable', 'Для этого товара в образце нет истории');
