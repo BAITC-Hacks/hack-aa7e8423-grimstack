@@ -44,7 +44,7 @@ flowchart LR
   end
   subgraph Mono["Моносервис: FastAPI, один процесс"]
     API["api/<br/>runs · lines · approve · export · upload · sku · summary"]
-    STORE["store<br/>прогоны в памяти, утверждения → JSON"]
+    STORE["store<br/>прогоны в памяти, утверждения → SQLite var/app.db"]
     ENG["engine/<br/>analyze.run · baseline.run · history"]
     ING["ingest/<br/>xlsx → Dataset"]
     AI["ai/<br/>categories · summary"]
@@ -95,7 +95,7 @@ app/
                    analyze · baseline · history                       [А]
   ai/              categories (CSV Laya), summary (LLM + кэш)         [А]
   api/             роутеры                                            [Б]
-  store.py         прогоны в памяти, утверждения в JSON               [Б]
+  store.py         прогоны в памяти, утверждения в SQLite var/app.db  [Б]
 frontend/          Vite + React + TS                                  [Ф]
 data/raw/<iek|se>/<role>.xlsx                                         [А]
 data/categories/sku_categories.csv                                    [А]
