@@ -44,7 +44,10 @@ hack-aa7e8423-grimstack/
 │   │   ├── common.py          месяцы из заголовков 1С, код, хэш документа, накладные
 │   │   └── dataset.py         канонический Dataset и concat()
 │   │
-│   └── ai/                    LLM-сводка с кэшем; группы Laya читаются из CSV        [А]
+│   └── ai/                    AI-слой, про HTTP не знает                              [А]
+│       ├── llm.py             LLM-сводка по заказу поставщику с кэшем ответов
+│       └── groups.py          товарные группы: правила по ключевым словам + выбор между
+│                              правилом и ответом Laya
 │
 ├── frontend/                  Vite + React + TypeScript                              [Ф]
 │   ├── src/api/               types.ts (зеркало contracts.py), live- и mock-клиент
@@ -54,11 +57,13 @@ hack-aa7e8423-grimstack/
 │
 ├── data/
 │   ├── raw/{iek,se}/<role>.xlsx   выгрузки партнёра                                  [А]
-│   ├── categories/            sku_categories.csv — товарные группы от Laya           [А]
+│   ├── categories/            sku_categories.csv — товарные группы (правила + Laya),
+│   │                          laya_eval.json — замер качества Laya                   [А]
 │   └── backtest/report.json   результаты бэктеста для README и слайдов               [А]
 ├── samples/cache/             сохранённые ответы LLM для запуска без ключа           [А]
 ├── scripts/
 │   ├── classify_laya.py       офлайн-классификация наименований, torch только здесь   [А]
+│   ├── warm_llm_cache.py      прогрев samples/cache/ живыми ответами LLM перед сдачей  [А]
 │   └── backtest.py            «машина времени»: наш метод против Excel на истории    [А]
 ├── contracts/*.json           примеры ответов API из реального прогона               [А]
 ├── docs/

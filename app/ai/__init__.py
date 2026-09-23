@@ -1,8 +1,5 @@
-"""AI-слой: LLM-сводка по заказу поставщику. Владелец — ядро (А)."""
+"""AI-слой: LLM-сводка по заказу поставщику (llm.py) и товарные группы для офлайн-классификации (groups.py)."""
 
-from app.contracts import RunResult, SummaryResponse, Supplier
+from app.ai.llm import summary
 
-
-def summary(result: RunResult, supplier: Supplier) -> SummaryResponse | None:
-    """None — нет ни ключа, ни кэша для этого входа (API → 503)."""
-    return None
+__all__ = ["summary"]
