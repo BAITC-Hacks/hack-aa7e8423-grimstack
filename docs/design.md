@@ -353,15 +353,21 @@ class SkuHistory(BaseModel):
 Функции ядра, которые вызывает API:
 
 ```python
-ingest.load_default() -> Dataset
+from app import ingest, engine, ai
+
+ingest.load_default() -> Dataset                                               # встроенные data/raw
 ingest.load_uploaded(supplier: Supplier, files: dict[str, bytes]) -> Dataset   # ключи — роли из §3
-    # при ошибке: IngestError(code, message, file_role)
-engine.analyze.run(data: Dataset, params: RunParams) -> RunResult
-engine.baseline.run(data: Dataset, params: RunParams) -> RunResult
+    # обязательные роли: monthly_sales, monthly_stock, in_transit, moq
+    # при ошибке: IngestError(code, message, file_role) → 422
+engine.run(data: Dataset, params: RunParams) -> RunResult    # params.method: analyze | baseline
 engine.history(data: Dataset, supplier: Supplier, sku: str, params: RunParams) -> SkuHistory
-engine.defaults() -> dict                  # L, R по поставщикам, список категорий
-ai.summary(result: RunResult, supplier: Supplier) -> tuple[str, bool]            # (текст, из_кэша)
+engine.meta(data: Dataset) -> Meta
+ai.summary(result: RunResult, supplier: Supplier) -> SummaryResponse | None   # None → 503
 ```
+
+Сигнатуры заморожены. До готовности ядра функции отдают моки из `contracts/*.json`,
+так что API подключается к ним сразу. `RunParams.dataset_id` выбирает загруженный
+датасет, при `None` используются встроенные выгрузки.
 
 ### HTTP — владелец Б
 

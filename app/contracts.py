@@ -15,6 +15,7 @@ FileRole = Literal["monthly_sales", "monthly_stock", "sales_tx", "in_transit", "
 
 
 class RunParams(BaseModel):
+    dataset_id: str | None = None  # None — встроенные выгрузки data/raw; иначе id из POST /api/datasets
     supplier: Supplier | None = None  # None — все поставщики
     category: str | None = None
     method: Literal["analyze", "baseline"] = "analyze"
