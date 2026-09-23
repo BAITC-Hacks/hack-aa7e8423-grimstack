@@ -87,6 +87,7 @@ export default function ScenarioPanel({ run, meta }: { run: RunResult; meta: Met
     xaxis: { categories: chartLines.map((line) => line.name), labels: { formatter: (value) => formatNumber(Number(value)), style: { colors: color('--text-muted') } } },
     yaxis: { labels: { maxWidth: 180, style: { colors: color('--text') } } },
     tooltip: { theme: 'light', y: { formatter: (value) => `${signed(value)} ${selectedUnit}` } },
+    responsive: [{ breakpoint: 540, options: { yaxis: { labels: { maxWidth: 84, style: { colors: color('--text') } } } } }],
   };
 
   return <SectionPanel className={styles.panel} aria-labelledby="scenario-heading">

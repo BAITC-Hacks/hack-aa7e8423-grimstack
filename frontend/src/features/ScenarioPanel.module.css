@@ -1,6 +1,6 @@
 .panel { margin: var(--space-6) 0; min-width: 0; }
-.heading { margin-bottom: var(--space-4); }
-.heading h2 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -.025em; }
+.heading { margin-bottom: var(--space-4); padding-bottom: var(--space-4); border-bottom: 1px solid var(--border); }
+.heading h2 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -.025em; }
 .heading > p:last-child, .context, .lead, .note, .empty { color: var(--text-muted); font-size: var(--font-sm); }
 .heading > p:last-child { margin: var(--space-2) 0 0; }
 .controls { display: flex; flex-wrap: wrap; align-items: end; gap: var(--space-3); }
@@ -8,7 +8,9 @@
 .controls button { min-width: 132px; }
 .lead { margin: var(--space-3) 0 var(--space-4); }
 .metrics { display: flex; flex-wrap: wrap; gap: var(--space-3); margin: var(--space-4) 0; }
-.metrics > div { min-width: 160px; flex: 1 1 170px; display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-3) var(--space-4); background: var(--surface-raised); border: 1px solid var(--border); border-radius: var(--radius-control); }
+.metrics > div { min-width: 160px; flex: 1 1 170px; display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-3) var(--space-4); background: var(--surface-raised); border: 1px solid var(--border); border-top: 3px solid var(--series-1); border-radius: var(--radius-control); }
+.metrics > div:nth-child(2) { border-top-color: var(--series-2); }
+.metrics > div:nth-child(3) { border-top-color: var(--series-3); }
 .metrics span { color: var(--text-muted); font-size: var(--font-xs); }
 .metrics strong { color: var(--text); font-size: var(--font-lg); font-variant-numeric: tabular-nums; }
 .context { margin: 0 0 var(--space-4); }
@@ -18,11 +20,12 @@
 .note { margin: var(--space-2) 0; }
 .chart { min-width: 0; max-width: 100%; }
 .empty { margin: var(--space-4) 0; }
-.tableScroll { max-width: 100%; overflow-x: auto; margin-top: var(--space-4); }
+.tableScroll { max-width: 100%; overflow-x: auto; margin-top: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius-control); }
 .tableScroll table { width: 100%; min-width: 720px; border-collapse: collapse; font-size: var(--font-sm); }
 .tableScroll caption { text-align: left; color: var(--text-muted); font-size: var(--font-xs); padding: 0 0 var(--space-2); }
 .tableScroll th, .tableScroll td { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border); text-align: left; font-variant-numeric: tabular-nums; }
-.tableScroll thead th { background: var(--nav-bg); color: var(--nav-text); font-size: var(--font-xs); font-weight: 600; }
+.tableScroll thead th { background: var(--table-head-bg); color: var(--table-head-text); font-size: var(--font-xs); font-weight: 700; }
 .tableScroll tbody th { font-weight: 600; }
+.tableScroll tbody tr:nth-child(even) { background: var(--surface-raised); }
 .tableScroll tbody td:nth-child(2), .tableScroll tbody td:nth-child(3), .tableScroll tbody td:nth-child(4) { white-space: nowrap; }
 @media (max-width: 560px) { .controls label, .controls button { flex-basis: 100%; max-width: none; } .chartHeading label { width: 100%; } }

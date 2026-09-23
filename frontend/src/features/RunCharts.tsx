@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import Chart from 'react-apexcharts';
 import type { ApexOptions } from 'apexcharts';
 import type { RunResult, Urgency } from '../api/types';
 import { formatNumber } from '../shared/format';
+import { Select } from '../shared/ui';
 import styles from './RunCharts.module.css';
 
 const urgencies: { key: Urgency; label: string; token: string }[] = [
@@ -66,22 +68,27 @@ export function SupplierChart({ run }: { run: RunResult }) {
 export function ComparisonChart({ run }: { run: RunResult }) {
   const color = palette();
   const comparable = run.lines.filter((line) => line.baseline_qty !== null);
+  const units = [...new Set(comparable.map((line) => line.unit))];
+  const [unit, setUnit] = useState('');
+  const selectedUnit = units.includes(unit) ? unit : (units[0] ?? '');
+  const unitLines = comparable.filter((line) => line.unit === selectedUnit);
   const difference = (line: typeof comparable[number]) => line.recommended_qty - (line.baseline_qty ?? 0);
-  const less = comparable.filter((line) => difference(line) < 0).sort((a, b) => difference(a) - difference(b));
-  const more = comparable.filter((line) => difference(line) > 0).sort((a, b) => difference(b) - difference(a));
+  const less = unitLines.filter((line) => difference(line) < 0).sort((a, b) => difference(a) - difference(b));
+  const more = unitLines.filter((line) => difference(line) > 0).sort((a, b) => difference(b) - difference(a));
   const lines = [...less.slice(0, 4), ...more.slice(0, 4)];
   if (comparable.length === 0) return <p className={styles.noData}>Нет сопоставимых значений Excel-метода.</p>;
-  const summary = <p className={styles.comparisonSummary}>Меньше Excel-метода: {formatNumber(less.length)} поз. · больше: {formatNumber(more.length)} поз.</p>;
+  const summary = <div className={styles.comparisonToolbar}><p className={styles.comparisonSummary}>Меньше Excel-метода: {formatNumber(less.length)} поз. · больше: {formatNumber(more.length)} поз.</p>{units.length > 1 && <Select id="comparison-unit" label="Единица измерения" value={selectedUnit} onChange={(event) => setUnit(event.target.value)}>{units.map((item) => <option key={item} value={item}>{item}</option>)}</Select>}</div>;
   if (lines.length === 0) return <>{summary}<p className={styles.noData}>Расхождений с Excel-методом нет.</p></>;
   const maxValue = Math.max(...lines.flatMap((line) => [line.recommended_qty, line.baseline_qty ?? 0]));
   const options: ApexOptions = {
     ...baseOptions(),
-    colors: [color('--accent'), color('--border-strong')],
+    colors: [color('--series-1'), color('--series-2')],
     plotOptions: { bar: { horizontal: true, borderRadius: 3, barHeight: '65%', dataLabels: { position: 'center' } } },
     dataLabels: { enabled: true, formatter: (value) => formatNumber(Math.round(Number(value))), style: { fontSize: '11px', colors: [color('--text')] }, background: { enabled: true, foreColor: color('--text'), backgroundColor: color('--surface'), borderRadius: 2, opacity: 0.9, padding: 2 } },
     xaxis: { categories: lines.map((line) => line.name), max: maxValue * 1.2, labels: { formatter: (value) => formatNumber(Number(value)), style: { colors: color('--text-muted') } } },
     yaxis: { labels: { style: { colors: color('--text') }, maxWidth: 150 } },
-    tooltip: { theme: 'light', y: { formatter: (value) => formatNumber(Math.round(value)) } },
+    tooltip: { theme: 'light', y: { formatter: (value) => `${formatNumber(Math.round(value))} ${selectedUnit}` } },
+    responsive: [{ breakpoint: 540, options: { yaxis: { labels: { maxWidth: 84, style: { colors: color('--text') } } }, dataLabels: { enabled: false } } }],
   };
-  return <>{summary}<div className={styles.comparison} aria-hidden="true"><Chart type="bar" height={Math.max(320, lines.length * 48)} options={options} series={[{ name: 'Наш расчёт', data: lines.map((line) => line.recommended_qty) }, { name: 'Excel-метод', data: lines.map((line) => line.baseline_qty ?? 0) }]} /></div><div className={styles.seriesLegend}><span><i className={styles.green} />Наш расчёт</span><span><i className={styles.gray} />Excel-метод</span></div><table className={styles.dataTable}><caption>Четыре наибольших расхождения в каждую сторону относительно Excel-метода</caption><thead><tr><th>Товар</th><th>Наш расчёт</th><th>Excel</th><th>Разница</th></tr></thead><tbody>{lines.map((line) => <tr key={line.line_id}><th>{line.name}</th><td>{formatNumber(Math.round(line.recommended_qty))}</td><td>{formatNumber(Math.round(line.baseline_qty ?? 0))}</td><td>{difference(line) > 0 ? '+' : '−'}{formatNumber(Math.round(Math.abs(difference(line))))}</td></tr>)}</tbody></table></>;
+  return <>{summary}<div className={styles.comparison} aria-hidden="true"><Chart type="bar" height={Math.max(320, lines.length * 48)} options={options} series={[{ name: 'Наш расчёт', data: lines.map((line) => line.recommended_qty) }, { name: 'Excel-метод', data: lines.map((line) => line.baseline_qty ?? 0) }]} /></div><div className={styles.seriesLegend}><span><i className={styles.green} />Наш расчёт</span><span><i className={styles.gray} />Excel-метод</span></div><div className={styles.comparisonTableScroll} role="region" aria-label="Таблица сравнения методов" tabIndex={0}><table className={styles.comparisonTable}><caption>Четыре наибольших расхождения в каждую сторону относительно Excel-метода, {selectedUnit}</caption><thead><tr><th>Товар</th><th>Наш расчёт</th><th>Excel</th><th>Разница</th></tr></thead><tbody>{lines.map((line) => <tr key={line.line_id}><th>{line.name}</th><td>{formatNumber(Math.round(line.recommended_qty))} {line.unit}</td><td>{formatNumber(Math.round(line.baseline_qty ?? 0))} {line.unit}</td><td>{difference(line) > 0 ? '+' : '−'}{formatNumber(Math.round(Math.abs(difference(line))))} {line.unit}</td></tr>)}</tbody></table></div></>;
 }

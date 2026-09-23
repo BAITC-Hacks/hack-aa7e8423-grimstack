@@ -103,8 +103,10 @@
 .historyPanel { margin-top: 18px; }
 .historyPanel .sectionHeading { align-items: end; }
 .analysisPicker { display: grid; grid-template-columns: minmax(0, 180px) minmax(0, 320px); gap: 10px; width: min(100%, 510px); }
-.historyDescription { color: var(--text-muted); font-size: 13px; }
-.analysisFacts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border); }
+.historyDescription { padding: 12px 14px; border-left: 3px solid var(--cyan); border-radius: var(--radius-control); background: var(--cyan-soft); color: var(--text); font-size: 13px; }
+.analysisFacts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 24px; }
+.analysisFacts > div { min-width: 0; padding: 12px; border: 1px solid var(--border); border-top: 3px solid var(--series-1); border-radius: var(--radius-control); background: var(--surface-raised); }
+.analysisFacts > div:nth-child(2) { border-top-color: var(--series-3); }
 .analysisFacts span { display: block; color: var(--text-muted); font-size: 11px; }
 .analysisFacts strong { display: block; margin-top: 4px; font-size: 20px; font-variant-numeric: tabular-nums; }
 .dataLayout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; align-items: start; gap: 18px; }

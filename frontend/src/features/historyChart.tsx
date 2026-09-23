@@ -31,16 +31,17 @@ export default function HistoryChart({ history }: { history: SkuHistory }) {
     }];
   });
   const options: ApexOptions = {
-    chart: { background: 'transparent', toolbar: { show: false }, animations: { enabled: false } },
-    colors: [color('--border-strong'), color('--series-1'), color('--series-2'), color('--series-3')],
+    chart: { background: 'transparent', toolbar: { show: false }, animations: { enabled: false }, fontFamily: color('--font-body') },
+    colors: [color('--series-4'), color('--series-1'), color('--series-2'), color('--series-3')],
     theme: { mode: 'light' },
-    xaxis: { categories: months, labels: { rotate: 0, formatter: (value) => /^\d{4}-(01|04|07|10)$/.test(String(value)) ? String(value) : '' } },
-    yaxis: { labels: { formatter: (value) => formatNumber(value) } },
-    legend: { show: true, position: 'bottom' },
+    xaxis: { categories: months, labels: { rotate: 0, formatter: (value) => /^\d{4}-(01|04|07|10)$/.test(String(value)) ? String(value) : '', style: { colors: color('--text-muted') } } },
+    yaxis: { labels: { formatter: (value) => formatNumber(value), style: { colors: color('--text-muted') } } },
+    legend: { show: true, position: 'bottom', labels: { colors: color('--text-muted') } },
     stroke: { width: [1, 2, 2, 2], dashArray: [0, 0, 0, 6] },
-    tooltip: { shared: true },
+    tooltip: { shared: true, theme: 'light' },
     grid: { borderColor: color('--border') },
     annotations: { xaxis: stockoutBands },
+    responsive: [{ breakpoint: 540, options: { legend: { fontSize: '11px', itemMargin: { horizontal: 6, vertical: 3 } } } }],
   };
   const series = [
     { name: 'Продажи', data: pad(history.raw) },

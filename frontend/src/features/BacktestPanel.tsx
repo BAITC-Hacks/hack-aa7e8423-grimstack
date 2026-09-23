@@ -37,7 +37,7 @@ export function BacktestPanel({ report }: { report: BacktestReport }) {
   const chartBase: ApexOptions = {
     chart: { background: 'transparent', toolbar: { show: false }, animations: { enabled: false }, fontFamily: color('--font-body') },
     theme: { mode: 'light' },
-    colors: [color('--accent'), color('--border-strong'), color('--series-1')],
+    colors: [color('--series-1'), color('--series-2'), color('--series-3')],
     grid: { borderColor: color('--border'), strokeDashArray: 3 },
     legend: { position: 'bottom', fontSize: color('--font-xs'), labels: { colors: color('--text-muted') } },
     tooltip: { theme: 'light', y: { formatter: (value) => percentFormatter.format(value) } },
@@ -45,7 +45,7 @@ export function BacktestPanel({ report }: { report: BacktestReport }) {
   };
   const wapeOptions: ApexOptions = {
     ...chartBase,
-    colors: [color('--accent'), color('--border-strong')],
+    colors: [color('--series-1'), color('--series-2')],
     plotOptions: { bar: { borderRadius: 3, columnWidth: '48%' } },
     xaxis: { categories: suppliers, labels: { style: { colors: color('--text-muted') } } },
     yaxis: { min: 0, labels: { formatter: (value) => percentFormatter.format(value), style: { colors: color('--text-muted') } } },

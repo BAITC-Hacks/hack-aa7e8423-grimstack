@@ -1,7 +1,11 @@
 .chart { min-width: 0; }
 .tableDetails { margin-bottom: var(--space-6); color: var(--text-muted); font-size: var(--font-sm); }
-.tableDetails summary { cursor: pointer; color: var(--accent); }
-.tableScroll { max-width: 100%; overflow-x: auto; }
+.tableDetails summary { display: flex; align-items: center; min-height: var(--touch-target-min); width: fit-content; padding: var(--space-2) var(--space-3); border-radius: var(--radius-control); background: var(--accent-soft); color: var(--accent); font-weight: 600; cursor: pointer; }
+.tableDetails summary::before { content: '▸'; margin-right: var(--space-2); }
+.tableDetails[open] summary::before { transform: rotate(90deg); }
+.tableScroll { max-width: 100%; overflow-x: auto; margin-top: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-control); }
 .tableScroll table { width: 100%; border-collapse: collapse; }
 .tableScroll th, .tableScroll td { padding: var(--space-2); border-bottom: var(--border-width) solid var(--border); text-align: right; white-space: nowrap; }
+.tableScroll thead th { background: var(--table-head-bg); color: var(--table-head-text); }
+.tableScroll tbody tr:nth-child(even) { background: var(--surface-raised); }
 .tableScroll th:first-child { text-align: left; }
