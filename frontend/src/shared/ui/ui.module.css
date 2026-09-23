@@ -1,0 +1,39 @@
+.shell { width: min(calc(100% - var(--space-8) * 2), var(--content-max)); margin-inline: auto; padding-block: var(--space-8) var(--space-12); }
+.panel { min-width: 0; padding: var(--space-6); border: var(--border-width) solid var(--border); border-radius: var(--radius-panel); background: var(--surface); }
+.button { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); min-width: var(--touch-target-min); min-height: var(--control-height); padding: var(--space-2) var(--space-4); border: var(--border-width) solid var(--border-strong); border-radius: var(--radius-control); color: var(--text); background: var(--surface-raised); line-height: var(--line-heading); text-align: center; transition: border-color var(--motion-quick), background-color var(--motion-quick); }
+.button:hover { border-color: var(--accent); }
+.button:disabled { opacity: .5; cursor: not-allowed; }
+.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 700; }
+.primary:hover { background: var(--text); }
+.secondary { background: var(--surface-raised); }
+.ghost { background: transparent; border-color: transparent; }
+.danger { background: var(--critical-soft); border-color: var(--critical); color: var(--critical); }
+.field { display: grid; gap: var(--space-2); min-width: 0; color: var(--text-muted); font-size: var(--font-sm); }
+.control { min-width: 0; width: 100%; height: var(--control-height); padding-inline: var(--space-3); border: var(--border-width) solid var(--border-strong); border-radius: var(--radius-control); color: var(--text); background: var(--surface); }
+.control:hover { border-color: var(--accent); }
+.control:disabled { opacity: .5; }
+.invalid { border-color: var(--critical); }
+.valid { border-color: var(--success); }
+.error { color: var(--critical); }
+.success { color: var(--success); }
+.badge { display: inline-flex; align-items: center; min-height: 28px; padding: var(--space-1) var(--space-3); border-radius: var(--radius-control); font-size: var(--font-xs); font-weight: 700; white-space: nowrap; }
+.critical { color: var(--critical); background: var(--critical-soft); }
+.high, .draft { color: var(--warning); background: var(--warning-soft); }
+.planned, .none { color: var(--text-muted); background: var(--surface-raised); }
+.approved { color: var(--success); background: var(--success-soft); }
+.kpi { min-width: 0; padding-left: var(--space-4); border-left: var(--border-width) solid var(--border-strong); }
+.kpi:first-child { border-color: var(--accent); }
+.kpi span { display: block; color: var(--text-muted); font-size: var(--font-sm); }
+.kpi strong { display: block; margin-top: var(--space-1); font-size: var(--font-kpi); line-height: var(--line-heading); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.criticalValue { color: var(--critical); }
+.alert { padding: var(--space-3) var(--space-4); border: var(--border-width) solid var(--border); border-radius: var(--radius-control); font-size: var(--font-sm); }
+.warning { border-color: var(--warning); background: var(--warning-soft); }
+.info { border-color: var(--accent); background: var(--accent-soft); }
+.alert.error { border-color: var(--critical); background: var(--critical-soft); }
+.skeleton { padding: var(--space-8); border-radius: var(--radius-panel); color: var(--text-muted); background: var(--surface-raised); }
+.dialogOverlay { position: fixed; z-index: var(--z-dialog); inset: 0; background: rgb(0 0 0 / .7); }
+.dialog { position: fixed; z-index: calc(var(--z-dialog) + 1); top: 50%; left: 50%; width: min(calc(100vw - var(--space-8)), 32rem); max-height: calc(100dvh - var(--space-8)); overflow-y: auto; transform: translate(-50%, -50%); padding: var(--space-6); border: var(--border-width) solid var(--border-strong); border-radius: var(--radius-panel); color: var(--text); background: var(--surface-raised); }
+.dialogTitle { margin: 0 0 var(--space-4); font-size: var(--font-lg); }
+.tooltip { display: inline; border-bottom: var(--border-width) dotted var(--border-strong); cursor: help; }
+@media (max-width: 1439px) { .shell { width: min(calc(100% - var(--space-6) * 2), var(--content-max)); } }
+@media (max-width: 639px) { .shell { width: min(calc(100% - var(--space-4) * 2), var(--content-max)); padding-top: var(--space-6); } .panel { padding: var(--space-4); } .dialog { padding: var(--space-4); } }
