@@ -46,7 +46,9 @@ def read_sales_tx(path: Path, supplier: str) -> pd.DataFrame:
     Файл необязателен: без него очистка от разовых строк просто не срабатывает.
     """
     if not path.exists():
-        return pd.DataFrame(columns=TX_COLUMNS)
+        return pd.DataFrame({"supplier": pd.Series(dtype="str"), "sku": pd.Series(dtype="str"),
+                             "date": pd.Series(dtype="datetime64[ns]"), "doc": pd.Series(dtype="str"),
+                             "qty": pd.Series(dtype="float64")}, columns=TX_COLUMNS)
     body = read_sheet(path).iloc[1:]  # строка 0 — заголовок; «Итого» отсеется по пустому коду
     doc = body[2].astype(str)
     qty = pd.to_numeric(body[7], errors="coerce").fillna(0.0)

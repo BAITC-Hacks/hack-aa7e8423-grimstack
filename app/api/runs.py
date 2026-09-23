@@ -2,6 +2,7 @@
 
 from io import BytesIO
 from datetime import date
+import math
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
@@ -51,8 +52,10 @@ def patch_line(run_id: str, line_id: str, patch: LinePatch):
     summary = store.supplier(result, line.supplier)
     if summary.status == "approved":
         raise HTTPException(409, "Заказ поставщику уже утверждён")
+    if not math.isfinite(patch.final_qty) or line.moq <= 0:
+        raise HTTPException(422, "Количество должно быть конечным числом и кратность должна быть положительной")
     ratio = patch.final_qty / line.moq
-    if abs(ratio - round(ratio)) > 1e-8:
+    if not math.isfinite(ratio) or abs(ratio - round(ratio)) > 1e-8:
         raise HTTPException(422, f"Количество должно быть кратно {line.moq:g}")
     store.update_line(result, line, patch.final_qty)
     return line

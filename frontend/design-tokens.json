@@ -1,25 +1,28 @@
 {
   "meta": {
-    "name": "GrimStack procurement dark",
-    "description": "Canonical values for frontend/src/styles/tokens.css and shared UI components."
+    "name": "GrimStack Supply operations",
+    "description": "Light operational canvas with a dark navigation rail. Mirrors frontend/src/styles/tokens.css."
   },
   "color": {
-    "bg": "#17191B",
-    "surface": "#1E2124",
-    "surfaceRaised": "#262B30",
-    "border": "#363C42",
-    "borderStrong": "#56616B",
-    "text": "#F2F4F5",
-    "textMuted": "#AAB3BB",
-    "accent": "#69A9E0",
-    "onAccent": "#111920",
-    "accentSoft": "#243C50",
-    "critical": "#E07878",
-    "criticalSoft": "#43272A",
-    "warning": "#E2AB55",
-    "warningSoft": "#403322",
-    "success": "#78B995",
-    "successSoft": "#263D32"
+    "bg": "#F4F5F1",
+    "surface": "#FFFFFF",
+    "surfaceRaised": "#EEF1EC",
+    "border": "#DCE3DB",
+    "borderStrong": "#ABB9AE",
+    "text": "#17241D",
+    "textMuted": "#617168",
+    "accent": "#176949",
+    "onAccent": "#FFFFFF",
+    "accentSoft": "#E3F1E9",
+    "critical": "#B64834",
+    "criticalSoft": "#F9E8E3",
+    "warning": "#945D19",
+    "warningSoft": "#FFF0D9",
+    "success": "#287453",
+    "successSoft": "#E3F2E9",
+    "navBg": "#14251C",
+    "navText": "#E7EFE6",
+    "navMuted": "#9EB2A3"
   },
   "font": {
     "body": "IBM Plex Sans",
@@ -29,9 +32,9 @@
       "sm": 14,
       "md": 16,
       "lg": 20,
-      "xl": 24,
-      "kpiMin": 24,
-      "kpiMax": 34
+      "xl": 40,
+      "kpiMin": 28,
+      "kpiMax": 42
     },
     "lineHeight": {
       "heading": 1.25,
@@ -49,7 +52,7 @@
   },
   "radius": {
     "control": 8,
-    "panel": 12
+    "panel": 14
   },
   "size": {
     "borderWidth": 1,

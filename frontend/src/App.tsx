@@ -4,7 +4,6 @@ import { ApiError, type DatasetFiles } from './api/ProcurementApi';
 import { getApi } from './api/client';
 import type { FileRole, Meta, OrderLine, RunParams, Supplier, SupplierSummary, Urgency } from './api/types';
 import { SkuPanel } from './features/SkuPanel';
-import { ComparisonChart, RiskChart, SupplierChart } from './features/RunCharts';
 import { saveBlob } from './shared/download';
 import { formatDate, formatMoney, formatNumber, formatQty } from './shared/format';
 import { isValidQuantity } from './shared/quantity';
@@ -13,10 +12,13 @@ import styles from './App.module.css';
 
 const initialParams: RunParams = { dataset_id: null, supplier: null, category: null, method: 'analyze', lead_time_days: null, review_period_days: null, service_level: null, growth_pct: 0 };
 const urgencyOrder: Record<Urgency, number> = { critical: 0, high: 1, planned: 2, none: 3 };
-const requiredRoles: FileRole[] = ['monthly_sales', 'monthly_stock', 'sales_tx', 'in_transit'];
-const allRoles: FileRole[] = [...requiredRoles, 'moq', 'seasonality'];
+const requiredRoles: FileRole[] = ['monthly_sales', 'monthly_stock', 'in_transit', 'moq'];
+const allRoles: FileRole[] = [...requiredRoles, 'sales_tx', 'seasonality'];
 const roleLabels: Record<FileRole, string> = { monthly_sales: 'Продажи по месяцам', monthly_stock: 'Остатки по месяцам', sales_tx: 'Строки продаж', in_transit: 'Товар в пути', moq: 'Кратность заказа', seasonality: 'Сезонность' };
 const HistoryChart = lazy(() => import('./features/historyChart'));
+const RiskChart = lazy(() => import('./features/RunCharts').then((module) => ({ default: module.RiskChart })));
+const SupplierChart = lazy(() => import('./features/RunCharts').then((module) => ({ default: module.SupplierChart })));
+const ComparisonChart = lazy(() => import('./features/RunCharts').then((module) => ({ default: module.ComparisonChart })));
 type View = 'overview' | 'orders' | 'analytics' | 'data';
 const viewItems: { id: View; label: string; number: string }[] = [
   { id: 'overview', label: 'Обзор', number: '01' },
@@ -31,7 +33,7 @@ function readView(): View {
 
 function Parameters({ meta, params, setParams, onCalculate, calculating, onOpenUpload }: { meta: Meta | undefined; params: RunParams; setParams: (params: RunParams) => void; onCalculate: () => void; calculating: boolean; onOpenUpload: () => void }) {
   const supplierInfo = meta?.suppliers.find((item) => item.supplier === params.supplier);
-  return <SectionPanel aria-label="Параметры расчёта">
+  return <div className={styles.parameterPanel} aria-label="Параметры расчёта">
     <div className={styles.parameterGrid}>
       <Select id="supplier" label="Поставщик" value={params.supplier ?? ''} onChange={(event) => setParams({ ...params, supplier: (event.target.value || null) as Supplier | null, dataset_id: null, category: null, lead_time_days: null, review_period_days: null })}><option value="">Все поставщики</option>{meta?.suppliers.map((item) => <option key={item.supplier} value={item.supplier}>{item.supplier_name}</option>)}</Select>
       <Select id="method" label="Метод" value={params.method} onChange={(event) => setParams({ ...params, method: event.target.value as RunParams['method'] })}><option value="analyze">Наш расчёт</option><option value="baseline">Excel-метод</option></Select>
@@ -44,7 +46,7 @@ function Parameters({ meta, params, setParams, onCalculate, calculating, onOpenU
       <Select id="category" label="Категория" value={params.category ?? ''} disabled={!supplierInfo} onChange={(event) => setParams({ ...params, category: event.target.value || null })}><option value="">Все категории</option>{supplierInfo?.categories.map((category) => <option key={category} value={category}>{category}</option>)}</Select>
       <Field id="service" label="Уровень сервиса, %" type="number" min={51} max={99} step="0.1" placeholder="По категории" value={params.service_level === null ? '' : params.service_level * 100} onChange={(event) => setParams({ ...params, service_level: event.target.value ? Number(event.target.value) / 100 : null })} />
     </div><div className={styles.uploadLink}><Button type="button" onClick={onOpenUpload}>Загрузить свои выгрузки</Button>{params.dataset_id && <span>Набор данных: {params.dataset_id}</span>}</div></details>
-  </SectionPanel>;
+  </div>;
 }
 
 function QuantityEditor({ line, approved, onSave }: { line: OrderLine; approved: boolean; onSave: (line: OrderLine, quantity: number) => Promise<void> }) {
@@ -69,10 +71,16 @@ function SupplierOrders({ summary, lines, selectedId, onSelect, onSave, onApprov
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState('');
+  const [page, setPage] = useState(0);
+  const pageSize = 50;
+  const pageCount = Math.max(1, Math.ceil(lines.length / pageSize));
+  const currentPage = Math.min(page, pageCount - 1);
+  const pageLines = lines.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
   async function action(work: () => Promise<void>) { setBusy(true); setActionError(''); try { await work(); } catch (cause) { setActionError(cause instanceof Error ? cause.message : 'Действие не выполнено'); } finally { setBusy(false); } }
   return <section className={styles.supplier} aria-labelledby={`supplier-${summary.supplier}`}><header className={styles.supplierHeader}><div className={styles.supplierTitle}><h3 id={`supplier-${summary.supplier}`}>{summary.supplier_name}</h3><OrderStatus status={summary.status} /></div><div className={styles.supplierActions}><Button type="button" disabled={summary.status === 'approved' || busy} onClick={() => setConfirm(true)}>Утвердить</Button><Button type="button" disabled={busy || import.meta.env.VITE_MOCK === '1'} title={import.meta.env.VITE_MOCK === '1' ? 'Экспорт доступен в рабочем режиме' : undefined} onClick={() => void action(() => onExport(summary.supplier))}>Excel для 1С</Button><Button type="button" variant="ghost" disabled={busy} onClick={() => void action(() => onSummary(summary.supplier))}>Сводка</Button></div></header><p className={styles.supplierMeta}>{formatNumber(summary.lines_count)} поз. · {summary.total_amount === null ? 'Сумма: нет цены' : `Оценочная сумма: ${formatMoney(summary.total_amount)}`}{summary.approved_at ? ` · Утверждён ${formatDate(summary.approved_at)}` : ''}</p>{actionError && <InlineAlert tone="error">{actionError}</InlineAlert>}
-    <div className={styles.tableScroll} role="region" aria-label={`Таблица заказов ${summary.supplier_name}`} tabIndex={0}><table><thead><tr><th>Товар</th><th>Остаток</th><th>В пути</th><th>Прогноз/мес</th><th>Наш расчёт</th><th>Excel</th><th>Кратность</th><th>Итог</th><th>Срочность</th><th>Обоснование</th></tr></thead><tbody>{lines.map((line) => <tr key={line.line_id} className={selectedId === line.line_id ? styles.selected : ''}><td className={styles.productCell}><span className={styles.sku}>{line.sku}{line.article ? ` · ${line.article}` : ''}</span><button className={styles.productButton} type="button" onClick={() => onSelect(line)}>{line.name}</button></td><td className={styles.number}>{line.stock_source === 'estimate_lower_bound' ? <Tooltip text="Нижняя оценка остатка">≈</Tooltip> : null}{formatQty(line.stock_free, line.unit)}</td><td className={styles.number}>{formatQty(line.in_transit, line.unit)}</td><td className={styles.number}>{formatQty(line.forecast_monthly, line.unit)}</td><td className={styles.number}>{formatQty(line.recommended_qty, line.unit)}</td><td className={`${styles.number} ${line.baseline_qty === 0 && line.recommended_qty > 0 ? styles.compare : ''}`}>{formatQty(line.baseline_qty, line.unit)}</td><td className={styles.number}>{formatQty(line.moq, line.unit)}</td><td><QuantityEditor key={`${line.line_id}:${line.final_qty}`} line={line} approved={summary.status === 'approved'} onSave={onSave} /></td><td><StatusBadge urgency={line.urgency} /></td><td className={styles.explanation} title={line.explanation}>{line.explanation}</td></tr>)}</tbody></table></div>
-    <div className={styles.cards}>{lines.map((line) => <OrderCard key={line.line_id} line={line} approved={summary.status === 'approved'} selected={selectedId === line.line_id} onSelect={onSelect} onSave={onSave} />)}</div>
+    <div className={styles.tableScroll} role="region" aria-label={`Таблица заказов ${summary.supplier_name}`} tabIndex={0}><table><thead><tr><th>Товар</th><th>Остаток</th><th>В пути</th><th>Прогноз/мес</th><th>Наш расчёт</th><th>Excel</th><th>Кратность</th><th>Итог</th><th>Срочность</th><th>Обоснование</th></tr></thead><tbody>{pageLines.map((line) => <tr key={line.line_id} className={selectedId === line.line_id ? styles.selected : ''}><td className={styles.productCell}><span className={styles.sku}>{line.sku}{line.article ? ` · ${line.article}` : ''}</span><button className={styles.productButton} type="button" onClick={() => onSelect(line)}>{line.name}</button></td><td className={styles.number}>{line.stock_source === 'estimate_lower_bound' ? <Tooltip text="Нижняя оценка остатка">≈</Tooltip> : null}{formatQty(line.stock_free, line.unit)}</td><td className={styles.number}>{formatQty(line.in_transit, line.unit)}</td><td className={styles.number}>{formatQty(line.forecast_monthly, line.unit)}</td><td className={styles.number}>{formatQty(line.recommended_qty, line.unit)}</td><td className={`${styles.number} ${line.baseline_qty === 0 && line.recommended_qty > 0 ? styles.compare : ''}`}>{formatQty(line.baseline_qty, line.unit)}</td><td className={styles.number}>{formatQty(line.moq, line.unit)}</td><td><QuantityEditor key={`${line.line_id}:${line.final_qty}`} line={line} approved={summary.status === 'approved'} onSave={onSave} /></td><td><StatusBadge urgency={line.urgency} /></td><td className={styles.explanation} title={line.explanation}>{line.explanation}</td></tr>)}</tbody></table></div>
+    <div className={styles.cards}>{pageLines.map((line) => <OrderCard key={line.line_id} line={line} approved={summary.status === 'approved'} selected={selectedId === line.line_id} onSelect={onSelect} onSave={onSave} />)}</div>
+    {pageCount > 1 && <nav className={styles.pagination} aria-label={`Страницы заказов ${summary.supplier_name}`}><span>Показаны {formatNumber(currentPage * pageSize + 1)}–{formatNumber(currentPage * pageSize + pageLines.length)} из {formatNumber(lines.length)}</span><div><Button type="button" disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>Назад</Button><span>Страница {formatNumber(currentPage + 1)} из {formatNumber(pageCount)}</span><Button type="button" disabled={currentPage >= pageCount - 1} onClick={() => setPage(currentPage + 1)}>Далее</Button></div></nav>}
     <Dialog open={confirm} onOpenChange={setConfirm} title={`Утвердить заказ ${summary.supplier_name}?`}><p>После утверждения количества этого поставщика нельзя будет изменить.</p><div className={styles.dialogActions}><Button type="button" onClick={() => setConfirm(false)}>Отмена</Button><Button type="button" variant="primary" loading={busy} onClick={() => void action(async () => { await onApprove(summary.supplier); setConfirm(false); })}>Утвердить</Button></div></Dialog>
   </section>;
 }
@@ -102,9 +110,12 @@ function UploadDialog({ open, onOpenChange, onUploaded }: { open: boolean; onOpe
 export default function App() {
   const queryClient = useQueryClient();
   const autoRunAttempted = useRef(false);
+  const manualRunStarted = useRef(false);
+  const historyProbeAttempted = useRef<string | null>(null);
+  const runRecoveryAttempted = useRef(false);
   const [view, setView] = useState<View>(readView);
   const [params, setParams] = useState<RunParams>(initialParams);
-  const [runId, setRunId] = useState<string | null>(() => sessionStorage.getItem('grimstack-run-id'));
+  const [runId, setRunId] = useState<string | null>(() => import.meta.env.VITE_MOCK === '1' ? null : sessionStorage.getItem('grimstack-run-id'));
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [summary, setSummary] = useState<{ text: string; cached: boolean } | null>(null);
@@ -124,27 +135,43 @@ export default function App() {
   useEffect(() => {
     if (!metaQuery.isSuccess || runId || autoRunAttempted.current) return;
     autoRunAttempted.current = true;
-    let active = true;
     setBootstrapping(true);
     void (async () => {
       try {
         const result = await (await getApi()).createRun(initialParams);
-        if (!active) return;
+        if (manualRunStarted.current) return;
         sessionStorage.setItem('grimstack-run-id', result.run_id);
         queryClient.setQueryData(['run', result.run_id], result);
         setRunId(result.run_id);
       } catch (cause) {
-        if (active) setError(cause instanceof Error ? cause.message : 'Расчёт не выполнен');
-      } finally { if (active) setBootstrapping(false); }
+        setError(cause instanceof Error ? cause.message : 'Расчёт не выполнен');
+      } finally { setBootstrapping(false); }
     })();
-    return () => { active = false; };
   }, [metaQuery.isSuccess, queryClient, runId]);
-  useEffect(() => { if (runQuery.error instanceof ApiError && runQuery.error.status === 404) sessionStorage.removeItem('grimstack-run-id'); }, [runQuery.error]);
+  useEffect(() => {
+    if (!(runQuery.error instanceof ApiError) || runQuery.error.status !== 404) return;
+    sessionStorage.removeItem('grimstack-run-id');
+    if (!runRecoveryAttempted.current) { runRecoveryAttempted.current = true; autoRunAttempted.current = false; setRunId(null); }
+  }, [runQuery.error]);
   const run = runQuery.data;
   const selected = run?.lines.find((line) => line.line_id === selectedId) ?? null;
   const [analysisId, setAnalysisId] = useState<string>('');
-  const analysisLine = run?.lines.find((line) => line.line_id === analysisId) ?? run?.lines[0] ?? null;
+  const [analysisSearch, setAnalysisSearch] = useState('');
+  const analysisLine = run?.lines.find((line) => line.line_id === analysisId) ?? run?.lines.find((line) => line.supplier === 'IEK' && line.flags.includes('stockout_restored')) ?? run?.lines[0] ?? null;
+  const analysisOptions = useMemo(() => {
+    const needle = analysisSearch.trim().toLocaleLowerCase('ru-RU');
+    const matches = (run?.lines ?? []).filter((line) => !needle || `${line.supplier} ${line.sku} ${line.article ?? ''} ${line.name}`.toLocaleLowerCase('ru-RU').includes(needle)).slice(0, 49);
+    return analysisLine && !matches.some((line) => line.line_id === analysisLine.line_id) ? [analysisLine, ...matches] : matches;
+  }, [analysisLine, analysisSearch, run]);
   const analysisHistory = useQuery({ queryKey: ['history', analysisLine?.supplier, analysisLine?.sku], enabled: view === 'analytics' && Boolean(analysisLine), queryFn: async () => (await getApi()).getSkuHistory(analysisLine!.supplier, analysisLine!.sku) });
+  useEffect(() => {
+    if (import.meta.env.VITE_MOCK !== '1' || view !== 'analytics' || !run || !analysisHistory.isError || historyProbeAttempted.current === run.run_id) return;
+    historyProbeAttempted.current = run.run_id;
+    void Promise.any(run.lines.filter((line) => line.line_id !== analysisLine?.line_id).map(async (line) => ({ line, history: await (await getApi()).getSkuHistory(line.supplier, line.sku) }))).then(({ line, history }) => {
+      queryClient.setQueryData(['history', line.supplier, line.sku], history);
+      setAnalysisId(line.line_id);
+    }).catch(() => undefined);
+  }, [analysisHistory.isError, analysisLine?.line_id, queryClient, run, view]);
   const visibleLines = useMemo(() => (run?.lines ?? []).filter((line) => {
     const needle = search.toLocaleLowerCase('ru-RU');
     return (!urgency || line.urgency === urgency) && (!needle || `${line.sku} ${line.article ?? ''} ${line.name}`.toLocaleLowerCase('ru-RU').includes(needle));
@@ -152,6 +179,7 @@ export default function App() {
 
   async function calculate() {
     if (params.growth_pct < -90 || params.growth_pct > 500 || [params.lead_time_days, params.review_period_days].some((value) => value !== null && (value < 1 || value > 365)) || (params.service_level !== null && (params.service_level <= .5 || params.service_level >= 1))) { setError('Проверьте параметры: L/R — 1–365 дней, сервис — 50–100 %, прирост — от −90 до 500 %.'); return; }
+    manualRunStarted.current = true;
     setCalculating(true); setError(''); setNotice(''); setSelectedId(null);
     try { const result = await (await getApi()).createRun(params); sessionStorage.setItem('grimstack-run-id', result.run_id); queryClient.setQueryData(['run', result.run_id], result); setRunId(result.run_id); }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Расчёт не выполнен'); }
@@ -166,28 +194,60 @@ export default function App() {
   async function approve(supplier: Supplier) { if (!runId) return; await (await getApi()).approveSupplier(runId, supplier); await queryClient.invalidateQueries({ queryKey: ['run', runId] }); }
   async function exportFile(supplier: Supplier) { if (!runId) return; const file = await (await getApi()).exportXlsx(runId, supplier); saveBlob(file.blob, file.filename ?? `order_${supplier}_${new Date().toISOString().slice(0, 10)}.xlsx`); }
   async function showSummary(supplier: Supplier) { if (!runId) return; const result = await (await getApi()).getSummary(runId, supplier); setSummary(result); }
-  function resetRun() { sessionStorage.removeItem('grimstack-run-id'); setRunId(null); setSelectedId(null); }
+  function resetRun() { autoRunAttempted.current = true; manualRunStarted.current = true; sessionStorage.removeItem('grimstack-run-id'); setRunId(null); setSelectedId(null); }
   function navigate(next: View) {
     if (next !== view) { window.history.pushState(null, '', next === 'overview' ? '/' : `/${next}`); setView(next); setSelectedId(null); window.scrollTo({ top: 0, behavior: 'instant' }); }
   }
 
-  return <PageShell>
-    <header className={styles.pageHeader}><div><p className={styles.eyebrow}>GrimStack · закупки</p><h1>Планирование заказов</h1></div><div className={styles.headerMeta}>{import.meta.env.VITE_MOCK === '1' && <span className={styles.demoBadge}>Демо-данные</span>}<span>Данные на {formatDate(run?.data_as_of ?? metaQuery.data?.data_as_of)}</span></div></header>
-    {import.meta.env.VITE_MOCK === '1' && <InlineAlert tone="warning">Демонстрационный режим: образец получен из реального расчёта. Изменение параметров и загрузка файлов не пересчитывают его.</InlineAlert>}
-    {metaQuery.isError && <InlineAlert tone="error">Не удалось загрузить параметры: {metaQuery.error.message} <Button type="button" onClick={() => void metaQuery.refetch()}>Повторить</Button></InlineAlert>}
-    <Parameters meta={metaQuery.data} params={params} setParams={setParams} onCalculate={() => void calculate()} calculating={calculating} onOpenUpload={() => setUploadOpen(true)} />
-    {error && <InlineAlert tone="error">{error}</InlineAlert>}{notice && <InlineAlert tone="info">{notice}</InlineAlert>}
-    {calculating && <Skeleton label="Расчёт ассортимента" />}
-    {runQuery.isError && !calculating && <InlineAlert tone="error">{runQuery.error instanceof ApiError && runQuery.error.status === 404 ? 'Прогон больше не существует. Запустите новый расчёт.' : runQuery.error.message} <Button type="button" onClick={resetRun}>Новый расчёт</Button></InlineAlert>}
-    {run && !calculating && <>
-      <div className={styles.runMeta}><span>Расчёт от {formatDate(run.created_at)} · {import.meta.env.VITE_MOCK === '1' ? 'Образец нашего расчёта' : run.params.method === 'analyze' ? 'Наш расчёт' : 'Excel-метод'}</span><span>Прогон: {run.run_id}</span></div>
-      {run.warnings.map((warning, index) => <InlineAlert key={`${warning}-${index}`} tone="warning">{warning}</InlineAlert>)}
-      <section className={styles.kpis} aria-label="Главные показатели"><KpiMetric label="К заказу" value={`${formatNumber(run.kpi.lines_to_order)} поз.`} /><KpiMetric label="Срочно" value={formatNumber(run.kpi.critical)} critical /><KpiMetric label="Разовых исключено" value={`${formatNumber(run.kpi.oneoff_units_excluded)} шт.`} /><KpiMetric label="Спрос восстановлен" value={`${formatNumber(run.kpi.stockout_units_restored)} шт.`} /></section>
-      <div className={styles.secondaryMetrics}>Позиции с излишком: {formatNumber(run.kpi.overstock_lines)} · Оценочная сумма по данным с ценами: {formatMoney(run.kpi.total_amount)}</div>
-      <div className={`${styles.workspace} ${selected ? styles.withDetail : ''}`}><SectionPanel className={styles.orders} aria-labelledby="orders-heading"><div className={styles.ordersHeading}><h2 id="orders-heading">Заказы поставщикам</h2><div className={styles.filters}><Field id="search" label="Поиск по коду, артикулу, названию" value={search} onChange={(event) => setSearch(event.target.value)} /><Select id="urgency-filter" label="Срочность" value={urgency} onChange={(event) => setUrgency(event.target.value as Urgency | '')}><option value="">Все</option><option value="critical">Срочно</option><option value="high">Скоро</option><option value="planned">Плановый</option><option value="none">Без заказа</option></Select></div></div>{run.lines.length === 0 ? <p>Заказывать нечего</p> : run.suppliers.map((supplier) => <SupplierOrders key={supplier.supplier} summary={supplier} lines={visibleLines.filter((line) => line.supplier === supplier.supplier)} selectedId={selectedId} onSelect={(line) => setSelectedId(line.line_id)} onSave={saveLine} onApprove={approve} onExport={exportFile} onSummary={showSummary} />)}</SectionPanel>{selected && <><button className={styles.backdrop} type="button" aria-label="Закрыть детали" onClick={() => setSelectedId(null)} /><SkuPanel line={selected} onClose={() => setSelectedId(null)} /></>}</div>
-    </>}
-    {!run && !calculating && !runQuery.isError && <SectionPanel className={styles.empty}><h2>Начните с расчёта</h2><p>Выберите параметры и нажмите «Рассчитать». Затем можно проверить каждую позицию, изменить количество и выгрузить заказ.</p></SectionPanel>}
+  const title = { overview: 'Обзор закупок', orders: 'Заказы поставщикам', analytics: 'Аналитика спроса', data: 'Данные и расчёт' }[view];
+  const subtitle = { overview: 'Операционная картина по текущему расчёту', orders: 'Проверка, корректировка и утверждение заказа', analytics: 'Причины рекомендаций и динамика спроса', data: 'Источники и параметры планирования' }[view];
+
+  return <div className={styles.appLayout}>
+    <aside className={styles.sidebar} aria-label="Навигация">
+      <div className={styles.brand}><span className={styles.brandMark}>G<span>.</span></span><div><strong>GRIMSTACK</strong><small>SUPPLY INTELLIGENCE</small></div></div>
+      <div className={styles.navCaption}>РАБОЧАЯ ОБЛАСТЬ</div>
+      <nav className={styles.nav}>{viewItems.map((item) => <a key={item.id} href={item.id === 'overview' ? '/' : `/${item.id}`} aria-current={view === item.id ? 'page' : undefined} className={view === item.id ? styles.activeNav : ''} onClick={(event) => { event.preventDefault(); navigate(item.id); }}><span>{item.number}</span>{item.label}<b aria-hidden="true">↗</b></a>)}</nav>
+      <div className={styles.sidebarBottom}><span className={styles.statusDot} />{run ? 'Расчёт активен' : bootstrapping ? 'Идёт расчёт' : 'Нет расчёта'}<small>Данные на {formatDate(run?.data_as_of ?? metaQuery.data?.data_as_of)}</small></div>
+    </aside>
+
+    <div className={styles.mainColumn}>
+      <header className={styles.topbar}><span>ПЛАТФОРМА ЗАКУПОК <span className={styles.topbarSlash}>/</span> {title.toUpperCase()}</span><div>{import.meta.env.VITE_MOCK === '1' && <span className={styles.demoBadge}>Демо-данные</span>}<span className={styles.topbarDate}>Обновлено {formatDate(run?.created_at ?? metaQuery.data?.data_as_of)}</span></div></header>
+      <main id="main-content" className={styles.content}>
+        <header className={styles.pageHeader}><div><p className={styles.eyebrow}>GRIMSTACK / {viewItems.find((item) => item.id === view)?.number}</p><h1>{title}</h1><p className={styles.subtitle}>{subtitle}</p></div>{view !== 'data' && <Button type="button" variant="primary" onClick={() => navigate('data')}>Параметры расчёта <span aria-hidden="true">↗</span></Button>}</header>
+        {metaQuery.isError && <InlineAlert tone="error">Не удалось загрузить параметры: {metaQuery.error.message} <Button type="button" onClick={() => void metaQuery.refetch()}>Повторить</Button></InlineAlert>}
+        {error && <InlineAlert tone="error">{error}</InlineAlert>}{notice && <InlineAlert tone="info">{notice}</InlineAlert>}
+        {(calculating || bootstrapping || runQuery.isPending && Boolean(runId)) && <Skeleton label="Формирование расчёта" />}
+        {runQuery.isError && !calculating && <InlineAlert tone="error">{runQuery.error instanceof ApiError && runQuery.error.status === 404 ? 'Расчёт больше не существует.' : runQuery.error.message} <Button type="button" onClick={() => { resetRun(); navigate('data'); }}>Новый расчёт</Button></InlineAlert>}
+        {run && !calculating && <div className={styles.runMeta}><span>Расчёт от {formatDate(run.created_at)} · {import.meta.env.VITE_MOCK === '1' ? 'Демонстрационный образец' : run.params.method === 'analyze' ? 'Аналитический метод' : 'Excel-метод'}</span><span>ID {run.run_id}</span></div>}
+        {run && run.warnings.length > 0 && view !== 'data' && <button className={styles.warningLink} type="button" onClick={() => navigate('data')}>{formatNumber(run.warnings.length)} примечания к данным <span aria-hidden="true">↗</span></button>}
+        {run && view === 'data' && run.warnings.map((warning, index) => <InlineAlert key={`${warning}-${index}`} tone="warning">{warning}</InlineAlert>)}
+        {view === 'data' && import.meta.env.VITE_MOCK === '1' && <InlineAlert tone="info">Демо-режим показывает фиксированный образец расчёта. Изменение параметров и загрузка файлов не меняют его значения.</InlineAlert>}
+
+        {view === 'overview' && run && !calculating && <>
+          <section className={styles.kpis} aria-label="Главные показатели"><KpiMetric label="Позиций к заказу" value={formatNumber(run.kpi.lines_to_order)} /><KpiMetric label="Срочные позиции" value={formatNumber(run.kpi.critical)} critical /><KpiMetric label="Исключено разовых продаж" value={formatNumber(run.kpi.oneoff_units_excluded)} /><KpiMetric label="Восстановлено спроса" value={formatNumber(run.kpi.stockout_units_restored)} /></section>
+          <div className={styles.chartGrid}>
+            <SectionPanel className={styles.chartPanel}><div className={styles.sectionHeading}><div><p className={styles.sectionKicker}>СТРУКТУРА ПОРТФЕЛЯ</p><h2>Риск по позициям</h2></div><span>{formatNumber(run.lines.length)} SKU</span></div><Suspense fallback={<Skeleton label="Загрузка структуры заказов" />}><RiskChart run={run} /></Suspense></SectionPanel>
+            <SectionPanel className={styles.chartPanel}><div className={styles.sectionHeading}><div><p className={styles.sectionKicker}>ПЛАН ЗАКУПОК</p><h2>Позиции по поставщикам</h2></div><span>Количество SKU</span></div><Suspense fallback={<Skeleton label="Загрузка заказов поставщиков" />}><SupplierChart run={run} /></Suspense></SectionPanel>
+          </div>
+          <div className={styles.overviewGrid}>
+            <SectionPanel><div className={styles.sectionHeading}><div><p className={styles.sectionKicker}>ТРЕБУЮТ ВНИМАНИЯ</p><h2>Срочные позиции</h2></div><button className={styles.textAction} type="button" onClick={() => { setUrgency('critical'); navigate('orders'); }}>Все заказы ↗</button></div><div className={styles.priorityList}>{run.lines.filter((line) => line.urgency === 'critical').slice(0, 5).map((line) => <button key={line.line_id} type="button" onClick={() => { navigate('orders'); setSelectedId(line.line_id); }}><span><small>{line.supplier} · {line.sku}</small><strong>{line.name}</strong></span><span className={styles.priorityQty}>{formatQty(line.final_qty, line.unit)}<small>к заказу</small></span></button>)}{run.kpi.critical === 0 && <p className={styles.muted}>Срочных позиций нет.</p>}</div></SectionPanel>
+            <SectionPanel><div className={styles.sectionHeading}><div><p className={styles.sectionKicker}>ПОСТАВЩИКИ</p><h2>Состояние заказов</h2></div></div><div className={styles.supplierOverview}>{run.suppliers.map((supplier) => <button key={supplier.supplier} type="button" onClick={() => navigate('orders')}><span><strong>{supplier.supplier_name}</strong><small>{formatNumber(supplier.lines_count)} поз. · {formatNumber(supplier.critical_count)} срочных</small></span><OrderStatus status={supplier.status} /></button>)}</div><div className={styles.overviewFoot}>Позиций с излишком: <strong>{formatNumber(run.kpi.overstock_lines)}</strong><br />Оценочная сумма по доступным ценам: <strong>{formatMoney(run.kpi.total_amount)}</strong></div></SectionPanel>
+          </div>
+        </>}
+
+        {view === 'orders' && run && !calculating && <div className={`${styles.workspace} ${selected ? styles.withDetail : ''}`}><SectionPanel className={styles.orders} aria-labelledby="orders-heading"><div className={styles.ordersHeading}><div><p className={styles.sectionKicker}>РАБОЧИЙ РЕЕСТР</p><h2 id="orders-heading">Позиции к заказу</h2></div><div className={styles.filters}><Field id="search" label="Поиск по коду, артикулу, названию" value={search} onChange={(event) => setSearch(event.target.value)} /><Select id="urgency-filter" label="Срочность" value={urgency} onChange={(event) => setUrgency(event.target.value as Urgency | '')}><option value="">Все</option><option value="critical">Срочно</option><option value="high">Скоро</option><option value="planned">Плановый</option><option value="none">Без заказа</option></Select></div></div>{run.lines.length === 0 ? <p>В этом расчёте нет позиций к заказу.</p> : visibleLines.length === 0 ? <p>По выбранным фильтрам позиций нет.</p> : run.suppliers.filter((supplier) => visibleLines.some((line) => line.supplier === supplier.supplier)).map((supplier) => <SupplierOrders key={`${supplier.supplier}:${search}:${urgency}`} summary={supplier} lines={visibleLines.filter((line) => line.supplier === supplier.supplier)} selectedId={selectedId} onSelect={(line) => setSelectedId(line.line_id)} onSave={saveLine} onApprove={approve} onExport={exportFile} onSummary={showSummary} />)}</SectionPanel>{selected && <><button className={styles.backdrop} type="button" aria-label="Закрыть детали" onClick={() => setSelectedId(null)} /><SkuPanel line={selected} onClose={() => setSelectedId(null)} /></>}</div>}
+
+        {view === 'analytics' && run && !calculating && <>
+          <div className={styles.chartGrid}><SectionPanel className={styles.chartPanel}><div className={styles.sectionHeading}><div><p className={styles.sectionKicker}>СОПОСТАВЛЕНИЕ МЕТОДОВ</p><h2>Где расчёты расходятся</h2></div><span>Топ 8 по относительной разнице</span></div><Suspense fallback={<Skeleton label="Загрузка сравнения методов" />}><ComparisonChart run={run} /></Suspense></SectionPanel><SectionPanel className={styles.chartPanel}><div className={styles.sectionHeading}><div><p className={styles.sectionKicker}>РИСК ДЕФИЦИТА</p><h2>Распределение позиций</h2></div></div><Suspense fallback={<Skeleton label="Загрузка структуры заказов" />}><RiskChart run={run} /></Suspense><div className={styles.analysisFacts}><div><span>Исключено разовых</span><strong>{formatNumber(run.kpi.oneoff_units_excluded)}</strong></div><div><span>Восстановлено при дефиците</span><strong>{formatNumber(run.kpi.stockout_units_restored)}</strong></div></div></SectionPanel></div>
+          <SectionPanel className={styles.historyPanel}><div className={styles.sectionHeading}><div><p className={styles.sectionKicker}>ИСТОРИЯ ТОВАРА</p><h2>Продажи и прогноз</h2></div><div className={styles.analysisPicker}><Field id="analysis-search" label="Найти SKU" value={analysisSearch} onChange={(event) => setAnalysisSearch(event.target.value)} placeholder="Код, артикул или название" /><Select id="analysis-sku" label="Позиция" value={analysisLine?.line_id ?? ''} onChange={(event) => setAnalysisId(event.target.value)}>{analysisOptions.map((line) => <option key={line.line_id} value={line.line_id}>{line.supplier} · {line.sku} · {line.name}</option>)}</Select></div></div>{analysisLine && <p className={styles.historyDescription}>{analysisLine.explanation}</p>}{analysisLine && (analysisHistory.isPending ? <Skeleton label="Загрузка истории продаж" /> : analysisHistory.isError ? <InlineAlert tone="error">{analysisHistory.error.message}</InlineAlert> : <Suspense fallback={<Skeleton label="Загрузка графика" />}><HistoryChart history={analysisHistory.data} /></Suspense>)}</SectionPanel>
+        </>}
+
+        {view === 'data' && <div className={styles.dataLayout}><div><SectionPanel><div className={styles.sectionHeading}><div><p className={styles.sectionKicker}>МОДЕЛЬ ПЛАНИРОВАНИЯ</p><h2>Параметры расчёта</h2></div></div><Parameters meta={metaQuery.data} params={params} setParams={setParams} onCalculate={() => void calculate()} calculating={calculating} onOpenUpload={() => setUploadOpen(true)} /></SectionPanel></div><div className={styles.dataAside}><SectionPanel><p className={styles.sectionKicker}>ИСТОЧНИК</p><h2>Набор данных</h2><p className={styles.muted}>{params.dataset_id ? `Загруженный набор ${params.dataset_id}` : 'Встроенные выгрузки поставщиков'}</p><dl><div><dt>Дата данных</dt><dd>{formatDate(run?.data_as_of ?? metaQuery.data?.data_as_of)}</dd></div><div><dt>Поставщиков</dt><dd>{formatNumber(metaQuery.data?.suppliers.length ?? null)}</dd></div><div><dt>Активный расчёт</dt><dd>{run ? formatDate(run.created_at) : 'Нет'}</dd></div></dl><Button type="button" onClick={() => setUploadOpen(true)}>Загрузить выгрузки</Button></SectionPanel>{run && <SectionPanel><p className={styles.sectionKicker}>РЕЗУЛЬТАТ</p><h2>Текущий расчёт</h2><p className={styles.muted}>{formatNumber(run.kpi.lines_to_order)} позиций к заказу · {formatNumber(run.kpi.critical)} срочных</p><Button type="button" variant="primary" onClick={() => navigate('orders')}>Открыть заказы ↗</Button></SectionPanel>}</div></div>}
+
+        {!run && !calculating && !bootstrapping && !runQuery.isError && view !== 'data' && <SectionPanel className={styles.empty}><p className={styles.sectionKicker}>РАСЧЁТ НЕ АКТИВЕН</p><h2>Данные готовы к планированию</h2><p>Запустите расчёт по текущим выгрузкам, чтобы увидеть заказы и аналитику.</p><Button type="button" variant="primary" onClick={() => navigate('data')}>Перейти к расчёту</Button></SectionPanel>}
+      </main>
+    </div>
     <UploadDialog open={uploadOpen} onOpenChange={setUploadOpen} onUploaded={(datasetId, supplier, warnings) => { resetRun(); setParams((current) => ({ ...current, supplier, category: null, lead_time_days: null, review_period_days: null, dataset_id: datasetId })); setNotice(`Набор ${datasetId} загружен. Запустите новый расчёт. ${warnings.join(' ')}`); }} />
     <Dialog open={summary !== null} onOpenChange={(open) => { if (!open) setSummary(null); }} title="Сводка по заказу">{summary && <><p>{summary.text}</p>{summary.cached && <p>Из кэша</p>}<div className={styles.dialogActions}><Button type="button" onClick={() => setSummary(null)}>Закрыть</Button></div></>}</Dialog>
-  </PageShell>;
+  </div>;
 }

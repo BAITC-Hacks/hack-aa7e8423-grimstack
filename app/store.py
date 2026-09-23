@@ -1,6 +1,7 @@
 """Данные процесса и операции над сохранёнными прогонами."""
 
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
@@ -35,7 +36,8 @@ class Store:
         dataset = ingest.load_uploaded(supplier, files)
         dataset_id = uuid4().hex[:12]
         self.datasets[dataset_id] = dataset
-        return DatasetUploaded(dataset_id=dataset_id, supplier=supplier, warnings=[])
+        warnings = [] if "sales_tx" in files else ["Без строк продаж очистка разовых заказов и оценка дней наличия ограничены"]
+        return DatasetUploaded(dataset_id=dataset_id, supplier=supplier, warnings=warnings)
 
     def line(self, run: RunResult, line_id: str) -> OrderLine | None:
         return next((line for line in run.lines if line.line_id == line_id), None)
@@ -63,8 +65,19 @@ class Store:
                   "lines": [{"line_id": line.line_id, "final_qty": line.final_qty}
                             for line in run.lines if line.supplier == summary.supplier]}
         APPROVALS.parent.mkdir(parents=True, exist_ok=True)
-        with APPROVALS.open("a", encoding="utf-8") as file:
-            file.write(json.dumps(record, ensure_ascii=False, allow_nan=False) + "\n")
+        if APPROVALS.exists():
+            content = APPROVALS.read_text(encoding="utf-8")
+            try:
+                records = json.loads(content)
+            except json.JSONDecodeError:
+                records = [json.loads(line) for line in content.splitlines() if line.strip()]
+        else:
+            records = []
+        records.append(record)
+        temporary = APPROVALS.with_suffix(".json.tmp")
+        temporary.write_text(json.dumps(records, ensure_ascii=False, allow_nan=False, indent=2) + "\n",
+                             encoding="utf-8")
+        os.replace(temporary, APPROVALS)
         summary.status = "approved"
         summary.approved_at = datetime.fromisoformat(record["approved_at"])
 

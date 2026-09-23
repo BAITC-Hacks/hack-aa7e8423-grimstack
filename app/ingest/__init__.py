@@ -76,6 +76,8 @@ def load_uploaded(supplier: Supplier, files: dict[str, bytes]) -> Dataset:
         for role, content in files.items():
             (folder / f"{role}.xlsx").write_bytes(content)
         try:
-            return loader(folder, AS_OF)
+            data = loader(folder, AS_OF)
+            apply_product_groups(data, _CATEGORIES_CSV)
+            return data
         except Exception as exc:
             raise IngestError("bad_format", f"Не удалось разобрать файл: {exc}") from exc

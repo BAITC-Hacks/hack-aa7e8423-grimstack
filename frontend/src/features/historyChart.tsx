@@ -15,7 +15,7 @@ export default function HistoryChart({ history }: { history: SkuHistory }) {
   const options: ApexOptions = {
     chart: { background: 'transparent', toolbar: { show: false }, animations: { enabled: false } },
     colors: [color('--text'), color('--text-muted'), color('--success'), color('--accent')],
-    theme: { mode: 'dark' },
+    theme: { mode: 'light' },
     xaxis: { categories: months, labels: { rotate: -45 } },
     yaxis: { labels: { formatter: (value) => formatNumber(value) } },
     legend: { show: true, position: 'bottom' },
