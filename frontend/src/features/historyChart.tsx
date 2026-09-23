@@ -12,17 +12,35 @@ export default function HistoryChart({ history }: { history: SkuHistory }) {
   const forecast = history.months.length > 0
     ? [...Array<null>(history.months.length - 1).fill(null), history.restored.at(-1) ?? null, ...history.forecast]
     : [...history.forecast];
+  const stockoutBands = history.months.flatMap((month, index) => {
+    if (!history.stockout[index] || history.stockout[index - 1]) return [];
+    let endIndex = index + 1;
+    while (endIndex < history.months.length && history.stockout[endIndex]) endIndex += 1;
+    // Координата за пределами графика обрезается до его правой границы.
+    const end = months[endIndex] ?? '100000px';
+    return [{
+      x: month,
+      x2: end,
+      fillColor: color('--critical-soft'),
+      opacity: 0.55,
+      borderColor: color('--critical'),
+      label: {
+        text: 'Нет товара',
+        style: { background: color('--critical-soft'), color: color('--text') },
+      },
+    }];
+  });
   const options: ApexOptions = {
     chart: { background: 'transparent', toolbar: { show: false }, animations: { enabled: false } },
-    colors: [color('--text'), color('--text-muted'), color('--success'), color('--accent')],
+    colors: [color('--border-strong'), color('--series-1'), color('--series-2'), color('--series-3')],
     theme: { mode: 'light' },
-    xaxis: { categories: months, labels: { rotate: -45 } },
+    xaxis: { categories: months, labels: { rotate: 0, formatter: (value) => /^\d{4}-(01|04|07|10)$/.test(String(value)) ? String(value) : '' } },
     yaxis: { labels: { formatter: (value) => formatNumber(value) } },
     legend: { show: true, position: 'bottom' },
-    stroke: { width: [2, 1, 2, 2], dashArray: [0, 0, 0, 6] },
+    stroke: { width: [1, 2, 2, 2], dashArray: [0, 0, 0, 6] },
     tooltip: { shared: true },
     grid: { borderColor: color('--border') },
-    annotations: { xaxis: history.months.flatMap((month, index) => history.stockout[index] ? [{ x: month, borderColor: color('--critical'), label: { text: 'Нет товара', style: { background: color('--critical-soft'), color: color('--text') } } }] : []) },
+    annotations: { xaxis: stockoutBands },
   };
   const series = [
     { name: 'Продажи', data: pad(history.raw) },
