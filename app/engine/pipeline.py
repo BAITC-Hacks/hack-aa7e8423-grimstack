@@ -467,7 +467,7 @@ def meta(ds) -> Meta:
                                         lead_time_days=cfg["lead_time_days"],
                                         review_period_days=cfg["review_period_days"], categories=categories))
     product_groups = sorted({g for g in ds.skus["product_group"].dropna().unique() if g})
-    cache_dir = Path(__file__).resolve().parents[2] / "samples" / "cache"
-    llm_available = bool(os.getenv("OPENAI_API_KEY")) or (cache_dir.is_dir() and any(cache_dir.iterdir()))
+    from app.ai import has_cache
+    llm_available = bool(os.getenv("OPENAI_API_KEY") and os.getenv("MODEL")) or has_cache()
     return Meta(data_as_of=ds.as_of, suppliers=suppliers, product_groups=product_groups,
                 llm_available=llm_available)

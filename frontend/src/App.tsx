@@ -1,13 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError, type DatasetFiles } from './api/ProcurementApi';
 import { getApi } from './api/client';
 import type { FileRole, Meta, OrderLine, RunParams, Supplier, SupplierSummary, Urgency } from './api/types';
 import { SkuPanel } from './features/SkuPanel';
+import { ComparisonChart, RiskChart, SupplierChart } from './features/RunCharts';
 import { saveBlob } from './shared/download';
 import { formatDate, formatMoney, formatNumber, formatQty } from './shared/format';
 import { isValidQuantity } from './shared/quantity';
-import { Button, Dialog, Field, InlineAlert, KpiMetric, OrderStatus, PageShell, SectionPanel, Select, Skeleton, StatusBadge, Tooltip } from './shared/ui';
+import { Button, Dialog, Field, InlineAlert, KpiMetric, OrderStatus, SectionPanel, Select, Skeleton, StatusBadge, Tooltip } from './shared/ui';
 import styles from './App.module.css';
 
 const initialParams: RunParams = { dataset_id: null, supplier: null, category: null, method: 'analyze', lead_time_days: null, review_period_days: null, service_level: null, growth_pct: 0 };
@@ -15,6 +16,18 @@ const urgencyOrder: Record<Urgency, number> = { critical: 0, high: 1, planned: 2
 const requiredRoles: FileRole[] = ['monthly_sales', 'monthly_stock', 'sales_tx', 'in_transit'];
 const allRoles: FileRole[] = [...requiredRoles, 'moq', 'seasonality'];
 const roleLabels: Record<FileRole, string> = { monthly_sales: 'Продажи по месяцам', monthly_stock: 'Остатки по месяцам', sales_tx: 'Строки продаж', in_transit: 'Товар в пути', moq: 'Кратность заказа', seasonality: 'Сезонность' };
+const HistoryChart = lazy(() => import('./features/historyChart'));
+type View = 'overview' | 'orders' | 'analytics' | 'data';
+const viewItems: { id: View; label: string; number: string }[] = [
+  { id: 'overview', label: 'Обзор', number: '01' },
+  { id: 'orders', label: 'Заказы', number: '02' },
+  { id: 'analytics', label: 'Аналитика', number: '03' },
+  { id: 'data', label: 'Данные и расчёт', number: '04' },
+];
+function readView(): View {
+  const value = window.location.pathname.slice(1).split('/')[0];
+  return viewItems.find((item) => item.id === value)?.id ?? 'overview';
+}
 
 function Parameters({ meta, params, setParams, onCalculate, calculating, onOpenUpload }: { meta: Meta | undefined; params: RunParams; setParams: (params: RunParams) => void; onCalculate: () => void; calculating: boolean; onOpenUpload: () => void }) {
   const supplierInfo = meta?.suppliers.find((item) => item.supplier === params.supplier);
@@ -88,6 +101,8 @@ function UploadDialog({ open, onOpenChange, onUploaded }: { open: boolean; onOpe
 
 export default function App() {
   const queryClient = useQueryClient();
+  const autoRunAttempted = useRef(false);
+  const [view, setView] = useState<View>(readView);
   const [params, setParams] = useState<RunParams>(initialParams);
   const [runId, setRunId] = useState<string | null>(() => sessionStorage.getItem('grimstack-run-id'));
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -96,13 +111,40 @@ export default function App() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [calculating, setCalculating] = useState(false);
+  const [bootstrapping, setBootstrapping] = useState(false);
   const [search, setSearch] = useState('');
   const [urgency, setUrgency] = useState<Urgency | ''>('');
   const metaQuery = useQuery({ queryKey: ['meta'], queryFn: async () => (await getApi()).getMeta() });
   const runQuery = useQuery({ queryKey: ['run', runId], enabled: Boolean(runId), queryFn: async () => (await getApi()).getRun(runId!) });
+  useEffect(() => {
+    const onPopState = () => setView(readView());
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+  useEffect(() => {
+    if (!metaQuery.isSuccess || runId || autoRunAttempted.current) return;
+    autoRunAttempted.current = true;
+    let active = true;
+    setBootstrapping(true);
+    void (async () => {
+      try {
+        const result = await (await getApi()).createRun(initialParams);
+        if (!active) return;
+        sessionStorage.setItem('grimstack-run-id', result.run_id);
+        queryClient.setQueryData(['run', result.run_id], result);
+        setRunId(result.run_id);
+      } catch (cause) {
+        if (active) setError(cause instanceof Error ? cause.message : 'Расчёт не выполнен');
+      } finally { if (active) setBootstrapping(false); }
+    })();
+    return () => { active = false; };
+  }, [metaQuery.isSuccess, queryClient, runId]);
   useEffect(() => { if (runQuery.error instanceof ApiError && runQuery.error.status === 404) sessionStorage.removeItem('grimstack-run-id'); }, [runQuery.error]);
   const run = runQuery.data;
   const selected = run?.lines.find((line) => line.line_id === selectedId) ?? null;
+  const [analysisId, setAnalysisId] = useState<string>('');
+  const analysisLine = run?.lines.find((line) => line.line_id === analysisId) ?? run?.lines[0] ?? null;
+  const analysisHistory = useQuery({ queryKey: ['history', analysisLine?.supplier, analysisLine?.sku], enabled: view === 'analytics' && Boolean(analysisLine), queryFn: async () => (await getApi()).getSkuHistory(analysisLine!.supplier, analysisLine!.sku) });
   const visibleLines = useMemo(() => (run?.lines ?? []).filter((line) => {
     const needle = search.toLocaleLowerCase('ru-RU');
     return (!urgency || line.urgency === urgency) && (!needle || `${line.sku} ${line.article ?? ''} ${line.name}`.toLocaleLowerCase('ru-RU').includes(needle));
@@ -125,6 +167,9 @@ export default function App() {
   async function exportFile(supplier: Supplier) { if (!runId) return; const file = await (await getApi()).exportXlsx(runId, supplier); saveBlob(file.blob, file.filename ?? `order_${supplier}_${new Date().toISOString().slice(0, 10)}.xlsx`); }
   async function showSummary(supplier: Supplier) { if (!runId) return; const result = await (await getApi()).getSummary(runId, supplier); setSummary(result); }
   function resetRun() { sessionStorage.removeItem('grimstack-run-id'); setRunId(null); setSelectedId(null); }
+  function navigate(next: View) {
+    if (next !== view) { window.history.pushState(null, '', next === 'overview' ? '/' : `/${next}`); setView(next); setSelectedId(null); window.scrollTo({ top: 0, behavior: 'instant' }); }
+  }
 
   return <PageShell>
     <header className={styles.pageHeader}><div><p className={styles.eyebrow}>GrimStack · закупки</p><h1>Планирование заказов</h1></div><div className={styles.headerMeta}>{import.meta.env.VITE_MOCK === '1' && <span className={styles.demoBadge}>Демо-данные</span>}<span>Данные на {formatDate(run?.data_as_of ?? metaQuery.data?.data_as_of)}</span></div></header>
@@ -135,7 +180,7 @@ export default function App() {
     {calculating && <Skeleton label="Расчёт ассортимента" />}
     {runQuery.isError && !calculating && <InlineAlert tone="error">{runQuery.error instanceof ApiError && runQuery.error.status === 404 ? 'Прогон больше не существует. Запустите новый расчёт.' : runQuery.error.message} <Button type="button" onClick={resetRun}>Новый расчёт</Button></InlineAlert>}
     {run && !calculating && <>
-      <div className={styles.runMeta}><span>Расчёт от {formatDate(run.created_at)} · {run.params.method === 'analyze' ? 'Наш расчёт' : 'Excel-метод'}</span><span>Прогон: {run.run_id}</span></div>
+      <div className={styles.runMeta}><span>Расчёт от {formatDate(run.created_at)} · {import.meta.env.VITE_MOCK === '1' ? 'Образец нашего расчёта' : run.params.method === 'analyze' ? 'Наш расчёт' : 'Excel-метод'}</span><span>Прогон: {run.run_id}</span></div>
       {run.warnings.map((warning, index) => <InlineAlert key={`${warning}-${index}`} tone="warning">{warning}</InlineAlert>)}
       <section className={styles.kpis} aria-label="Главные показатели"><KpiMetric label="К заказу" value={`${formatNumber(run.kpi.lines_to_order)} поз.`} /><KpiMetric label="Срочно" value={formatNumber(run.kpi.critical)} critical /><KpiMetric label="Разовых исключено" value={`${formatNumber(run.kpi.oneoff_units_excluded)} шт.`} /><KpiMetric label="Спрос восстановлен" value={`${formatNumber(run.kpi.stockout_units_restored)} шт.`} /></section>
       <div className={styles.secondaryMetrics}>Позиции с излишком: {formatNumber(run.kpi.overstock_lines)} · Оценочная сумма по данным с ценами: {formatMoney(run.kpi.total_amount)}</div>
