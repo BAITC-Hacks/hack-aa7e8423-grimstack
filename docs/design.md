@@ -210,11 +210,13 @@ docs/                                                                 [А]
    - `net = S − остаток − в пути (ETA ≤ горизонта)`, заказ `= ceil(net/кратность)·кратность`.
    - Не заказываем: маркер `!!!`, «Кат. 7», кратность 0.
    - 34 SKU IEK с пометкой «поддерживаем склад на 1 мес» получают целевое покрытие 1 месяц.
-7. **Срочность.** Дни покрытия = остаток / дневной прогноз.
+7. **Срочность** считается только для строк с заказом > 0. Дни покрытия =
+   (остаток + в пути с ETA ≤ L) / дневной прогноз.
    - `critical` — меньше L;
    - `high` — меньше L+R;
-   - `planned` — заказ больше 0;
-   - `none` — иначе.
+   - `planned` — иначе.
+
+   Строки без заказа получают `none`.
 
    Флаг `overstock` — если остаток плюс в пути больше `S` + 3 месяца спроса.
 
@@ -260,9 +262,12 @@ class RunParams(BaseModel):
     service_level: float | None = None        # None — по категории
     growth_pct: float = 0.0
 
-class Component(BaseModel):                   # шаг «водопада» обоснования
+class Component(BaseModel):                   # шаг обоснования
+    # kind="qty": шаг «водопада», все qty-компоненты в сумме дают recommended_qty
+    #   (horizon_demand + safety_stock + stock(−) + in_transit(−) + moq_rounding);
+    # kind="factor": множитель прогноза; kind="info": справочное количество, в сумму не входит
     key: str        # base | seasonality | trend | growth | oneoff_excluded | stockout_restored
-                    # | safety_stock | stock | in_transit | moq_rounding
+                    # | horizon_demand | safety_stock | stock | in_transit | moq_rounding
     label: str      # подпись по-русски
     value: float
     kind: Literal["qty", "factor", "info"]
