@@ -1,15 +1,36 @@
 # Ядро расчёта (ingest + engine): план реализации
 
-> **Для исполнителей-агентов:** задачи выполняются по TDD. Шаги — чекбоксы `- [ ]`.
-> Алгоритм задан формулами в [docs/design.md](../design.md) §4. Правила разбора файлов —
-> в [docs/data-profile.md](../data-profile.md) §1–2, §4. План фиксирует файлы, интерфейсы,
-> тесты и команды. Реализацию пишет исполнитель строго по этим формулам.
+План замены заглушек загрузки и расчёта на конвейер обработки реальных выгрузок IEK и SE.
+
+**Статус:** исходный план реализации от 23 сентября 2026 года. Чекбоксы и требования
+сохранены как часть плана и не отражают текущую готовность кода.
+
+## Содержание
+
+- [Контекст и цель](#контекст-и-цель)
+- [Глобальные ограничения](#глобальные-ограничения)
+- [Структура файлов](#структура-файлов)
+- [Задача 1: Dataset, общие помощники, конфиг, фабрика, приёмка (координатор)](#задача-1-dataset-общие-помощники-конфиг-фабрика-приёмка-координатор)
+- [Задача 2: загрузчик IEK](#задача-2-загрузчик-iek)
+- [Задача 3: загрузчик SE](#задача-3-загрузчик-se)
+- [Задача 4: очистка и stockout](#задача-4-очистка-и-stockout)
+- [Задача 5: прогноз, политика, объяснение, сборка результата](#задача-5-прогноз-политика-объяснение-сборка-результата)
+- [Задача 6: интеграция на реальных данных (координатор)](#задача-6-интеграция-на-реальных-данных-координатор)
+- [Порядок исполнения](#порядок-исполнения)
+
+## Контекст и цель
+
+Для исполнителей-агентов: задачи выполняются по TDD. Шаги — чекбоксы `- [ ]`.
+Алгоритм задан формулами в `docs/design.md` §4. Правила разбора файлов —
+в `docs/data-profile.md` §1–2, §4. План фиксирует файлы, интерфейсы,
+тесты и команды. Реализацию пишет исполнитель строго по этим формулам.
 
 **Цель.** Заменить заглушки `app/ingest` и `app/engine` на настоящий расчёт: реальные
 выгрузки IEK и SE → `RunResult` по контракту `app/contracts.py`. Должны пройти приёмка
 must-have и smoke-тест на реальных данных.
 
 **Архитектура.**
+
 - `ingest` приводит 6 xlsx поставщика к `Dataset` — набору канонических pandas-таблиц.
 - `engine` прогоняет `Dataset` через конвейер
   `cleaning → stockout → forecast → policy → explain` и собирает `RunResult`.
@@ -17,6 +38,7 @@ must-have и smoke-тест на реальных данных.
 
 **Стек.** Python 3.12, pandas 3, numpy, openpyxl, pydantic 2, pytest. Окружение:
 `uv venv --python 3.12 .venv && uv pip install -r requirements.txt`.
+Команды выполнять в корне репозитория, в терминале zsh/bash на macOS или WSL/Ubuntu на Windows.
 
 ## Глобальные ограничения
 
@@ -38,7 +60,7 @@ must-have и smoke-тест на реальных данных.
 ## Структура файлов
 
 | Файл | Ответственность | Задача |
-|---|---|---|
+| :-- | :-- | :-- |
 | `app/ingest/dataset.py` | `Dataset` + `concat()` | 1 |
 | `app/ingest/common.py` | месяцы из заголовков 1С, код, хэш документа, чтение листа | 1 |
 | `app/ingest/iek.py` | `load(folder, as_of) -> Dataset` для IEK | 2 |
@@ -59,9 +81,7 @@ must-have и smoke-тест на реальных данных.
 | `tests/engine/test_ingest_real.py` | загрузка реальных файлов | 2, 3 |
 | `tests/engine/test_real_data.py` | smoke всего расчёта + демо-SKU | 6 |
 
----
-
-### Задача 1: `Dataset`, общие помощники, конфиг, фабрика, приёмка (координатор)
+## Задача 1: `Dataset`, общие помощники, конфиг, фабрика, приёмка (координатор)
 
 **Файлы:** `app/ingest/dataset.py`, `app/ingest/common.py`, `app/engine/config.py`,
 `tests/engine/factory.py`, `tests/engine/test_acceptance.py`,
@@ -107,7 +127,8 @@ def make_dataset(series: dict[str, list[float]], *, supplier="IEK", stock=None, 
 def add_oneoff(ds, sku, day: date, qty) -> None   # строка в sales_tx и +qty в sales_monthly того же месяца
 ```
 
-**Тесты приёмки** (`tests/engine/test_acceptance.py`) — пять must-have из design.md §9:
+**Тесты приёмки** (`tests/engine/test_acceptance.py`) — пять must-have из `docs/design.md` §9:
+
 1. В пути уменьшает заказ. Остаток, прирост, категория и история меняют результат.
 2. Сезонный профиль: прогноз на октябрь больше, чем на декабрь, в 1.5 раза и выше;
    расхождение с плоским средним больше 20 %.
@@ -122,16 +143,14 @@ def add_oneoff(ds, sku, day: date, qty) -> None   # строка в sales_tx и 
 - [ ] `pytest tests/engine/test_acceptance.py` → FAIL: заглушка `engine.run` ещё отдаёт моки.
 - [ ] Коммит.
 
----
-
-### Задача 2: загрузчик IEK
+## Задача 2: загрузчик IEK
 
 **Файлы:** `app/ingest/iek.py`, `app/ingest/__init__.py` (`load_default`, путь данных),
 `tests/engine/test_ingest_real.py` (часть IEK).
 
 **Использует:** `Dataset`, `common.*`. **Производит:** `iek.load(folder: Path, as_of: date) -> Dataset`.
 
-Правила — data-profile.md §1, §2, §4.
+Правила — `docs/data-profile.md` §1, §2, §4.
 
 - **Роли и источники:**
   - `monthly_sales` — заголовок в строках 0–1, строка «Итого» и колонка «Итого» отбрасываются;
@@ -163,9 +182,7 @@ def add_oneoff(ds, sku, day: date, qty) -> None   # строка в sales_tx и 
 - [ ] `load_uploaded`: после валидации записать байты во временную папку `<role>.xlsx`
       и вызвать `<supplier>.load()`. Ошибки разбора → `IngestError("bad_format", …, role)`.
 
----
-
-### Задача 3: загрузчик SE
+## Задача 3: загрузчик SE
 
 **Файлы:** `app/ingest/se.py`, `tests/engine/test_ingest_real.py` (часть SE).
 
@@ -194,9 +211,7 @@ def add_oneoff(ds, sku, day: date, qty) -> None   # строка в sales_tx и 
 - [ ] Тест: по `300200428_` остаток 1 174.
 - [ ] Прогнать → FAIL, реализовать → PASS.
 
----
-
-### Задача 4: очистка и stockout
+## Задача 4: очистка и stockout
 
 **Файлы:** `app/engine/cleaning.py`, `app/engine/stockout.py`, `tests/engine/test_units.py`.
 
@@ -217,8 +232,9 @@ def restore(cleaned: pd.DataFrame, stock_monthly: pd.DataFrame, tx: pd.DataFrame
     #                              types той же формы: None|'full'|'start'|'end'|'effective')
 ```
 
-**Правило разовой строки** (design.md §4 п. 2). Статистика SKU считается по строкам без
+**Правило разовой строки** (`docs/design.md` §4 п. 2). Статистика SKU считается по строкам без
 паллетов; нужно ≥ 5 строк, у SE ≥ 20. Строка отмечается, если выполнено (B) или (U).
+
 - (B) — все условия одновременно:
   - `q > 5·медиана`;
   - `q > Q3 + 3·IQR`;
@@ -230,7 +246,8 @@ def restore(cleaned: pd.DataFrame, stock_monthly: pd.DataFrame, tx: pd.DataFrame
 `capped_to` = медиана строк SKU, `excess = qty − capped_to`. Документ с ≥ 3 отмеченными
 строками получает `project = True`.
 
-**Stockout** (design.md §4 п. 3):
+**Stockout** (`docs/design.md` §4 п. 3):
+
 - `open = S[m]`, `close = S[m+1]`; тип месяца `full` / `start` / `end` / `effective`
   (`open < 0.25·база`);
 - SKU активен, если продавался в 6 месяцах до и в 6 месяцах после;
@@ -252,9 +269,7 @@ def restore(cleaned: pd.DataFrame, stock_monthly: pd.DataFrame, tx: pd.DataFrame
   - месяц без stockout получает 0.
 - [ ] FAIL → реализация → PASS.
 
----
-
-### Задача 5: прогноз, политика, объяснение, сборка результата
+## Задача 5: прогноз, политика, объяснение, сборка результата
 
 **Файлы:** `app/engine/forecast.py`, `app/engine/policy.py`, `app/engine/explain.py`,
 `app/engine/pipeline.py`, `app/engine/__init__.py`.
@@ -267,6 +282,7 @@ def restore(cleaned: pd.DataFrame, stock_monthly: pd.DataFrame, tx: pd.DataFrame
 `engine.history(data, supplier, sku, params) -> SkuHistory`, `engine.meta(data) -> Meta`.
 
 **Конвейер `analyze`:**
+
 - `raw` = `sales_monthly` за закрытые месяцы, отрицательные значения → 0;
 - `cleaned = max(0, raw − excess)`;
 - `demand = cleaned + added`;
@@ -289,12 +305,13 @@ def restore(cleaned: pd.DataFrame, stock_monthly: pd.DataFrame, tx: pd.DataFrame
 - не заказывать (qty = 0, флаг `do_not_order`): `discontinued`, категория «Кат. 7»,
   `moq == 0`, нет продаж 12 месяцев;
 - `keep_1m`: горизонт ограничен 30 днями;
-- срочность — design.md §4 п. 7;
+- срочность — `docs/design.md` §4 п. 7;
 - флаги: `seasonal` (размах профиля ≥ 1.5), `trend_up` (T ≥ 1.05), `trend_down` (T ≤ 0.95),
   `intermittent`, `overstock`, `approx_stock`, `oneoff_excluded`, `project_order`,
   `stockout_restored`, `discontinued`, `keep_1m`, `new_item`, `no_history`.
 
 **`explain`:**
+
 - компоненты по контракту; qty-компоненты в сумме строго равны `recommended_qty`:
   `horizon_demand`, `safety_stock`, `−stock`, `−in_transit`, `moq_rounding`; если `net ≤ 0`,
   то `moq_rounding = −(horizon + SS − stock − transit)`;
@@ -302,6 +319,7 @@ def restore(cleaned: pd.DataFrame, stock_monthly: pd.DataFrame, tx: pd.DataFrame
   заказ, в пути), прогноз в месяц и итог с кратностью.
 
 **`baseline`:** демонстрирует разницу с Excel-подходом.
+
 - спрос = среднее сырых продаж за 12 закрытых месяцев, без очистки, восстановления,
   сезона и тренда;
 - σ — по сырым;
@@ -311,6 +329,7 @@ def restore(cleaned: pd.DataFrame, stock_monthly: pd.DataFrame, tx: pd.DataFrame
 `analyze` заполняет `baseline_qty` значением `baseline` для той же строки.
 
 **`RunResult`:**
+
 - в `lines` попадают строки с `recommended_qty > 0` или `urgency != "none"`, сортировка
   по срочности, затем по сумме или количеству;
 - фильтры `params.supplier`, `params.category`;
@@ -327,15 +346,13 @@ def restore(cleaned: pd.DataFrame, stock_monthly: pd.DataFrame, tx: pd.DataFrame
 - [ ] `pytest tests/engine/test_acceptance.py` — PASS (MH3, MH4 после задачи 4).
 - [ ] `pytest tests/test_contracts.py` остаётся зелёным.
 
----
-
-### Задача 6: интеграция на реальных данных (координатор)
+## Задача 6: интеграция на реальных данных (координатор)
 
 **Файл:** `tests/engine/test_real_data.py`.
 
 - [ ] `ds = ingest.load_default()`; `engine.run(ds, RunParams())` отрабатывает меньше чем
       за 30 с, без NaN, все количества ≥ 0 и кратны `moq`, у каждой строки есть объяснение.
-- [ ] Демо-SKU (design.md §5) получают ожидаемые флаги:
+- [ ] Демо-SKU (`docs/design.md` §5) получают ожидаемые флаги:
   - `130200305_` → разовая строка исключена;
   - `010300096_` → `stockout_restored`;
   - `130300792_` → `seasonal`;
@@ -343,8 +360,6 @@ def restore(cleaned: pd.DataFrame, stock_monthly: pd.DataFrame, tx: pd.DataFrame
 - [ ] `baseline` отрабатывает по обоим поставщикам.
 - [ ] Перегенерировать `contracts/sample_*.json` из реального прогона (тест контракта
       должен оставаться зелёным) и закоммитить.
-
----
 
 ## Порядок исполнения
 
