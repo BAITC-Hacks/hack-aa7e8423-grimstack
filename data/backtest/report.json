@@ -1,0 +1,522 @@
+{
+  "generated_at": "2026-09-23T10:06:43.468313+00:00",
+  "checkpoints": [
+    "2026-03",
+    "2026-04",
+    "2026-05",
+    "2026-06",
+    "2026-07",
+    "2026-08"
+  ],
+  "suppliers": {
+    "IEK": {
+      "wape": {
+        "raw": {
+          "analyze": {
+            "wape": 0.4094,
+            "n": 25013
+          },
+          "baseline": {
+            "wape": 0.4178,
+            "n": 25013
+          }
+        },
+        "cleaned": {
+          "analyze": {
+            "wape": 0.3972,
+            "n": 25013
+          },
+          "baseline": {
+            "wape": 0.4055,
+            "n": 25013
+          }
+        },
+        "by_segment": {
+          "erratic": {
+            "raw": {
+              "analyze": {
+                "wape": 1.0466,
+                "n": 3739
+              },
+              "baseline": {
+                "wape": 0.9873,
+                "n": 3739
+              }
+            },
+            "cleaned": {
+              "analyze": {
+                "wape": 1.0695,
+                "n": 3739
+              },
+              "baseline": {
+                "wape": 1.0056,
+                "n": 3739
+              }
+            }
+          },
+          "intermittent": {
+            "raw": {
+              "analyze": {
+                "wape": 1.3215,
+                "n": 8362
+              },
+              "baseline": {
+                "wape": 1.3084,
+                "n": 8362
+              }
+            },
+            "cleaned": {
+              "analyze": {
+                "wape": 1.3701,
+                "n": 8362
+              },
+              "baseline": {
+                "wape": 1.3569,
+                "n": 8362
+              }
+            }
+          },
+          "lumpy": {
+            "raw": {
+              "analyze": {
+                "wape": 1.3812,
+                "n": 5623
+              },
+              "baseline": {
+                "wape": 1.4039,
+                "n": 5623
+              }
+            },
+            "cleaned": {
+              "analyze": {
+                "wape": 1.4534,
+                "n": 5623
+              },
+              "baseline": {
+                "wape": 1.4844,
+                "n": 5623
+              }
+            }
+          },
+          "smooth": {
+            "raw": {
+              "analyze": {
+                "wape": 0.3371,
+                "n": 7289
+              },
+              "baseline": {
+                "wape": 0.3513,
+                "n": 7289
+              }
+            },
+            "cleaned": {
+              "analyze": {
+                "wape": 0.3244,
+                "n": 7289
+              },
+              "baseline": {
+                "wape": 0.3385,
+                "n": 7289
+              }
+            }
+          }
+        }
+      },
+      "service_level": {
+        "target": 0.9104,
+        "analyze": {
+          "share": 0.8995,
+          "n": 9361
+        },
+        "baseline": {
+          "share": 0.9248,
+          "n": 9361
+        },
+        "n_window_unavailable": 1868
+      },
+      "ablation": [
+        {
+          "step": "raw_mean_12",
+          "wape": 0.4055,
+          "n": 25013
+        },
+        {
+          "step": "cleaned_mean_12",
+          "wape": 0.3897,
+          "n": 25013
+        },
+        {
+          "step": "cleaned_restored_mean_12",
+          "wape": 0.3971,
+          "n": 25013
+        },
+        {
+          "step": "base_season",
+          "wape": 0.3974,
+          "n": 25013
+        },
+        {
+          "step": "base_season_trend",
+          "wape": 0.3972,
+          "n": 25013
+        }
+      ],
+      "ablation_restore_example": {
+        "sku": "IEK:010300096_",
+        "note": "разовая строка 630 шт 05.2025 + stockout 06-07.2025",
+        "cleaned_mean_12": {
+          "wape": 0.2579,
+          "n": 15
+        },
+        "cleaned_restored_mean_12": {
+          "wape": 0.2855,
+          "n": 15
+        }
+      }
+    },
+    "SE": {
+      "wape": {
+        "raw": {
+          "analyze": {
+            "wape": 0.2422,
+            "n": 7022
+          },
+          "baseline": {
+            "wape": 0.2844,
+            "n": 7022
+          }
+        },
+        "cleaned": {
+          "analyze": {
+            "wape": 0.2297,
+            "n": 7022
+          },
+          "baseline": {
+            "wape": 0.2753,
+            "n": 7022
+          }
+        },
+        "by_segment": {
+          "erratic": {
+            "raw": {
+              "analyze": {
+                "wape": 0.7456,
+                "n": 1140
+              },
+              "baseline": {
+                "wape": 0.689,
+                "n": 1140
+              }
+            },
+            "cleaned": {
+              "analyze": {
+                "wape": 0.7668,
+                "n": 1140
+              },
+              "baseline": {
+                "wape": 0.7028,
+                "n": 1140
+              }
+            }
+          },
+          "intermittent": {
+            "raw": {
+              "analyze": {
+                "wape": 0.8997,
+                "n": 1762
+              },
+              "baseline": {
+                "wape": 0.8931,
+                "n": 1762
+              }
+            },
+            "cleaned": {
+              "analyze": {
+                "wape": 0.8978,
+                "n": 1762
+              },
+              "baseline": {
+                "wape": 0.8915,
+                "n": 1762
+              }
+            }
+          },
+          "lumpy": {
+            "raw": {
+              "analyze": {
+                "wape": 1.0419,
+                "n": 1875
+              },
+              "baseline": {
+                "wape": 1.0194,
+                "n": 1875
+              }
+            },
+            "cleaned": {
+              "analyze": {
+                "wape": 1.0481,
+                "n": 1875
+              },
+              "baseline": {
+                "wape": 1.0247,
+                "n": 1875
+              }
+            }
+          },
+          "smooth": {
+            "raw": {
+              "analyze": {
+                "wape": 0.209,
+                "n": 2245
+              },
+              "baseline": {
+                "wape": 0.2555,
+                "n": 2245
+              }
+            },
+            "cleaned": {
+              "analyze": {
+                "wape": 0.1974,
+                "n": 2245
+              },
+              "baseline": {
+                "wape": 0.2474,
+                "n": 2245
+              }
+            }
+          }
+        }
+      },
+      "service_level": {
+        "target": 0.9325,
+        "analyze": {
+          "share": 0.923,
+          "n": 1987
+        },
+        "baseline": {
+          "share": 0.9295,
+          "n": 1987
+        },
+        "n_window_unavailable": 978
+      },
+      "ablation": [
+        {
+          "step": "raw_mean_12",
+          "wape": 0.2753,
+          "n": 7022
+        },
+        {
+          "step": "cleaned_mean_12",
+          "wape": 0.2715,
+          "n": 7022
+        },
+        {
+          "step": "cleaned_restored_mean_12",
+          "wape": 0.2715,
+          "n": 7022
+        },
+        {
+          "step": "base_season",
+          "wape": 0.2526,
+          "n": 7022
+        },
+        {
+          "step": "base_season_trend",
+          "wape": 0.2297,
+          "n": 7022
+        }
+      ],
+      "frozen_capital": [
+        {
+          "as_of": "2026-03-01",
+          "amount": 67279058.38,
+          "skus": 368
+        },
+        {
+          "as_of": "2026-04-01",
+          "amount": 56753535.61,
+          "skus": 338
+        },
+        {
+          "as_of": "2026-05-01",
+          "amount": 61625987.88,
+          "skus": 353
+        },
+        {
+          "as_of": "2026-06-01",
+          "amount": 46093499.59,
+          "skus": 308
+        },
+        {
+          "as_of": "2026-07-01",
+          "amount": 41007438.62,
+          "skus": 263
+        },
+        {
+          "as_of": "2026-08-01",
+          "amount": 41062846.85,
+          "skus": 263
+        }
+      ],
+      "frozen_capital_now": {
+        "as_of": "2026-09-22",
+        "amount": 37169857.39,
+        "skus": 261
+      }
+    }
+  },
+  "demo_skus": [
+    {
+      "sku": "IEK:130300792_",
+      "label": "сезонная труба",
+      "months": [
+        {
+          "month": "2026-03",
+          "actual_raw": 2800.0,
+          "actual_cleaned": 2800.0,
+          "forecast_analyze_h1": 1671.2,
+          "forecast_baseline": 4358.9
+        },
+        {
+          "month": "2026-04",
+          "actual_raw": 2656.0,
+          "actual_cleaned": 2656.0,
+          "forecast_analyze_h1": 4313.0,
+          "forecast_baseline": 4510.7
+        },
+        {
+          "month": "2026-05",
+          "actual_raw": 4608.0,
+          "actual_cleaned": 4608.0,
+          "forecast_analyze_h1": 4206.6,
+          "forecast_baseline": 4434.0
+        },
+        {
+          "month": "2026-06",
+          "actual_raw": 4601.0,
+          "actual_cleaned": 4601.0,
+          "forecast_analyze_h1": 4708.3,
+          "forecast_baseline": 4546.1
+        },
+        {
+          "month": "2026-07",
+          "actual_raw": 15620.0,
+          "actual_cleaned": 11390.0,
+          "forecast_analyze_h1": 7356.1,
+          "forecast_baseline": 4689.2
+        },
+        {
+          "month": "2026-08",
+          "actual_raw": 946.0,
+          "actual_cleaned": 946.0,
+          "forecast_analyze_h1": 6766.6,
+          "forecast_baseline": 5360.9
+        }
+      ]
+    },
+    {
+      "sku": "SE:030200201_",
+      "label": "рост",
+      "months": [
+        {
+          "month": "2026-03",
+          "actual_raw": 19937.0,
+          "actual_cleaned": 19937.0,
+          "forecast_analyze_h1": 15443.2,
+          "forecast_baseline": 19082.3
+        },
+        {
+          "month": "2026-04",
+          "actual_raw": 25870.0,
+          "actual_cleaned": 25870.0,
+          "forecast_analyze_h1": 23588.9,
+          "forecast_baseline": 19442.1
+        },
+        {
+          "month": "2026-05",
+          "actual_raw": 23330.0,
+          "actual_cleaned": 23330.0,
+          "forecast_analyze_h1": 21416.4,
+          "forecast_baseline": 19948.2
+        },
+        {
+          "month": "2026-06",
+          "actual_raw": 24199.0,
+          "actual_cleaned": 24199.0,
+          "forecast_analyze_h1": 24507.0,
+          "forecast_baseline": 20165.3
+        },
+        {
+          "month": "2026-07",
+          "actual_raw": 26986.0,
+          "actual_cleaned": 26986.0,
+          "forecast_analyze_h1": 22124.3,
+          "forecast_baseline": 20545.6
+        },
+        {
+          "month": "2026-08",
+          "actual_raw": 25401.0,
+          "actual_cleaned": 25401.0,
+          "forecast_analyze_h1": 26151.3,
+          "forecast_baseline": 20989.8
+        }
+      ]
+    },
+    {
+      "sku": "IEK:010300096_",
+      "label": "разовый заказ + stockout",
+      "months": [
+        {
+          "month": "2026-03",
+          "actual_raw": 137.0,
+          "actual_cleaned": 137.0,
+          "forecast_analyze_h1": 224.8,
+          "forecast_baseline": 256.1
+        },
+        {
+          "month": "2026-04",
+          "actual_raw": 202.0,
+          "actual_cleaned": 202.0,
+          "forecast_analyze_h1": 261.2,
+          "forecast_baseline": 252.8
+        },
+        {
+          "month": "2026-05",
+          "actual_raw": 557.0,
+          "actual_cleaned": 159.0,
+          "forecast_analyze_h1": 274.1,
+          "forecast_baseline": 250.3
+        },
+        {
+          "month": "2026-06",
+          "actual_raw": 172.0,
+          "actual_cleaned": 172.0,
+          "forecast_analyze_h1": 223.6,
+          "forecast_baseline": 235.6
+        },
+        {
+          "month": "2026-07",
+          "actual_raw": 234.0,
+          "actual_cleaned": 234.0,
+          "forecast_analyze_h1": 328.1,
+          "forecast_baseline": 246.6
+        },
+        {
+          "month": "2026-08",
+          "actual_raw": 377.0,
+          "actual_cleaned": 377.0,
+          "forecast_analyze_h1": 276.0,
+          "forecast_baseline": 249.6
+        }
+      ]
+    }
+  ],
+  "caveats": [
+    "in_transit на контрольных точках пуст (истории поставок нет) — S на бэктесте завышает нужду относительно того, что менеджер видел бы с реальным «в пути»; это ограничение данных, не ошибка метода.",
+    "Справочник SE («Категория 2026», флаги !!! / Кат. 5 / keep_1m) — снимок текущего файла, не пересчитан по состоянию на дату M; возможная небольшая утечка в категории SE (не в цифрах спроса).",
+    "Текущий остаток IEK в блоке «сейчас» (frozen_capital_now) — нижняя оценка (приходы сентября неизвестны); на контрольных точках 03-08.2026 остаток взят из stock_monthly и точен.",
+    "SKU-месяцы с остатком на начало месяца ≤ 0 исключены из WAPE и калибровки сервиса — факт в них цензурирован дефицитом, а не отражает реальный спрос.",
+    "Горизонт бэктеста — 6 точек: для h=3 выборка SKU-месяцев меньше, чем для h=1 (не все точки доходят до месяца ≤ 2026-08 на третьем шаге) — доверия к h=3 меньше.",
+    "Калибровка уровня сервиса считается только там, где окно L+R не выходит за последний закрытый месяц (2026-08); для длинных окон SE (L+R до 70 дней) часть SKU×точек исключена — см. n_window_unavailable."
+  ]
+}
