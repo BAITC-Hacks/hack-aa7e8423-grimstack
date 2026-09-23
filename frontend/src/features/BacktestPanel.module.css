@@ -1,6 +1,5 @@
 .panel { margin-bottom: var(--space-6); }
 .heading { margin-bottom: var(--space-4); }
-.kicker { margin: 0 0 var(--space-2); color: var(--accent); font-size: 10px; font-weight: 700; letter-spacing: .12em; }
 .heading h2 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -.025em; }
 .charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); margin-bottom: var(--space-4); }
 .chartPanel { min-width: 0; padding: var(--space-4); border: var(--border-width) solid var(--border); border-radius: var(--radius-control); background: var(--surface); }

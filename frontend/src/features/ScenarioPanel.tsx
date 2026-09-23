@@ -90,7 +90,7 @@ export default function ScenarioPanel({ run, meta }: { run: RunResult; meta: Met
   };
 
   return <SectionPanel className={styles.panel} aria-labelledby="scenario-heading">
-    <header className={styles.heading}><p className={styles.kicker}>ЧТО ЕСЛИ</p><h2 id="scenario-heading">Задержка поставщика</h2><p>Пересчитываем два варианта по тем же данным и показываем, как изменится рекомендуемый заказ.</p></header>
+    <header className={styles.heading}><h2 id="scenario-heading">Задержка поставщика</h2><p>Пересчитываем два варианта по тем же данным и показываем, как изменится рекомендуемый заказ.</p></header>
     <div className={styles.controls}>
       <Select id="scenario-supplier" label="Поставщик" value={supplier} disabled={pending} onChange={(event) => { setSupplier(event.target.value as Supplier); setComparison(null); setError(''); }}>
         {run.suppliers.map((item) => <option key={item.supplier} value={item.supplier}>{item.supplier_name}</option>)}

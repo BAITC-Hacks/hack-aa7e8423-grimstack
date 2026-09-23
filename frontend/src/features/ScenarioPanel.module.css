@@ -1,6 +1,5 @@
 .panel { margin: var(--space-6) 0; min-width: 0; }
 .heading { margin-bottom: var(--space-4); }
-.kicker { margin: 0 0 var(--space-2); color: var(--accent); font-size: 10px; font-weight: 700; letter-spacing: .12em; }
 .heading h2 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -.025em; }
 .heading > p:last-child, .context, .lead, .note, .empty { color: var(--text-muted); font-size: var(--font-sm); }
 .heading > p:last-child { margin: var(--space-2) 0 0; }

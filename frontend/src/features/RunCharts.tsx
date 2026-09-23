@@ -71,7 +71,7 @@ export function ComparisonChart({ run }: { run: RunResult }) {
   const more = comparable.filter((line) => difference(line) > 0).sort((a, b) => difference(b) - difference(a));
   const lines = [...less.slice(0, 4), ...more.slice(0, 4)];
   if (comparable.length === 0) return <p className={styles.noData}>Нет сопоставимых значений Excel-метода.</p>;
-  const summary = <p className={styles.comparisonSummary}>Меньше Excel-метода: {formatNumber(less.length)} позиций · больше: {formatNumber(more.length)}</p>;
+  const summary = <p className={styles.comparisonSummary}>Меньше Excel-метода: {formatNumber(less.length)} поз. · больше: {formatNumber(more.length)} поз.</p>;
   if (lines.length === 0) return <>{summary}<p className={styles.noData}>Расхождений с Excel-методом нет.</p></>;
   const maxValue = Math.max(...lines.flatMap((line) => [line.recommended_qty, line.baseline_qty ?? 0]));
   const options: ApexOptions = {

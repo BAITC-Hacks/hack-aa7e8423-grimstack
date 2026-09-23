@@ -58,7 +58,7 @@ export function BacktestPanel({ report }: { report: BacktestReport }) {
   };
 
   return <SectionPanel className={styles.panel} aria-labelledby="backtest-heading">
-    <header className={styles.heading}><p className={styles.kicker}>ПРОВЕРКА НА ИСТОРИИ</p><h2 id="backtest-heading">Наш метод против Excel-метода</h2></header>
+    <header className={styles.heading}><h2 id="backtest-heading">Наш метод против Excel-метода</h2></header>
     <div className={styles.charts}>
       <section className={styles.chartPanel} aria-labelledby="backtest-wape-heading">
         <h3 id="backtest-wape-heading">Ошибка прогноза WAPE</h3>
