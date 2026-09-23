@@ -275,13 +275,55 @@ def test_export_contains_only_positive_order_lines_and_blank_iek_prices(client):
     assert exported.status_code == 200
     assert "attachment;" in exported.headers["content-disposition"]
     workbook = load_workbook(BytesIO(exported.content), read_only=True, data_only=True)
+    assert workbook.sheetnames == ["IEK", "Параметры расчёта"]
     rows = list(workbook.active.values)
+    default_settings = dict(list(workbook["Параметры расчёта"].values)[1:])
     workbook.close()
     assert rows[0] == EXPORT_COLUMNS
-    assert len(rows) == 1 + sum(line["supplier"] == "IEK" for line in run["lines"]) - 1
-    assert iek_line["sku"] not in {row[0] for row in rows[1:]}
-    assert all(row[4] > 0 and row[5] is None and row[6] is None for row in rows[1:])
+    assert len(rows) == 2 + sum(line["supplier"] == "IEK" for line in run["lines"]) - 1
+    assert iek_line["sku"] not in {row[0] for row in rows[1:-1]}
+    assert all(row[4] > 0 and row[5] is None and row[6] is None for row in rows[1:-1])
+    assert rows[-1][0] == "Итого" and rows[-1][6] is None
+    assert (default_settings["L, дни"], default_settings["R, дни"]) == (24, 7)
+    assert default_settings["Статус"] == "draft"
+    assert default_settings["Дата утверждения"] is None
     assert_error(client.get(f"/api/runs/{run['run_id']}/export.xlsx?supplier=XYZ"), 404)
+
+
+def test_export_formats_order_and_records_effective_parameters(client):
+    run = new_run(client, supplier="SE", lead_time_days=38, review_period_days=12)
+    approved = client.post(f"/api/runs/{run['run_id']}/suppliers/SE/approve")
+    assert approved.status_code == 200
+    exported = client.get(f"/api/runs/{run['run_id']}/export.xlsx?supplier=SE")
+    assert exported.status_code == 200
+
+    workbook = load_workbook(BytesIO(exported.content))
+    assert workbook.sheetnames == ["SE", "Параметры расчёта"]
+    orders = workbook["SE"]
+    assert tuple(cell.value for cell in orders[1]) == EXPORT_COLUMNS
+    assert all(cell.font.bold for cell in orders[1])
+    assert orders.freeze_panes == "A2"
+    assert orders.column_dimensions["C"].width > len("Наименование")
+    assert orders["E2"].number_format == "#,##0.###"
+    assert orders["G2"].number_format == "#,##0.00"
+    total = orders.max_row
+    assert orders.cell(total, 1).value == "Итого"
+    assert orders.cell(total, 1).font.bold
+    assert orders.cell(total, 5).value == sum(line["final_qty"] for line in run["lines"])
+    assert orders.cell(total, 7).value == approved.json()["total_amount"]
+    assert orders.auto_filter.ref == f"A1:J{total - 1}"
+
+    settings = dict(list(workbook["Параметры расчёта"].values)[1:])
+    assert {key: value for key, value in settings.items() if key != "Дата утверждения"} == {
+        "Дата данных": run["data_as_of"],
+        "Метод": "analyze",
+        "L, дни": 38,
+        "R, дни": 12,
+        "Поставщик": "SE",
+        "Статус": "approved",
+    }
+    assert settings["Дата утверждения"]
+    workbook.close()
 
 
 def test_upload_validation_and_uploaded_dataset_selection(client):

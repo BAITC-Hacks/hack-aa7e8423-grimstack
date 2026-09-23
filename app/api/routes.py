@@ -10,10 +10,13 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, Response
 from openpyxl import Workbook
+from openpyxl.styles import Font
+from openpyxl.utils import get_column_letter
 from starlette.datastructures import UploadFile
 
 from app import ai, engine, ingest
 from app.api.schemas import ChangedLine, CompareDelta, CompareRequest, CompareResult
+from app.engine.config import SUPPLIERS
 from app.contracts import (
     DatasetUploaded,
     ErrorBody,
@@ -68,6 +71,15 @@ UPLOAD_REQUEST_BODY = {
 
 def errors(*statuses: int) -> dict[int, dict]:
     return {status: ERROR_RESPONSES[status] for status in statuses}
+
+
+def fit_columns(sheet) -> None:
+    for column in sheet.columns:
+        longest = max(
+            len(str(cell.value)) if cell.value is not None else 0
+            for cell in column
+        )
+        sheet.column_dimensions[get_column_letter(column[0].column)].width = min(80, max(12, longest + 2))
 
 
 def get_store(request: Request) -> Store:
@@ -307,7 +319,9 @@ def export_run(
     selected = parse_supplier(supplier)
     with store.lock:
         run = get_run(store, run_id)
-        get_supplier(run, selected)
+        summary = get_supplier(run, selected).model_copy(deep=True)
+        params = run.params.model_copy(deep=True)
+        data_as_of = run.data_as_of
         lines = [
             line.model_copy(deep=True)
             for line in run.lines
@@ -319,6 +333,8 @@ def export_run(
     sheet = workbook.active
     sheet.title = selected
     sheet.append(EXPORT_COLUMNS)
+    for cell in sheet[1]:
+        cell.font = Font(bold=True)
     for line in lines:
         values = (
             line.sku, line.article, line.name, line.unit, line.final_qty,
@@ -330,8 +346,35 @@ def export_run(
             cell = sheet.cell(sheet.max_row, index)
             if isinstance(cell.value, str):
                 cell.data_type = "s"
+        for index, number_format in ((5, "#,##0.###"), (6, "#,##0.00"), (7, "#,##0.00")):
+            sheet.cell(sheet.max_row, index).number_format = number_format
+    last_data_row = sheet.max_row
+    sheet.append(("Итого", None, None, None, summary.total_qty, None, summary.total_amount))
+    for cell in sheet[sheet.max_row]:
+        cell.font = Font(bold=True)
+    sheet.cell(sheet.max_row, 5).number_format = "#,##0.###"
+    sheet.cell(sheet.max_row, 7).number_format = "#,##0.00"
     sheet.freeze_panes = "A2"
-    sheet.auto_filter.ref = sheet.dimensions
+    sheet.auto_filter.ref = f"A1:J{last_data_row}"
+    fit_columns(sheet)
+
+    settings = workbook.create_sheet("Параметры расчёта")
+    settings.append(("Параметр", "Значение"))
+    settings_rows = (
+        ("Дата данных", data_as_of.isoformat()),
+        ("Метод", params.method),
+        ("L, дни", params.lead_time_days or SUPPLIERS[selected]["lead_time_days"]),
+        ("R, дни", params.review_period_days or SUPPLIERS[selected]["review_period_days"]),
+        ("Поставщик", selected),
+        ("Статус", summary.status),
+        ("Дата утверждения", summary.approved_at.isoformat() if summary.approved_at else None),
+    )
+    for row in settings_rows:
+        settings.append(row)
+    for cell in settings[1]:
+        cell.font = Font(bold=True)
+    settings.freeze_panes = "A2"
+    fit_columns(settings)
     output = BytesIO()
     workbook.save(output)
     workbook.close()

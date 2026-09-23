@@ -62,7 +62,8 @@ def test_export_approve_and_conflict(client, run, tmp_path, monkeypatch):
     assert response.status_code == 200
     sheet = load_workbook(BytesIO(response.content)).active
     assert sheet["A1"].value == "Код 1С"
-    assert sheet.max_row == 1 + sum(line["final_qty"] > 0 for line in run["lines"])
+    assert sheet.max_row == 2 + sum(line["final_qty"] > 0 for line in run["lines"])
+    assert sheet.cell(sheet.max_row, 1).value == "Итого"
     assert client.post(f"/api/runs/{run_id}/suppliers/SE/approve").json()["status"] == "approved"
     assert (tmp_path / "approvals.json").exists()
     line = run["lines"][0]
