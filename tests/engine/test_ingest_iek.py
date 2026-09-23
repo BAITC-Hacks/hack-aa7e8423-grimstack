@@ -88,3 +88,29 @@ def test_load_uploaded_without_optional_sales_tx():
     files = {role: (folder / f"{role}.xlsx").read_bytes() for role in REQUIRED_ROLES}
     ds = load_uploaded("IEK", files)
     assert ds.sales_tx.empty and len(ds.skus) > 1000
+
+
+def test_load_uploaded_bad_monthly_sales_names_the_role_not_a_raw_index():
+    """Задача 2 плана: кривой xlsx должен давать понятное сообщение с именем роли, а не
+    голый индекс колонки (KeyError(1) из-за нехватки колонок в 1-ячеечном файле)."""
+    import io
+
+    import openpyxl
+
+    from app.ingest import REQUIRED_ROLES
+
+    wb = openpyxl.Workbook()
+    wb.active["A1"] = "x"
+    buf = io.BytesIO()
+    wb.save(buf)
+
+    folder = Path("data/raw/iek")
+    files = {role: (folder / f"{role}.xlsx").read_bytes() for role in REQUIRED_ROLES}
+    files["monthly_sales"] = buf.getvalue()
+
+    with pytest.raises(IngestError) as exc:
+        load_uploaded("IEK", files)
+    assert exc.value.code == "bad_format"
+    assert exc.value.file_role == "monthly_sales"
+    assert "monthly_sales" in exc.value.message
+    assert ": 3" not in exc.value.message and ": 1" not in exc.value.message

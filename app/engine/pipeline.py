@@ -143,7 +143,11 @@ def _build(ds) -> Prepared:
     else:
         project_flag = pd.Series(False, index=idx)
 
-    seasonal_flag = (season.max(axis=1) / season.min(axis=1).replace(0, np.nan)) >= 1.5
+    # ложная сезонность: размах сезонного профиля у intermittent/lumpy не держится
+    # статистически (замер на реальных данных: p25=1.53 p50=1.87 p75=2.44), поэтому флаг только у
+    # smooth/erratic с размахом ≥2.0 (настоящие сезонные SKU вроде IEK 130300792_ размах 5.0 остаются)
+    season_range = season.max(axis=1) / season.min(axis=1).replace(0, np.nan)
+    seasonal_flag = segment_s.isin(["smooth", "erratic"]) & (season_range >= 2.0)
     approx_stock = ds.stock_now["source"].reindex(idx) == "estimate_lower_bound"
 
     # sum по excess/added — общие для kpi (окно 12 мес.) и флагов строки (окно 18 мес.,

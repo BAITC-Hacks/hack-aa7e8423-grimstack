@@ -33,7 +33,20 @@ def doc_hash(doc: str) -> str:
     return hashlib.sha1(str(doc).encode("utf-8")).hexdigest()[:10]
 
 
+# ponytail: модульная переменная, не потокобезопасна — сервис грузит файлы одной выгрузки
+# последовательно и однопоточно (load_uploaded), апгрейд на contextvar понадобится только при параллелизме
+_last_role: str | None = None
+
+
+def last_read_role() -> str | None:
+    """Роль (имя файла без расширения) последнего файла, прочитанного read_sheet/read_sales_tx —
+    нужна load_uploaded, чтобы указать в IngestError, какой файл не разобрался."""
+    return _last_role
+
+
 def read_sheet(path: Path, sheet=0) -> pd.DataFrame:
+    global _last_role
+    _last_role = path.stem
     return pd.read_excel(path, sheet_name=sheet, header=None, dtype=object)
 
 

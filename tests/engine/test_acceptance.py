@@ -155,6 +155,17 @@ def test_explanation_names_the_forecast_month():
     assert found.explanation.startswith("Октябрь — сезонный пик"), found.explanation
 
 
+# задача 1 плана: ложная сезонность — у intermittent/lumpy сезонный размах по группе не держится
+# статистически, флаг и причина не должны на него полагаться
+def test_intermittent_demand_is_not_flagged_seasonal():
+    rare = [30.0 if i % 3 == 0 else 0.0 for i in range(33)]  # продажа раз в квартал
+    found = line(make_dataset({"A": rare}, stock_now=0, tx_lines=1))
+    assert found is not None
+    assert "intermittent" in found.flags
+    assert "seasonal" not in found.flags
+    assert "сезонный" not in found.explanation, found.explanation
+
+
 def test_overstock_is_counted_even_when_nothing_is_ordered():
     result = engine.run(make_dataset({"A": noisy(100)}, stock_now=10_000), RunParams())
     assert not result.lines

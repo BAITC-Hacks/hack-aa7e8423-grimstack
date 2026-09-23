@@ -148,6 +148,23 @@ def test_se_pallets_are_not_oneoffs(ds):
     assert events[(events["supplier"] == "SE") & (events["sku"] == "030300013_")].empty
 
 
+def test_false_seasonality_reason_is_rare(result):
+    """Задача 1 плана: раньше «сезон» лидировал в 54% строк (504/927), из них 309 — intermittent/lumpy,
+    где сезонность по группе статистически не держится (docs/design.md §4). После фикса доля должна упасть."""
+    total = len(result.lines)
+    seasonal_reason = sum(1 for l in result.lines if "сезонный" in l.explanation)
+    assert seasonal_reason / total < 0.30, f"{seasonal_reason}/{total}"
+
+
+def test_seasonal_flag_kept_for_real_seasonal_sku(result):
+    """130300792_ Труба Ø50 (erratic, размах сезонного профиля 5.0, октябрь ×1.80) — настоящая
+    сезонность, флаг и лидирующая причина должны остаться."""
+    found = _line(result, "IEK", "130300792_")
+    assert found is not None
+    assert "seasonal" in found.flags
+    assert found.explanation.startswith("Октябрь — сезонный пик"), found.explanation
+
+
 def test_stockout_demo_sku_130200124(ds):
     """MH3: шина ШНИ-14 — остаток 0 в феврале–апреле 2025, продажи провалились до 0/0/43."""
     h = engine.history(ds, "IEK", "130200124_", RunParams())

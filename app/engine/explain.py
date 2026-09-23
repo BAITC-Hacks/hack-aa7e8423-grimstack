@@ -60,10 +60,13 @@ def components_baseline(*, base, horizon, ss, floor, stock, transit, moq, qty, s
 
 def _lead_reason(*, month, seasonal, season_val, trend_up, trend_down, trend_val,
                   stockout_restored, oneoff_excluded, in_transit) -> str:
-    """Главная причина заказа: сезон → тренд → stockout → разовый заказ → товар в пути."""
-    if seasonal and season_val >= 1.15:
+    """Главная причина заказа: сезон → тренд → stockout → разовый заказ → товар в пути.
+
+    Сезон лидирует только при заметном факторе (≥1.25 пик / ≤0.80 спад) —
+    иначе флаг seasonal есть, но фактор ближайшего месяца слабый и причину подавать не стоит."""
+    if seasonal and season_val >= 1.25:
         return f"{MONTHS_NOM[month.month - 1]} — сезонный пик (×{season_val:.2f})"
-    if seasonal and season_val <= 0.85:
+    if seasonal and season_val <= 0.80:
         return f"{MONTHS_NOM[month.month - 1]} — сезонный спад (×{season_val:.2f})"
     if trend_up:
         return f"Устойчивый рост спроса (×{trend_val:.2f} год к году)"

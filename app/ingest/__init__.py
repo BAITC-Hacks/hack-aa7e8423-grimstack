@@ -3,7 +3,10 @@
 Сигнатуры финальные.
 """
 
+import logging
+import re
 import tempfile
+import zipfile
 from datetime import date
 from pathlib import Path
 from typing import get_args
@@ -11,8 +14,10 @@ from typing import get_args
 import pandas as pd
 
 from app.contracts import FileRole, IngestError, Supplier
-from app.ingest import iek
+from app.ingest import common, iek
 from app.ingest.dataset import Dataset, concat
+
+logger = logging.getLogger(__name__)
 
 try:
     from app.ingest import se
@@ -53,6 +58,26 @@ def apply_product_groups(data: Dataset, csv_path: Path) -> None:
                                            index=data.skus.index, dtype=object)
 
 
+def _friendly_ingest_error(exc: Exception, supplier: str) -> IngestError:
+    """Человеческое сообщение вместо сырого str(exc) — сырую ошибку логируем,
+    наружу отдаём код + роль файла (последний, что читал common.read_sheet до сбоя)."""
+    role = common.last_read_role()
+    logger.warning("Не разобралась выгрузка %s (роль=%s): %r", supplier, role, exc, exc_info=True)
+    if role is None:  # сбой до чтения любого файла — роль неизвестна
+        return IngestError("bad_format", f"Файлы не похожи на выгрузку 1С для {supplier}")
+    if isinstance(exc, ValueError) and "Worksheet named" in str(exc):
+        m = re.search(r"Worksheet named '([^']+)' not found", str(exc))
+        sheet = m.group(1) if m else "?"
+        return IngestError("bad_format", f"В файле «{role}» нет листа «{sheet}»", role)
+    if isinstance(exc, (zipfile.BadZipFile, ValueError)):
+        return IngestError("bad_format", f"Файл «{role}» повреждён или это не .xlsx", role)
+    if isinstance(exc, KeyError) and isinstance(exc.args[0], str):
+        return IngestError("bad_format", f"В файле «{role}» не найдена колонка «{exc.args[0]}»", role)
+    if isinstance(exc, (KeyError, IndexError)):
+        return IngestError("bad_format", f"В файле «{role}» меньше колонок, чем в выгрузке 1С", role)
+    return IngestError("bad_format", f"Файл «{role}» не похож на выгрузку 1С", role)
+
+
 def load_uploaded(supplier: Supplier, files: dict[str, bytes]) -> Dataset:
     """Проверяет набор файлов; при некорректном вводе бросает IngestError (API → 422)."""
     unknown = sorted(set(files) - set(ROLES))
@@ -75,9 +100,10 @@ def load_uploaded(supplier: Supplier, files: dict[str, bytes]) -> Dataset:
         folder = Path(tmp)
         for role, content in files.items():
             (folder / f"{role}.xlsx").write_bytes(content)
+        common._last_role = None  # роль прошлой загрузки не должна попасть в эту ошибку
         try:
             data = loader(folder, AS_OF)
         except Exception as exc:
-            raise IngestError("bad_format", f"Не удалось разобрать файл: {exc}") from exc
+            raise _friendly_ingest_error(exc, supplier) from exc
     apply_product_groups(data, _CATEGORIES_CSV)  # как в load_default: группы нужны фильтру и пулу сезонности
     return data
