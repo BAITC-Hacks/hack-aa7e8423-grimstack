@@ -8,7 +8,7 @@ const urgencies: { key: Urgency; label: string; token: string }[] = [
   { key: 'critical', label: 'Срочно', token: '--critical' },
   { key: 'high', label: 'Скоро', token: '--warning' },
   { key: 'planned', label: 'Плановый', token: '--success' },
-  { key: 'none', label: 'Без заказа', token: '--border-strong' },
+  { key: 'none', label: 'Без заказа', token: '--purple' },
 ];
 
 function palette() {
@@ -52,11 +52,11 @@ export function SupplierChart({ run }: { run: RunResult }) {
   if (categories.length === 0) return <p className={styles.noData}>Нет данных по поставщикам.</p>;
   const options: ApexOptions = {
     ...baseOptions(),
-    colors: [color('--accent'), color('--border-strong')],
+    colors: [color('--accent')],
     chart: { ...baseOptions().chart, stacked: false },
     plotOptions: { bar: { horizontal: true, borderRadius: 4, barHeight: '38%' } },
     xaxis: { categories, labels: { formatter: (value) => formatNumber(Number(value)), style: { colors: color('--text-muted') } } },
-    yaxis: { labels: { style: { colors: color('--text') }, maxWidth: 150 } },
+    yaxis: { labels: { style: { colors: color('--text') }, maxWidth: 130 } },
     tooltip: { theme: 'light', y: { formatter: (value) => `${formatNumber(value)} поз.` } },
   };
   const series = [{ name: 'Позиции', data: run.suppliers.map((supplier) => supplier.lines_count) }];
