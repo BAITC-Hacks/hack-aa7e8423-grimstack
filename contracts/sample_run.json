@@ -1,6 +1,6 @@
 {
-  "run_id": "b00ce0eca017",
-  "created_at": "2026-09-23T14:22:15.430138",
+  "run_id": "ac1ad8a6d581",
+  "created_at": "2026-09-23T15:32:59.033001",
   "params": {
     "dataset_id": null,
     "supplier": null,
@@ -15,10 +15,10 @@
   "kpi": {
     "lines_to_order": 12,
     "critical": 8,
-    "total_amount": 5373528.6,
-    "oneoff_units_excluded": 31254.5,
+    "total_amount": 5405342.8,
+    "oneoff_units_excluded": 29998.5,
     "stockout_units_restored": 9296.3,
-    "overstock_lines": 0
+    "overstock_lines": 667
   },
   "suppliers": [
     {
@@ -26,8 +26,8 @@
       "supplier_name": "Systeme Electric",
       "lines_count": 6,
       "critical_count": 4,
-      "total_qty": 40268.0,
-      "total_amount": 5373528.6,
+      "total_qty": 40153.0,
+      "total_amount": 5405342.8,
       "status": "draft",
       "approved_at": null
     },
@@ -51,27 +51,27 @@
       "name": "Сжим У 733M (16-35/1,5-10) Sch El (140)",
       "unit": "шт",
       "category": "Кат. 1",
-      "product_group": null,
+      "product_group": "Прочее",
       "stock_free": 114.0,
       "stock_source": "warehouses",
       "in_transit": 0.0,
-      "forecast_monthly": 529.3,
+      "forecast_monthly": 910.3,
       "safety_stock": 1446.9,
-      "order_up_to": 2466.4,
+      "order_up_to": 3004.0,
       "moq": 140.0,
-      "recommended_qty": 2380.0,
-      "final_qty": 2380.0,
+      "recommended_qty": 2940.0,
+      "final_qty": 2940.0,
       "baseline_qty": 3360.0,
       "urgency": "critical",
-      "days_of_cover": 6.5,
+      "days_of_cover": 3.8,
       "unit_cost": 326.54,
-      "amount": 777165.2,
-      "explanation": "Месяц — сезонный пик (×1.31): прогноз 529 шт/мес → 2 380 шт, кратно 140",
+      "amount": 960027.6,
+      "explanation": "Октябрь — сезонный пик (×1.89): прогноз 910 шт/мес → 2 940 шт, кратно 140",
       "components": [
         {
           "key": "base",
           "label": "База: среднее 12 мес без сезонности",
-          "value": 484.1,
+          "value": 576.1,
           "kind": "info",
           "note": null
         },
@@ -91,8 +91,8 @@
         },
         {
           "key": "seasonality",
-          "label": "Сезонность: октября",
-          "value": 1.31,
+          "label": "Сезонность октября",
+          "value": 1.89,
           "kind": "factor",
           "note": null
         },
@@ -113,7 +113,7 @@
         {
           "key": "horizon_demand",
           "label": "Спрос на срок поставки и период заказа",
-          "value": 1019.5,
+          "value": 1557.1,
           "kind": "qty",
           "note": null
         },
@@ -141,7 +141,7 @@
         {
           "key": "moq_rounding",
           "label": "Округление до кратности 140",
-          "value": 27.59999999999991,
+          "value": 50.0,
           "kind": "qty",
           "note": null
         }
@@ -154,108 +154,6 @@
       ]
     },
     {
-      "line_id": "SE:130300026_",
-      "supplier": "SE",
-      "sku": "130300026_",
-      "article": "U731M",
-      "name": "Сжим У 731М (4-10/1,5-10) Sch El (140)",
-      "unit": "шт",
-      "category": "Кат. 3",
-      "product_group": null,
-      "stock_free": 260.0,
-      "stock_source": "warehouses",
-      "in_transit": 0.0,
-      "forecast_monthly": 280.0,
-      "safety_stock": 317.9,
-      "order_up_to": 857.1,
-      "moq": 140.0,
-      "recommended_qty": 700.0,
-      "final_qty": 700.0,
-      "baseline_qty": 1120.0,
-      "urgency": "critical",
-      "days_of_cover": 27.9,
-      "unit_cost": 396.19,
-      "amount": 277333.0,
-      "explanation": "Месяц — сезонный пик (×1.31): прогноз 280 шт/мес → 700 шт, кратно 140",
-      "components": [
-        {
-          "key": "base",
-          "label": "База: среднее 12 мес без сезонности",
-          "value": 251.6,
-          "kind": "info",
-          "note": null
-        },
-        {
-          "key": "oneoff_excluded",
-          "label": "Исключены разовые строки",
-          "value": 1256.0,
-          "kind": "info",
-          "note": "26.05.2026, документ 20221f3fea: 748 шт (обычно 20)"
-        },
-        {
-          "key": "seasonality",
-          "label": "Сезонность: октября",
-          "value": 1.31,
-          "kind": "factor",
-          "note": null
-        },
-        {
-          "key": "trend",
-          "label": "Тренд год к году",
-          "value": 0.85,
-          "kind": "factor",
-          "note": null
-        },
-        {
-          "key": "growth",
-          "label": "Прирост (параметр)",
-          "value": 1.0,
-          "kind": "factor",
-          "note": null
-        },
-        {
-          "key": "horizon_demand",
-          "label": "Спрос на срок поставки и период заказа",
-          "value": 539.2,
-          "kind": "qty",
-          "note": null
-        },
-        {
-          "key": "safety_stock",
-          "label": "Страховой запас (Кат. 3, 90%)",
-          "value": 317.9,
-          "kind": "qty",
-          "note": null
-        },
-        {
-          "key": "stock",
-          "label": "Текущий остаток",
-          "value": -260.0,
-          "kind": "qty",
-          "note": null
-        },
-        {
-          "key": "in_transit",
-          "label": "В пути",
-          "value": -0.0,
-          "kind": "qty",
-          "note": null
-        },
-        {
-          "key": "moq_rounding",
-          "label": "Округление до кратности 140",
-          "value": 102.89999999999998,
-          "kind": "qty",
-          "note": null
-        }
-      ],
-      "flags": [
-        "oneoff_excluded",
-        "seasonal",
-        "trend_down"
-      ]
-    },
-    {
       "line_id": "SE:130300028_",
       "supplier": "SE",
       "sku": "130300028_",
@@ -263,27 +161,27 @@
       "name": "Сжим У 734М (16-35/16-25) Sch El (140)",
       "unit": "шт",
       "category": "Кат. 3",
-      "product_group": null,
+      "product_group": "Измерения и инструмент",
       "stock_free": 9.0,
       "stock_source": "warehouses",
       "in_transit": 0.0,
-      "forecast_monthly": 217.3,
+      "forecast_monthly": 140.0,
       "safety_stock": 327.9,
-      "order_up_to": 746.4,
+      "order_up_to": 638.1,
       "moq": 140.0,
-      "recommended_qty": 840.0,
-      "final_qty": 840.0,
+      "recommended_qty": 700.0,
+      "final_qty": 700.0,
       "baseline_qty": 700.0,
       "urgency": "critical",
-      "days_of_cover": 1.2,
+      "days_of_cover": 1.9,
       "unit_cost": 310.81,
-      "amount": 261080.4,
-      "explanation": "Месяц — сезонный пик (×1.31): прогноз 217 шт/мес → 840 шт, кратно 140",
+      "amount": 217567.0,
+      "explanation": "Разовый крупный заказ исключён из базового спроса: прогноз 140 шт/мес → 700 шт, кратно 140",
       "components": [
         {
           "key": "base",
           "label": "База: среднее 12 мес без сезонности",
-          "value": 165.9,
+          "value": 149.4,
           "kind": "info",
           "note": null
         },
@@ -296,8 +194,8 @@
         },
         {
           "key": "seasonality",
-          "label": "Сезонность: октября",
-          "value": 1.31,
+          "label": "Сезонность октября",
+          "value": 0.94,
           "kind": "factor",
           "note": null
         },
@@ -318,7 +216,7 @@
         {
           "key": "horizon_demand",
           "label": "Спрос на срок поставки и период заказа",
-          "value": 418.5,
+          "value": 310.2,
           "kind": "qty",
           "note": null
         },
@@ -346,7 +244,7 @@
         {
           "key": "moq_rounding",
           "label": "Округление до кратности 140",
-          "value": 102.60000000000002,
+          "value": 70.90000000000009,
           "kind": "qty",
           "note": null
         }
@@ -358,6 +256,100 @@
       ]
     },
     {
+      "line_id": "SE:300200700_",
+      "supplier": "SE",
+      "sku": "300200700_",
+      "article": "ATN000146",
+      "name": "S4000 Роз. с з/к 16А с/у з/ш с крышкой б/рамки\"ATLAS\" белый ATN146 (15)",
+      "unit": "шт",
+      "category": "Кат. 3",
+      "product_group": "Розетки и выключатели",
+      "stock_free": 87.0,
+      "stock_source": "warehouses",
+      "in_transit": 0.0,
+      "forecast_monthly": 73.2,
+      "safety_stock": 75.4,
+      "order_up_to": 249.8,
+      "moq": 15.0,
+      "recommended_qty": 165.0,
+      "final_qty": 165.0,
+      "baseline_qty": 195.0,
+      "urgency": "critical",
+      "days_of_cover": 35.6,
+      "unit_cost": 1029.08,
+      "amount": 169798.2,
+      "explanation": "Спрос снижается (×0.83 год к году): прогноз 73 шт/мес → 165 шт, кратно 15",
+      "components": [
+        {
+          "key": "base",
+          "label": "База: среднее 12 мес без сезонности",
+          "value": 87.3,
+          "kind": "info",
+          "note": null
+        },
+        {
+          "key": "seasonality",
+          "label": "Сезонность октября",
+          "value": 1.0,
+          "kind": "factor",
+          "note": null
+        },
+        {
+          "key": "trend",
+          "label": "Тренд год к году",
+          "value": 0.83,
+          "kind": "factor",
+          "note": null
+        },
+        {
+          "key": "growth",
+          "label": "Прирост (параметр)",
+          "value": 1.0,
+          "kind": "factor",
+          "note": null
+        },
+        {
+          "key": "horizon_demand",
+          "label": "Спрос на срок поставки и период заказа",
+          "value": 174.4,
+          "kind": "qty",
+          "note": null
+        },
+        {
+          "key": "safety_stock",
+          "label": "Страховой запас (Кат. 3, 90%)",
+          "value": 75.4,
+          "kind": "qty",
+          "note": null
+        },
+        {
+          "key": "stock",
+          "label": "Текущий остаток",
+          "value": -87.0,
+          "kind": "qty",
+          "note": null
+        },
+        {
+          "key": "in_transit",
+          "label": "В пути",
+          "value": -0.0,
+          "kind": "qty",
+          "note": null
+        },
+        {
+          "key": "moq_rounding",
+          "label": "Округление до кратности 15",
+          "value": 2.1999999999999886,
+          "kind": "qty",
+          "note": null
+        }
+      ],
+      "flags": [
+        "seasonal",
+        "trend_down"
+      ]
+    },
+    {
       "line_id": "IEK:130300792_",
       "supplier": "IEK",
       "sku": "130300792_",
@@ -365,7 +357,7 @@
       "name": "Трубы гибкая двустенная красная (с протяжкой) Ø50 IEK (50)",
       "unit": "м",
       "category": "A",
-      "product_group": null,
+      "product_group": "Трубы, кабель-каналы, лотки",
       "stock_free": 0.0,
       "stock_source": "estimate_lower_bound",
       "in_transit": 0.0,
@@ -380,7 +372,7 @@
       "days_of_cover": 0.0,
       "unit_cost": null,
       "amount": null,
-      "explanation": "Месяц — сезонный пик (×1.80): прогноз 8 708 м/мес → 14 800 м, кратно 50",
+      "explanation": "Октябрь — сезонный пик (×1.80): прогноз 8 708 м/мес → 14 800 м, кратно 50",
       "components": [
         {
           "key": "base",
@@ -405,7 +397,7 @@
         },
         {
           "key": "seasonality",
-          "label": "Сезонность: октября",
+          "label": "Сезонность октября",
           "value": 1.8,
           "kind": "factor",
           "note": null
@@ -476,7 +468,7 @@
       "name": "Трубы гибкая двустенная красная (с протяжкой) Ø40 IEK (50)",
       "unit": "м",
       "category": "A",
-      "product_group": null,
+      "product_group": "Трубы, кабель-каналы, лотки",
       "stock_free": 0.0,
       "stock_source": "estimate_lower_bound",
       "in_transit": 0.0,
@@ -491,7 +483,7 @@
       "days_of_cover": 0.0,
       "unit_cost": null,
       "amount": null,
-      "explanation": "Месяц — сезонный пик (×1.99): прогноз 8 197 м/мес → 12 450 м, кратно 50",
+      "explanation": "Октябрь — сезонный пик (×1.99): прогноз 8 197 м/мес → 12 450 м, кратно 50",
       "components": [
         {
           "key": "base",
@@ -516,7 +508,7 @@
         },
         {
           "key": "seasonality",
-          "label": "Сезонность: октября",
+          "label": "Сезонность октября",
           "value": 1.99,
           "kind": "factor",
           "note": null
@@ -586,7 +578,7 @@
       "name": "Трубы гибкая двустенная красная (с протяжкой) Ø63 IEK (50)",
       "unit": "м",
       "category": "A",
-      "product_group": null,
+      "product_group": "Трубы, кабель-каналы, лотки",
       "stock_free": 0.0,
       "stock_source": "estimate_lower_bound",
       "in_transit": 2000.0,
@@ -601,7 +593,7 @@
       "days_of_cover": 9.6,
       "unit_cost": null,
       "amount": null,
-      "explanation": "Месяц — сезонный пик (×1.45): прогноз 6 255 м/мес → 9 150 м, кратно 50",
+      "explanation": "Октябрь — сезонный пик (×1.45): прогноз 6 255 м/мес → 9 150 м, кратно 50",
       "components": [
         {
           "key": "base",
@@ -619,7 +611,7 @@
         },
         {
           "key": "seasonality",
-          "label": "Сезонность: октября",
+          "label": "Сезонность октября",
           "value": 1.45,
           "kind": "factor",
           "note": null
@@ -689,7 +681,7 @@
       "name": "Наконечник медно-луженный JG - 6 IEK (600)",
       "unit": "шт",
       "category": "A",
-      "product_group": null,
+      "product_group": "Шины, клеммы, изоляторы",
       "stock_free": 344.0,
       "stock_source": "estimate_lower_bound",
       "in_transit": 0.0,
@@ -722,7 +714,7 @@
         },
         {
           "key": "seasonality",
-          "label": "Сезонность: октября",
+          "label": "Сезонность октября",
           "value": 1.15,
           "kind": "factor",
           "note": null
@@ -792,11 +784,11 @@
       "name": "Распределительная коробка с/у для твердых стен 75х30 карболит IP30 У-195 Systeme Electric (108)",
       "unit": "шт",
       "category": null,
-      "product_group": null,
+      "product_group": "Коробки установочные",
       "stock_free": 1.0,
       "stock_source": "estimate_lower_bound",
       "in_transit": 0.0,
-      "forecast_monthly": 8.5,
+      "forecast_monthly": 8.1,
       "safety_stock": 57.7,
       "order_up_to": 108.0,
       "moq": 108.0,
@@ -804,22 +796,22 @@
       "final_qty": 108.0,
       "baseline_qty": 108.0,
       "urgency": "critical",
-      "days_of_cover": 3.5,
+      "days_of_cover": 3.7,
       "unit_cost": null,
       "amount": null,
-      "explanation": "Месяц — сезонный пик (×1.31): прогноз 8 шт/мес → 108 шт, кратно 108",
+      "explanation": "Октябрь — сезонный пик (×1.28): прогноз 8 шт/мес → 108 шт, кратно 108",
       "components": [
         {
           "key": "base",
           "label": "База: среднее 12 мес без сезонности",
-          "value": 6.5,
+          "value": 6.3,
           "kind": "info",
           "note": null
         },
         {
           "key": "seasonality",
-          "label": "Сезонность: октября",
-          "value": 1.31,
+          "label": "Сезонность октября",
+          "value": 1.28,
           "kind": "factor",
           "note": null
         },
@@ -840,7 +832,7 @@
         {
           "key": "horizon_demand",
           "label": "Спрос на срок поставки и период заказа",
-          "value": 16.3,
+          "value": 15.8,
           "kind": "qty",
           "note": null
         },
@@ -854,7 +846,7 @@
         {
           "key": "min_order_floor",
           "label": "Минимум для редкого спроса",
-          "value": 34.0,
+          "value": 34.5,
           "kind": "qty",
           "note": "не меньше типичной строки продажи"
         },
@@ -894,7 +886,7 @@
       "name": "Установочная коробка для полых стен г/к 65х45 IMT35150 Systeme Electric (210)",
       "unit": "шт",
       "category": "Кат. 1",
-      "product_group": null,
+      "product_group": "Коробки установочные",
       "stock_free": 40798.0,
       "stock_source": "warehouses",
       "in_transit": 37800.0,
@@ -909,7 +901,7 @@
       "days_of_cover": 64.2,
       "unit_cost": 133.71,
       "amount": 3032542.8,
-      "explanation": "Месяц — сезонный пик (×1.21): прогноз 36 744 шт/мес → 22 680 шт, кратно 3780",
+      "explanation": "Октябрь — сезонный пик (×1.21): прогноз 36 744 шт/мес → 22 680 шт, кратно 3780",
       "components": [
         {
           "key": "base",
@@ -920,7 +912,7 @@
         },
         {
           "key": "seasonality",
-          "label": "Сезонность: октября",
+          "label": "Сезонность октября",
           "value": 1.21,
           "kind": "factor",
           "note": null
@@ -988,7 +980,7 @@
       "name": "Установочная коробка для твердых стен 65х60 IMT35101 Systeme Electric (120)",
       "unit": "шт",
       "category": "Кат. 1",
-      "product_group": null,
+      "product_group": "Коробки установочные",
       "stock_free": 62498.0,
       "stock_source": "warehouses",
       "in_transit": 0.0,
@@ -1003,7 +995,7 @@
       "days_of_cover": 64.4,
       "unit_cost": 75.62,
       "amount": 1025407.2,
-      "explanation": "Месяц — сезонный пик (×1.20): прогноз 29 130 шт/мес → 13 560 шт, кратно 120",
+      "explanation": "Октябрь — сезонный пик (×1.20): прогноз 29 130 шт/мес → 13 560 шт, кратно 120",
       "components": [
         {
           "key": "base",
@@ -1021,7 +1013,7 @@
         },
         {
           "key": "seasonality",
-          "label": "Сезонность: октября",
+          "label": "Сезонность октября",
           "value": 1.2,
           "kind": "factor",
           "note": null
@@ -1090,7 +1082,7 @@
       "name": "Шина \"N\" нулевая 8х12мм комб с изол \"Стойка\" ШНИ 14 КС IEK (20)",
       "unit": "шт",
       "category": "B",
-      "product_group": null,
+      "product_group": "Шины, клеммы, изоляторы",
       "stock_free": 117.0,
       "stock_source": "estimate_lower_bound",
       "in_transit": 160.0,
@@ -1105,7 +1097,7 @@
       "days_of_cover": 46.7,
       "unit_cost": null,
       "amount": null,
-      "explanation": "Месяц — сезонный пик (×1.33): прогноз 178 шт/мес → 80 шт, кратно 20",
+      "explanation": "Октябрь — сезонный пик (×1.33): прогноз 178 шт/мес → 80 шт, кратно 20",
       "components": [
         {
           "key": "base",
@@ -1123,7 +1115,7 @@
         },
         {
           "key": "seasonality",
-          "label": "Сезонность: октября",
+          "label": "Сезонность октября",
           "value": 1.33,
           "kind": "factor",
           "note": null
@@ -1193,7 +1185,7 @@
       "name": "УЗО АВДТ 32 40А IEK (6/60)",
       "unit": "шт",
       "category": "B",
-      "product_group": null,
+      "product_group": "УЗО и дифавтоматы",
       "stock_free": 450.0,
       "stock_source": "estimate_lower_bound",
       "in_transit": 0.0,
@@ -1208,7 +1200,7 @@
       "days_of_cover": 44.2,
       "unit_cost": null,
       "amount": null,
-      "explanation": "Месяц — сезонный пик (×1.24): прогноз 306 шт/мес → 30 шт, кратно 1",
+      "explanation": "Октябрь — сезонный пик (×1.24): прогноз 306 шт/мес → 30 шт, кратно 1",
       "components": [
         {
           "key": "base",
@@ -1233,7 +1225,7 @@
         },
         {
           "key": "seasonality",
-          "label": "Сезонность: октября",
+          "label": "Сезонность октября",
           "value": 1.24,
           "kind": "factor",
           "note": null
@@ -1298,6 +1290,8 @@
   ],
   "warnings": [
     "IEK: текущий остаток — нижняя оценка (остаток на 01.09 минус продажи сентября)",
+    "IEK: из 359 срочных позиций у 359 остаток оценочный (приходы после 01.09 неизвестны) — сверьте фактический остаток в 1С перед утверждением",
+    "SE: из 23 срочных позиций у 18 остаток оценочный (приходы после 01.09 неизвестны) — сверьте фактический остаток в 1С перед утверждением",
     "Не заказываем 1303 SKU: списаны с закупки, не подлежат заказу или нет истории продаж"
   ]
 }

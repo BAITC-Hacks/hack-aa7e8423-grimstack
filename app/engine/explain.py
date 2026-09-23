@@ -2,6 +2,8 @@
 
 from app.contracts import Component
 
+MONTHS_NOM = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+              "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"]
 MONTHS_RU = ["января", "февраля", "марта", "апреля", "мая", "июня",
              "июля", "августа", "сентября", "октября", "ноября", "декабря"]
 
@@ -39,7 +41,7 @@ def components_analyze(*, base, oneoff_excess, oneoff_note, restored, restored_n
         comps.append(Component(key="stockout_restored", label="Восстановлен упущенный спрос",
                                 value=round(restored, 1), kind="info", note=restored_note))
     comps += [
-        Component(key="seasonality", label=f"Сезонность: {MONTHS_RU[month.month - 1]}",
+        Component(key="seasonality", label=f"Сезонность {MONTHS_RU[month.month - 1]}",
                    value=round(season_val, 2), kind="factor"),
         Component(key="trend", label="Тренд год к году", value=round(trend_val, 2), kind="factor"),
         Component(key="growth", label="Прирост (параметр)", value=round(1 + growth_pct / 100, 2), kind="factor"),
@@ -56,13 +58,13 @@ def components_baseline(*, base, horizon, ss, floor, stock, transit, moq, qty, s
                               moq=moq, ss_label=f"Страховой запас ({sl:.0%})", approx_stock=approx_stock)
 
 
-def _lead_reason(*, seasonal, season_val, trend_up, trend_down, trend_val,
+def _lead_reason(*, month, seasonal, season_val, trend_up, trend_down, trend_val,
                   stockout_restored, oneoff_excluded, in_transit) -> str:
     """Главная причина заказа: сезон → тренд → stockout → разовый заказ → товар в пути."""
     if seasonal and season_val >= 1.15:
-        return f"Месяц — сезонный пик (×{season_val:.2f})"
+        return f"{MONTHS_NOM[month.month - 1]} — сезонный пик (×{season_val:.2f})"
     if seasonal and season_val <= 0.85:
-        return f"Месяц — сезонный спад (×{season_val:.2f})"
+        return f"{MONTHS_NOM[month.month - 1]} — сезонный спад (×{season_val:.2f})"
     if trend_up:
         return f"Устойчивый рост спроса (×{trend_val:.2f} год к году)"
     if trend_down:
