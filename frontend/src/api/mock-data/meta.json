@@ -1,0 +1,43 @@
+{
+  "data_as_of": "2026-09-22",
+  "suppliers": [
+    {
+      "supplier": "IEK",
+      "supplier_name": "IEK (ИЭК)",
+      "lead_time_days": 24,
+      "review_period_days": 7,
+      "categories": [
+        "A",
+        "B",
+        "C"
+      ]
+    },
+    {
+      "supplier": "SE",
+      "supplier_name": "Systeme Electric",
+      "lead_time_days": 40,
+      "review_period_days": 30,
+      "categories": [
+        "Кат. 1",
+        "Кат. 2",
+        "Кат. 3",
+        "Кат. 5",
+        "Кат. 7"
+      ]
+    }
+  ],
+  "product_groups": [
+    "Автоматические выключатели",
+    "УЗО и дифавтоматы",
+    "Кабель и провод",
+    "Трубы и гофра",
+    "Коробки установочные",
+    "Розетки и выключатели",
+    "Шины и клеммы",
+    "Наконечники и гильзы",
+    "Светильники",
+    "Щиты и боксы",
+    "Прочее"
+  ],
+  "llm_available": false
+}

@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GrimStack — предпросмотр дизайн-системы</title>
+    <style>
+      /* Значения :root повторяют design-tokens.json. Это автономный предпросмотр, не приложение. */
+      :root {
+        color-scheme: dark;
+        --bg: #17191B;
+        --surface: #1E2124;
+        --surface-raised: #262B30;
+        --border: #363C42;
+        --border-strong: #56616B;
+        --text: #F2F4F5;
+        --text-muted: #AAB3BB;
+        --accent: #69A9E0;
+        --on-accent: #111920;
+        --accent-soft: #243C50;
+        --critical: #E07878;
+        --critical-soft: #43272A;
+        --warning: #E2AB55;
+        --warning-soft: #403322;
+        --success: #78B995;
+        --success-soft: #263D32;
+        --font-body: "IBM Plex Sans", system-ui, sans-serif;
+        --font-code: "IBM Plex Mono", ui-monospace, monospace;
+        --font-xs: 12px;
+        --font-sm: 14px;
+        --font-md: 16px;
+        --font-lg: 20px;
+        --font-xl: 24px;
+        --font-kpi: clamp(24px, 2vw, 34px);
+        --line-heading: 1.25;
+        --line-body: 1.45;
+        --space-1: 4px;
+        --space-2: 8px;
+        --space-3: 12px;
+        --space-4: 16px;
+        --space-6: 24px;
+        --space-8: 32px;
+        --space-12: 48px;
+        --radius-control: 8px;
+        --radius-panel: 12px;
+        --border-width: 1px;
+        --control-height: 44px;
+        --control-height-dense: 36px;
+        --touch-target-min: 44px;
+        --content-max: 1600px;
+        --detail-width-min: 420px;
+        --z-sticky: 10;
+        --z-drawer: 20;
+        --z-dialog: 30;
+        --z-toast: 40;
+        --motion-quick: 120ms;
+        --motion-standard: 180ms;
+      }
+
+      * { box-sizing: border-box; }
+      html { background: var(--bg); }
+      body { margin: 0; min-width: 0; background: var(--bg); color: var(--text); font: var(--font-md)/var(--line-body) var(--font-body); }
+      button, input, select { font: inherit; }
+      button { cursor: pointer; }
+      button:disabled { cursor: not-allowed; opacity: .5; }
+      :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+      h1, h2, h3, p { margin-top: 0; }
+      h1, h2, h3 { line-height: var(--line-heading); }
+      h1 { margin-bottom: 0; font-size: var(--font-xl); }
+      h2 { margin-bottom: 0; font-size: var(--font-lg); }
+      h3 { margin-bottom: var(--space-3); font-size: var(--font-md); }
+      .shell { width: min(calc(100% - var(--space-8) * 2), var(--content-max)); margin-inline: auto; padding-block: var(--space-8) var(--space-12); }
+      .page-header, .section-heading, .group-title, .group-actions, .detail-heading, .field-row, .component-row { display: flex; align-items: center; gap: var(--space-3); }
+      .page-header { justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-6); }
+      .eyebrow { margin-bottom: var(--space-1); color: var(--text-muted); font-size: var(--font-xs); letter-spacing: .08em; text-transform: uppercase; }
+      .date { margin: 0; color: var(--text-muted); font-size: var(--font-sm); }
+      .panel { min-width: 0; padding: var(--space-6); background: var(--surface); border: var(--border-width) solid var(--border); border-radius: var(--radius-panel); }
+      .demo-alert { margin-bottom: var(--space-4); padding: var(--space-3) var(--space-4); border: var(--border-width) solid var(--warning); border-radius: var(--radius-control); background: var(--warning-soft); color: var(--text); font-size: var(--font-sm); }
+      .demo-alert strong { color: var(--warning); }
+      .filters { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, .7fr) auto; gap: var(--space-4); align-items: end; }
+      .field { display: grid; min-width: 0; gap: var(--space-2); color: var(--text-muted); font-size: var(--font-sm); }
+      .control { width: 100%; min-width: 0; height: var(--control-height); padding-inline: var(--space-3); border: var(--border-width) solid var(--border-strong); border-radius: var(--radius-control); background: var(--surface); color: var(--text); }
+      .control:hover { border-color: var(--accent); }
+      .control:disabled { opacity: .5; }
+      .field-error .control { border-color: var(--critical); }
+      .field-error small { color: var(--critical); }
+      .field-success .control { border-color: var(--success); }
+      .button { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); min-height: var(--control-height); min-width: var(--touch-target-min); padding: var(--space-2) var(--space-4); border: var(--border-width) solid var(--border-strong); border-radius: var(--radius-control); background: var(--surface-raised); color: var(--text); line-height: var(--line-heading); text-align: center; text-decoration: none; transition: border-color var(--motion-quick), background-color var(--motion-quick); }
+      .button:hover { border-color: var(--accent); }
+      .button.primary { border-color: var(--accent); background: var(--accent); color: var(--on-accent); font-weight: 700; }
+      .button.primary:hover { background: var(--text); }
+      .button.ghost { border-color: transparent; background: transparent; }
+      .button.danger { border-color: var(--critical); color: var(--critical); background: var(--critical-soft); }
+      .button.dense { min-height: var(--control-height-dense); }
+      .button[aria-busy="true"]::before { content: ""; width: var(--space-4); aspect-ratio: 1; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; }
+      .more-options { margin-top: var(--space-3); }
+      .more-options summary { width: fit-content; padding: var(--space-2) 0; color: var(--accent); cursor: pointer; }
+      .more-options .field-row { flex-wrap: wrap; padding-top: var(--space-3); }
+      .more-options .field { flex: 1 1 var(--detail-width-min); }
+      .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-6); margin-block: var(--space-8); }
+      .metric { min-width: 0; padding-left: var(--space-4); border-left: var(--border-width) solid var(--border-strong); }
+      .metric:first-child { border-color: var(--accent); }
+      .metric span { display: block; color: var(--text-muted); font-size: var(--font-sm); }
+      .metric strong { display: block; margin-top: var(--space-1); font-size: var(--font-kpi); line-height: var(--line-heading); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+      .metric .critical-value { color: var(--critical); }
+      .workspace { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-6); align-items: start; }
+      .workspace.has-detail { grid-template-columns: minmax(0, 1.38fr) minmax(0, 1fr); }
+      .orders, .detail { min-width: 0; }
+      .section-heading { justify-content: space-between; flex-wrap: wrap; margin-bottom: var(--space-4); }
+      .secondary-metrics { color: var(--text-muted); font-size: var(--font-sm); }
+      .supplier + .supplier { margin-top: var(--space-8); }
+      .group-title { min-width: 0; flex-wrap: wrap; margin-bottom: var(--space-3); }
+      .group-title h3 { margin: 0; }
+      .group-actions { margin-left: auto; flex-wrap: wrap; }
+      .badge { display: inline-flex; align-items: center; min-height: 28px; padding: var(--space-1) var(--space-3); border-radius: var(--radius-control); font-size: var(--font-xs); font-weight: 700; line-height: var(--line-heading); white-space: nowrap; }
+      .badge.warning { color: var(--warning); background: var(--warning-soft); }
+      .badge.critical { color: var(--critical); background: var(--critical-soft); }
+      .badge.success { color: var(--success); background: var(--success-soft); }
+      .badge.neutral { color: var(--text-muted); background: var(--surface-raised); }
+      .group-meta { margin-bottom: var(--space-3); color: var(--text-muted); font-size: var(--font-sm); }
+      .table-scroll { max-width: 100%; overflow-x: auto; }
+      table { width: 100%; border-collapse: collapse; font-size: var(--font-sm); }
+      th, td { padding: var(--space-3) var(--space-2); border-bottom: var(--border-width) solid var(--border); vertical-align: middle; }
+      th { color: var(--text-muted); font-weight: 500; text-align: left; white-space: nowrap; }
+      td { min-width: 0; }
+      td.product { min-width: 18rem; max-width: 24rem; }
+      .sku { display: block; margin-bottom: var(--space-1); color: var(--text-muted); font: var(--font-xs)/var(--line-body) var(--font-code); }
+      .product-button { display: block; width: 100%; padding: 0; border: 0; background: none; color: var(--text); font-weight: 600; text-align: left; cursor: pointer; }
+      .product-button:hover { color: var(--accent); }
+      td.number { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+      .selected { background: var(--accent-soft); }
+      .compare { color: var(--critical); font-weight: 700; }
+      .mobile-cards { display: none; }
+      .order-card { padding-block: var(--space-4); border-top: var(--border-width) solid var(--border); }
+      .order-card:first-child { border-top: 0; }
+      .order-card .product-button { overflow-wrap: anywhere; }
+      .card-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); margin-block: var(--space-3); }
+      .card-facts div { min-width: 0; }
+      .card-facts dt { color: var(--text-muted); font-size: var(--font-xs); }
+      .card-facts dd { margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+      .detail { display: none; }
+      .detail.is-open { display: block; }
+      .detail-heading { justify-content: space-between; align-items: start; margin-bottom: var(--space-4); }
+      .detail-heading h2 { overflow-wrap: anywhere; }
+      .detail .lead { color: var(--text-muted); font-size: var(--font-sm); }
+      .chart { height: 12rem; margin-block: var(--space-6) var(--space-4); border-bottom: var(--border-width) solid var(--border-strong); }
+      .chart svg { display: block; width: 100%; height: 100%; }
+      .chart .actual { fill: none; stroke: var(--text); stroke-width: 2.5; }
+      .chart .forecast { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-dasharray: 6 5; }
+      .chart .stockout { fill: var(--critical-soft); }
+      .legend { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); margin-bottom: var(--space-6); color: var(--text-muted); font-size: var(--font-xs); }
+      .legend span::before { content: ""; display: inline-block; width: var(--space-4); height: var(--border-width); margin-right: var(--space-2); vertical-align: middle; background: var(--text); }
+      .legend .forecast-label::before { background: var(--accent); }
+      .legend .stockout-label::before { height: var(--space-2); background: var(--critical-soft); }
+      .step { display: flex; justify-content: space-between; gap: var(--space-4); padding-block: var(--space-2); border-bottom: var(--border-width) solid var(--border); font-size: var(--font-sm); }
+      .step span:first-child { min-width: 0; }
+      .step span:last-child { white-space: nowrap; font-variant-numeric: tabular-nums; }
+      .step.total { border-top: var(--border-width) solid var(--border-strong); border-bottom: 0; font-weight: 700; }
+      .sample-note { margin: var(--space-6) 0 0; color: var(--text-muted); font-size: var(--font-xs); }
+      .component-preview { margin-top: var(--space-8); }
+      .component-preview .panel { display: grid; gap: var(--space-6); }
+      .component-row { flex-wrap: wrap; }
+      .component-row .field { flex: 1 1 10rem; }
+      .tooltip-example { position: relative; }
+      .tooltip-example .tooltip-text { display: block; padding: var(--space-3); border: var(--border-width) solid var(--border-strong); border-radius: var(--radius-control); background: var(--surface-raised); color: var(--text); font-size: var(--font-xs); }
+      .skeleton { width: 12rem; height: var(--font-lg); border-radius: var(--radius-control); background: var(--surface-raised); }
+      dialog { max-width: min(calc(100vw - var(--space-8)), 30rem); padding: var(--space-6); border: var(--border-width) solid var(--border-strong); border-radius: var(--radius-panel); background: var(--surface-raised); color: var(--text); }
+      dialog::backdrop { background: rgb(0 0 0 / .7); }
+      dialog .group-actions { justify-content: end; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      @media (max-width: 1439px) {
+        .shell { width: min(calc(100% - var(--space-6) * 2), var(--content-max)); }
+        .workspace.has-detail { grid-template-columns: minmax(0, 1fr); }
+        .detail.is-open { position: fixed; z-index: var(--z-drawer); top: 0; right: 0; width: min(100%, 38rem); height: 100dvh; overflow-y: auto; border-radius: 0; box-shadow: 0 0 var(--space-8) var(--bg); }
+        .backdrop.is-open { position: fixed; z-index: calc(var(--z-drawer) - 1); inset: 0; background: rgb(0 0 0 / .7); }
+      }
+      @media (max-width: 1023px) {
+        .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      }
+      @media (max-width: 639px) {
+        .shell { width: min(calc(100% - var(--space-4) * 2), var(--content-max)); padding-top: var(--space-6); }
+        .panel { padding: var(--space-4); }
+        .filters { grid-template-columns: minmax(0, 1fr); }
+        .filters > .button { width: 100%; }
+        .metrics { gap: var(--space-4); margin-block: var(--space-6); }
+        .group-actions { width: 100%; margin-left: 0; }
+        .group-actions .button { flex: 1 1 8rem; }
+        .table-scroll { display: none; }
+        .mobile-cards { display: block; }
+        .detail.is-open { width: 100%; padding-bottom: var(--space-12); }
+      }
+      @media (max-width: 359px) { .metrics { grid-template-columns: minmax(0, 1fr); } }
+      @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="page-header">
+        <div><p class="eyebrow">GrimStack · закупки</p><h1>Планирование заказов</h1></div>
+        <p class="date">Данные на 31.08.2026</p>
+      </header>
+
+      <p class="demo-alert" role="note"><strong>Демо-данные.</strong> Это статический предпросмотр компонентов. Числа взяты из иллюстративного <code>sample_run.json</code> и не являются результатом расчёта.</p>
+
+      <section class="panel" aria-label="Параметры расчёта">
+        <div class="filters">
+          <label class="field">Поставщик<select class="control"><option>Все поставщики</option><option>IEK</option><option>Systeme Electric</option></select></label>
+          <label class="field">Метод<select class="control"><option>Наш расчёт</option><option>Excel-метод</option></select></label>
+          <label class="field">Прирост, %<input class="control" type="number" value="0"></label>
+          <button class="button primary" type="button" title="В рабочем приложении запускает расчёт">Рассчитать</button>
+        </div>
+        <details class="more-options"><summary>Доп. параметры</summary><div class="field-row"><label class="field">Категория<select class="control" disabled><option>Для всех поставщиков недоступна</option></select></label><label class="field">Срок поставки L, дни<input class="control" type="number" placeholder="По умолчанию поставщика"></label><label class="field">Период R, дни<input class="control" type="number" placeholder="По умолчанию поставщика"></label></div></details>
+      </section>
+
+      <section class="metrics" aria-label="Главные показатели">
+        <div class="metric"><span>К заказу</span><strong>6 поз.</strong></div>
+        <div class="metric"><span>Срочно</span><strong class="critical-value">1</strong></div>
+        <div class="metric"><span>Разовых исключено</span><strong>108 963 шт.</strong></div>
+        <div class="metric"><span>Спрос восстановлен</span><strong>12 840 шт.</strong></div>
+      </section>
+
+      <div class="workspace has-detail" id="workspace">
+        <section class="panel orders" aria-labelledby="orders-title">
+          <div class="section-heading"><h2 id="orders-title">Заказы поставщикам</h2><span class="secondary-metrics">Излишки: 3 позиции</span></div>
+          <section class="supplier" aria-labelledby="iek-title">
+            <div class="group-title"><h3 id="iek-title">IEK (ИЭК)</h3><span class="badge warning">Черновик</span><div class="group-actions"><button class="button dense" type="button" data-dialog-open>Утвердить</button><button class="button dense" type="button" title="В рабочем приложении скачает XLSX">Excel для 1С</button></div></div>
+            <p class="group-meta">3 позиции · Сумма: нет цены · Остаток IEK — нижняя оценка</p>
+            <div class="table-scroll"><table><thead><tr><th scope="col">Товар</th><th scope="col">Остаток</th><th scope="col">Наш заказ</th><th scope="col">Excel</th><th scope="col">Срочность</th></tr></thead><tbody><tr class="selected"><td class="product"><span class="sku">130300792_</span><button class="product-button" type="button" data-detail-open>Труба гибкая двустенная красная Ø50 IEK</button></td><td class="number" title="Нижняя оценка остатка">≈0 м</td><td class="number">15 000 м</td><td class="number">13 400 м</td><td><span class="badge critical">Срочно</span></td></tr><tr><td class="product"><span class="sku">010300096_</span><button class="product-button" type="button" data-detail-open>УЗО АВДТ 32 40А IEK</button></td><td class="number" title="Нижняя оценка остатка">≈450 шт.</td><td class="number">100 шт.</td><td class="number">79 шт.</td><td><span class="badge neutral">Плановый</span></td></tr></tbody></table></div>
+            <div class="mobile-cards"><article class="order-card"><span class="sku">130300792_</span><button class="product-button" type="button" data-detail-open>Труба гибкая двустенная красная Ø50 IEK</button><dl class="card-facts"><div><dt>Остаток</dt><dd>≈0 м</dd></div><div><dt>Наш заказ</dt><dd>15 000 м</dd></div><div><dt>Excel-метод</dt><dd>13 400 м</dd></div><div><dt>Срочность</dt><dd><span class="badge critical">Срочно</span></dd></div></dl><button class="button" type="button" data-detail-open>Почему столько</button></article><article class="order-card"><span class="sku">010300096_</span><button class="product-button" type="button" data-detail-open>УЗО АВДТ 32 40А IEK</button><dl class="card-facts"><div><dt>Остаток</dt><dd>≈450 шт.</dd></div><div><dt>Наш заказ</dt><dd>100 шт.</dd></div><div><dt>Excel-метод</dt><dd>79 шт.</dd></div><div><dt>Срочность</dt><dd><span class="badge neutral">Плановый</span></dd></div></dl></article></div>
+          </section>
+          <section class="supplier" aria-labelledby="se-title">
+            <div class="group-title"><h3 id="se-title">Systeme Electric</h3><span class="badge warning">Черновик</span><div class="group-actions"><button class="button dense" type="button" data-dialog-open>Утвердить</button><button class="button dense" type="button" title="В рабочем приложении скачает XLSX">Excel для 1С</button></div></div>
+            <p class="group-meta">3 позиции · Оценочная сумма: 2 700 359,3 ₸</p>
+            <div class="table-scroll"><table><thead><tr><th scope="col">Товар</th><th scope="col">Остаток</th><th scope="col">Наш заказ</th><th scope="col">Excel</th><th scope="col">Срочность</th></tr></thead><tbody><tr><td class="product"><span class="sku">030200201_</span><button class="product-button" type="button" data-detail-open>Коробка для твёрдых стен IMT35101</button></td><td class="number">62 498 шт.</td><td class="number">8 280 шт.</td><td class="number compare">0 шт.</td><td><span class="badge warning">Скоро</span></td></tr><tr><td class="product"><span class="sku">030200193_</span><button class="product-button" type="button" data-detail-open>Коробка для полых стен IMT35150</button></td><td class="number">40 798 шт.</td><td class="number">15 120 шт.</td><td class="number">3 780 шт.</td><td><span class="badge neutral">Плановый</span></td></tr></tbody></table></div>
+            <div class="mobile-cards"><article class="order-card"><span class="sku">030200201_</span><button class="product-button" type="button" data-detail-open>Коробка для твёрдых стен IMT35101</button><dl class="card-facts"><div><dt>Остаток</dt><dd>62 498 шт.</dd></div><div><dt>Наш заказ</dt><dd>8 280 шт.</dd></div><div><dt>Excel-метод</dt><dd class="compare">0 шт.</dd></div><div><dt>Срочность</dt><dd><span class="badge warning">Скоро</span></dd></div></dl><button class="button" type="button" data-detail-open>Почему столько</button></article></div>
+          </section>
+        </section>
+
+        <div class="backdrop" id="detail-backdrop" aria-hidden="true"></div>
+        <aside class="panel detail is-open" id="detail" aria-labelledby="detail-title">
+          <div class="detail-heading"><h2 id="detail-title">Труба Ø50 — почему 15 000 м</h2><button class="button ghost" type="button" id="detail-close" aria-label="Закрыть детали">Закрыть</button></div>
+          <p class="lead">Иллюстрация расположения графика и «лесенки». Динамические значения появятся в приложении после запроса истории SKU.</p>
+          <div class="chart" role="img" aria-label="Схема: светлая линия продаж, пунктир прогноза и зона месяца без товара">
+            <svg viewBox="0 0 500 180" preserveAspectRatio="none" aria-hidden="true"><rect class="stockout" x="315" y="0" width="45" height="180"/><polyline class="actual" points="0,145 45,140 90,116 135,80 180,92 225,48 270,130 315,105 360,143 405,117"/><polyline class="forecast" points="405,117 450,40 500,88"/></svg>
+          </div>
+          <div class="legend"><span>История продаж</span><span class="forecast-label">Прогноз</span><span class="stockout-label">Месяц без товара</span></div>
+          <h3>Расчёт количества</h3>
+          <div class="step"><span>Спрос на L + R</span><span>9 242 м</span></div><div class="step"><span>+ Страховой запас</span><span>5 730 м</span></div><div class="step"><span>− Свободный остаток</span><span>0 м</span></div><div class="step"><span>− В пути</span><span>0 м</span></div><div class="step"><span>+ Округление до кратности</span><span>28 м</span></div><div class="step total"><span>Наш заказ</span><span>15 000 м</span></div>
+          <p class="sample-note">Числа «лесенки» иллюстрируют поля образца. Множители и справочные корректировки в сумму не складываются.</p>
+        </aside>
+      </div>
+
+      <section class="component-preview" aria-labelledby="components-title">
+        <h2 id="components-title">Состояния общих компонентов</h2>
+        <p class="sample-note">Эти образцы задают единый вид кнопок, полей, статусов и сообщений для будущего приложения.</p>
+        <div class="panel">
+          <div class="component-row"><button class="button primary" type="button">Основное действие</button><button class="button" type="button">Вторичное</button><button class="button ghost" type="button">Текстовое</button><button class="button danger" type="button">Опасное</button><button class="button" type="button" disabled>Недоступно</button><button class="button" type="button" aria-busy="true">Загрузка</button></div>
+          <div class="component-row"><span class="badge critical">Срочно</span><span class="badge warning">Скоро</span><span class="badge neutral">Плановый</span><span class="badge warning">Черновик</span><span class="badge success">Утверждён</span></div>
+          <div class="component-row"><label class="field field-error">Количество<input class="control" type="number" value="13" aria-describedby="qty-error"><small id="qty-error">Количество должно быть кратно 10</small></label><label class="field field-success">Количество сохранено<input class="control" type="number" value="20"></label><span class="tooltip-example"><span class="tooltip-text" role="tooltip">≈ — нижняя оценка остатка IEK</span></span><div class="skeleton" role="status" aria-label="Загрузка данных"></div></div>
+          <p class="demo-alert" role="status"><strong>Предупреждение.</strong> Данные могут быть неполными; пояснение всегда показывается текстом.</p>
+          <div><button class="button" type="button" data-dialog-open>Пример подтверждения</button></div>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="confirm-dialog" aria-labelledby="dialog-title"><h2 id="dialog-title">Утвердить заказ?</h2><p>Предпросмотр диалога подтверждения. Эта кнопка не меняет данные.</p><div class="group-actions"><button class="button" type="button" id="dialog-close">Отмена</button><button class="button primary" type="button" id="dialog-confirm">Понятно</button></div></dialog>
+    <script>
+      const detail = document.getElementById('detail');
+      const workspace = document.getElementById('workspace');
+      const backdrop = document.getElementById('detail-backdrop');
+      const closeDetailButton = document.getElementById('detail-close');
+      let returnFocus = null;
+      const setDetailOpen = (open) => {
+        detail.classList.toggle('is-open', open);
+        workspace.classList.toggle('has-detail', open);
+        backdrop.classList.toggle('is-open', open);
+        if (open) closeDetailButton.focus();
+        else returnFocus?.focus();
+      };
+      document.querySelectorAll('[data-detail-open]').forEach((button) => button.addEventListener('click', () => {
+        returnFocus = button;
+        setDetailOpen(true);
+      }));
+      closeDetailButton.addEventListener('click', () => setDetailOpen(false));
+      backdrop.addEventListener('click', () => setDetailOpen(false));
+      document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && detail.classList.contains('is-open')) setDetailOpen(false); });
+      const dialog = document.getElementById('confirm-dialog');
+      document.querySelectorAll('[data-dialog-open]').forEach((button) => button.addEventListener('click', () => dialog.showModal()));
+      document.getElementById('dialog-close').addEventListener('click', () => dialog.close());
+      document.getElementById('dialog-confirm').addEventListener('click', () => dialog.close());
+      if (window.matchMedia('(max-width: 1439px)').matches) setDetailOpen(false);
+    </script>
+  </body>
+</html>
