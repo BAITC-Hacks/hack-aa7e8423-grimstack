@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from app.ingest.common import doc_hash, month_period, norm_code, read_sheet
+from app.ingest.common import month_period, norm_code, read_sales_tx, read_sheet
 from app.ingest.dataset import SKU_COLUMNS, Dataset
 
 SUPPLIER = "IEK"
@@ -67,25 +67,6 @@ def _monthly_stock(path: Path) -> tuple[pd.DataFrame, pd.Series, pd.Series]:
     name = pd.Series(body[0].map(_clean_text).values, index=idx, name="name")
     unit = pd.Series(body[1].map(_clean_text).values, index=idx, name="unit")
     return stock, name, unit
-
-
-def _sales_tx(path: Path) -> pd.DataFrame:
-    """Строки расходных накладных 2025+. Один читающий проход pandas, без циклов по openpyxl."""
-    raw = read_sheet(path)
-    body = raw.iloc[1:]
-    doc = body[2].astype(str)
-    is_sale = doc.str.startswith("Расходная накладная")
-    qty = pd.to_numeric(body[7], errors="coerce").fillna(0.0)
-    tx_date = pd.to_datetime(body[0], format="%d.%m.%Y %H:%M:%S", errors="coerce")
-    code = body[3].map(norm_code)
-    mask = is_sale & (qty > 0) & (tx_date >= pd.Timestamp("2025-01-01")) & code.notna()
-    return pd.DataFrame({
-        "supplier": SUPPLIER,
-        "sku": code[mask].values,
-        "date": tx_date[mask].values,
-        "doc": doc[mask].map(doc_hash).values,
-        "qty": qty[mask].values,
-    })
 
 
 def _in_transit(path: Path) -> tuple[pd.DataFrame, pd.Series, pd.Series, pd.Series, pd.Series]:
@@ -159,7 +140,7 @@ def load(folder: Path, as_of: date) -> Dataset:
     folder = Path(folder)
     sales, sales_name = _monthly_sales(folder / "monthly_sales.xlsx")
     stock, stock_name, stock_unit = _monthly_stock(folder / "monthly_stock.xlsx")
-    tx = _sales_tx(folder / "sales_tx.xlsx")
+    tx = read_sales_tx(folder / "sales_tx.xlsx", SUPPLIER)
     transit, transit_name, transit_article, transit_new_item, transit_keep_1m = \
         _in_transit(folder / "in_transit.xlsx")
     moq_name, moq_article, moq_value = _moq(folder / "moq.xlsx")

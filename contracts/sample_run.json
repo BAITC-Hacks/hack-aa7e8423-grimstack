@@ -1,6 +1,6 @@
 {
-  "run_id": "run_demo_0001",
-  "created_at": "2026-09-23T14:00:00",
+  "run_id": "b00ce0eca017",
+  "created_at": "2026-09-23T14:22:15.430138",
   "params": {
     "dataset_id": null,
     "supplier": null,
@@ -13,195 +13,93 @@
   },
   "data_as_of": "2026-09-22",
   "kpi": {
-    "lines_to_order": 6,
-    "critical": 1,
-    "total_amount": 2700359.3,
-    "oneoff_units_excluded": 108963.0,
-    "stockout_units_restored": 12840.0,
-    "overstock_lines": 3
+    "lines_to_order": 12,
+    "critical": 8,
+    "total_amount": 5373528.6,
+    "oneoff_units_excluded": 31254.5,
+    "stockout_units_restored": 9296.3,
+    "overstock_lines": 0
   },
   "suppliers": [
     {
-      "supplier": "IEK",
-      "supplier_name": "IEK (ИЭК)",
-      "lines_count": 3,
-      "critical_count": 1,
-      "total_qty": 15140.0,
-      "total_amount": null,
+      "supplier": "SE",
+      "supplier_name": "Systeme Electric",
+      "lines_count": 6,
+      "critical_count": 4,
+      "total_qty": 40268.0,
+      "total_amount": 5373528.6,
       "status": "draft",
       "approved_at": null
     },
     {
-      "supplier": "SE",
-      "supplier_name": "Systeme Electric",
-      "lines_count": 3,
-      "critical_count": 0,
-      "total_qty": 23450.0,
-      "total_amount": 2700359.3,
+      "supplier": "IEK",
+      "supplier_name": "IEK (ИЭК)",
+      "lines_count": 6,
+      "critical_count": 4,
+      "total_qty": 39510.0,
+      "total_amount": null,
       "status": "draft",
       "approved_at": null
     }
   ],
   "lines": [
     {
-      "line_id": "IEK:130300792_",
-      "supplier": "IEK",
-      "sku": "130300792_",
-      "article": "CTG12-050-K04-050-R",
-      "name": "Труба гибкая двустенная красная (с протяжкой) Ø50 IEK (50)",
-      "unit": "м",
-      "category": "A",
-      "product_group": "Трубы и гофра",
-      "stock_free": 0.0,
-      "stock_source": "estimate_lower_bound",
-      "in_transit": 0.0,
-      "forecast_monthly": 8944.0,
-      "safety_stock": 5730.0,
-      "order_up_to": 14972.0,
-      "moq": 50.0,
-      "recommended_qty": 15000.0,
-      "final_qty": 15000.0,
-      "baseline_qty": 13400.0,
-      "urgency": "critical",
-      "days_of_cover": 0.0,
-      "unit_cost": null,
-      "amount": null,
-      "explanation": "Октябрь — сезонный пик группы 1303 (×1.72): прогноз 8 944 м/мес; остаток ≈0 (оценка), в пути нет → 15 000 м, кратно 50",
-      "components": [
-        {
-          "key": "base",
-          "label": "База: среднее 12 мес без сезонности",
-          "value": 5200.0,
-          "kind": "info",
-          "note": null
-        },
-        {
-          "key": "stockout_restored",
-          "label": "Восстановлен упущенный спрос",
-          "value": 2500.0,
-          "kind": "info",
-          "note": "08.2026: остаток на начало 0, продано 946 м"
-        },
-        {
-          "key": "seasonality",
-          "label": "Сезонность октября (группа 1303)",
-          "value": 1.72,
-          "kind": "factor",
-          "note": null
-        },
-        {
-          "key": "trend",
-          "label": "Тренд YoY (сжатый)",
-          "value": 1.0,
-          "kind": "factor",
-          "note": null
-        },
-        {
-          "key": "growth",
-          "label": "Прирост (параметр)",
-          "value": 1.0,
-          "kind": "factor",
-          "note": null
-        },
-        {
-          "key": "horizon_demand",
-          "label": "Спрос на L+R = 24+7 дн",
-          "value": 9242.0,
-          "kind": "qty",
-          "note": null
-        },
-        {
-          "key": "safety_stock",
-          "label": "Страховой запас (A, 97%)",
-          "value": 5730.0,
-          "kind": "qty",
-          "note": null
-        },
-        {
-          "key": "stock",
-          "label": "Свободный остаток",
-          "value": 0.0,
-          "kind": "qty",
-          "note": "нижняя оценка: 01.09 − продажи 1–21.09"
-        },
-        {
-          "key": "in_transit",
-          "label": "В пути",
-          "value": 0.0,
-          "kind": "qty",
-          "note": null
-        },
-        {
-          "key": "moq_rounding",
-          "label": "Округление до кратности 50",
-          "value": 28.0,
-          "kind": "qty",
-          "note": null
-        }
-      ],
-      "flags": [
-        "seasonal",
-        "stockout_restored",
-        "approx_stock"
-      ]
-    },
-    {
-      "line_id": "IEK:010300096_",
-      "supplier": "IEK",
-      "sku": "010300096_",
-      "article": "MAD22-5-040-C-30",
-      "name": "УЗО АВДТ 32 40А IEK (6/60)",
+      "line_id": "SE:130300027_",
+      "supplier": "SE",
+      "sku": "130300027_",
+      "article": "U733M",
+      "name": "Сжим У 733M (16-35/1,5-10) Sch El (140)",
       "unit": "шт",
-      "category": "B",
-      "product_group": "УЗО и дифавтоматы",
-      "stock_free": 450.0,
-      "stock_source": "estimate_lower_bound",
+      "category": "Кат. 1",
+      "product_group": null,
+      "stock_free": 114.0,
+      "stock_source": "warehouses",
       "in_transit": 0.0,
-      "forecast_monthly": 339.0,
-      "safety_stock": 200.0,
-      "order_up_to": 550.0,
-      "moq": 1.0,
-      "recommended_qty": 100.0,
-      "final_qty": 100.0,
-      "baseline_qty": 79.0,
-      "urgency": "planned",
-      "days_of_cover": 39.8,
-      "unit_cost": null,
-      "amount": null,
-      "explanation": "Рост к прошлому году ×1.12 после очистки: разовая строка 630 шт (05.2025) и stockout 06–07.2025 не искажают базу → 100 шт",
+      "forecast_monthly": 529.3,
+      "safety_stock": 1446.9,
+      "order_up_to": 2466.4,
+      "moq": 140.0,
+      "recommended_qty": 2380.0,
+      "final_qty": 2380.0,
+      "baseline_qty": 3360.0,
+      "urgency": "critical",
+      "days_of_cover": 6.5,
+      "unit_cost": 326.54,
+      "amount": 777165.2,
+      "explanation": "Месяц — сезонный пик (×1.31): прогноз 529 шт/мес → 2 380 шт, кратно 140",
       "components": [
         {
           "key": "base",
           "label": "База: среднее 12 мес без сезонности",
-          "value": 260.0,
+          "value": 484.1,
           "kind": "info",
           "note": null
         },
         {
           "key": "oneoff_excluded",
-          "label": "Исключена разовая строка",
-          "value": 480.0,
+          "label": "Исключены разовые строки",
+          "value": 3001.0,
           "kind": "info",
-          "note": "15.05.2025: 630 шт обрезано до 150"
+          "note": "09.06.2026, документ 9f221cda6b: 1457 шт (обычно 30)"
         },
         {
           "key": "stockout_restored",
           "label": "Восстановлен упущенный спрос",
-          "value": 316.0,
+          "value": 78.0,
           "kind": "info",
-          "note": "05–07.2025: товара не было"
+          "note": "2024-08 (остаток ниже 25% базы): +295"
         },
         {
           "key": "seasonality",
-          "label": "Сезонность октября (IEK)",
-          "value": 1.17,
+          "label": "Сезонность: октября",
+          "value": 1.31,
           "kind": "factor",
           "note": null
         },
         {
           "key": "trend",
-          "label": "Тренд YoY (сжатый)",
-          "value": 1.115,
+          "label": "Тренд год к году",
+          "value": 0.83,
           "kind": "factor",
           "note": null
         },
@@ -214,36 +112,36 @@
         },
         {
           "key": "horizon_demand",
-          "label": "Спрос на L+R = 24+7 дн",
-          "value": 350.0,
+          "label": "Спрос на срок поставки и период заказа",
+          "value": 1019.5,
           "kind": "qty",
           "note": null
         },
         {
           "key": "safety_stock",
-          "label": "Страховой запас (B, 95%)",
-          "value": 200.0,
+          "label": "Страховой запас (Кат. 1, 97%)",
+          "value": 1446.9,
           "kind": "qty",
           "note": null
         },
         {
           "key": "stock",
-          "label": "Свободный остаток",
-          "value": -450.0,
+          "label": "Текущий остаток",
+          "value": -114.0,
           "kind": "qty",
-          "note": "нижняя оценка"
+          "note": null
         },
         {
           "key": "in_transit",
           "label": "В пути",
-          "value": 0.0,
+          "value": -0.0,
           "kind": "qty",
           "note": null
         },
         {
           "key": "moq_rounding",
-          "label": "Округление до кратности 1",
-          "value": 0.0,
+          "label": "Округление до кратности 140",
+          "value": 27.59999999999991,
           "kind": "qty",
           "note": null
         }
@@ -251,53 +149,60 @@
       "flags": [
         "oneoff_excluded",
         "stockout_restored",
-        "trend_up",
-        "approx_stock"
+        "seasonal",
+        "trend_down"
       ]
     },
     {
-      "line_id": "IEK:130200124_",
-      "supplier": "IEK",
-      "sku": "130200124_",
-      "article": "YNN10-812-14DP-K07",
-      "name": "Шина \"N\" нулевая 8х12мм комб с изол \"Стойка\" ШНИ 14 КС IEK (20)",
+      "line_id": "SE:130300026_",
+      "supplier": "SE",
+      "sku": "130300026_",
+      "article": "U731M",
+      "name": "Сжим У 731М (4-10/1,5-10) Sch El (140)",
       "unit": "шт",
-      "category": "C",
-      "product_group": "Шины и клеммы",
-      "stock_free": 117.0,
-      "stock_source": "estimate_lower_bound",
-      "in_transit": 160.0,
-      "forecast_monthly": 163.0,
-      "safety_stock": 143.0,
-      "order_up_to": 311.0,
-      "moq": 20.0,
-      "recommended_qty": 40.0,
-      "final_qty": 40.0,
-      "baseline_qty": 40.0,
-      "urgency": "planned",
-      "days_of_cover": 51.0,
-      "unit_cost": null,
-      "amount": null,
-      "explanation": "Прогноз 163 шт/мес, в пути 160 (до 01.10) почти закрывает потребность → 40 шт, кратно 20",
+      "category": "Кат. 3",
+      "product_group": null,
+      "stock_free": 260.0,
+      "stock_source": "warehouses",
+      "in_transit": 0.0,
+      "forecast_monthly": 280.0,
+      "safety_stock": 317.9,
+      "order_up_to": 857.1,
+      "moq": 140.0,
+      "recommended_qty": 700.0,
+      "final_qty": 700.0,
+      "baseline_qty": 1120.0,
+      "urgency": "critical",
+      "days_of_cover": 27.9,
+      "unit_cost": 396.19,
+      "amount": 277333.0,
+      "explanation": "Месяц — сезонный пик (×1.31): прогноз 280 шт/мес → 700 шт, кратно 140",
       "components": [
         {
           "key": "base",
           "label": "База: среднее 12 мес без сезонности",
-          "value": 150.0,
+          "value": 251.6,
           "kind": "info",
           "note": null
         },
         {
+          "key": "oneoff_excluded",
+          "label": "Исключены разовые строки",
+          "value": 1256.0,
+          "kind": "info",
+          "note": "26.05.2026, документ 20221f3fea: 748 шт (обычно 20)"
+        },
+        {
           "key": "seasonality",
-          "label": "Сезонность октября (IEK)",
-          "value": 1.17,
+          "label": "Сезонность: октября",
+          "value": 1.31,
           "kind": "factor",
           "note": null
         },
         {
           "key": "trend",
-          "label": "Тренд YoY (сжатый)",
-          "value": 0.93,
+          "label": "Тренд год к году",
+          "value": 0.85,
           "kind": "factor",
           "note": null
         },
@@ -310,42 +215,674 @@
         },
         {
           "key": "horizon_demand",
-          "label": "Спрос на L+R = 24+7 дн",
-          "value": 168.0,
+          "label": "Спрос на срок поставки и период заказа",
+          "value": 539.2,
           "kind": "qty",
           "note": null
         },
         {
           "key": "safety_stock",
-          "label": "Страховой запас (C, 90%)",
-          "value": 143.0,
+          "label": "Страховой запас (Кат. 3, 90%)",
+          "value": 317.9,
           "kind": "qty",
           "note": null
         },
         {
           "key": "stock",
-          "label": "Свободный остаток",
-          "value": -117.0,
+          "label": "Текущий остаток",
+          "value": -260.0,
           "kind": "qty",
-          "note": "нижняя оценка"
+          "note": null
         },
         {
           "key": "in_transit",
-          "label": "В пути (ETA 01.10.2026)",
-          "value": -160.0,
+          "label": "В пути",
+          "value": -0.0,
           "kind": "qty",
           "note": null
         },
         {
           "key": "moq_rounding",
-          "label": "Округление до кратности 20",
-          "value": 6.0,
+          "label": "Округление до кратности 140",
+          "value": 102.89999999999998,
           "kind": "qty",
           "note": null
         }
       ],
       "flags": [
-        "trend_down",
+        "oneoff_excluded",
+        "seasonal",
+        "trend_down"
+      ]
+    },
+    {
+      "line_id": "SE:130300028_",
+      "supplier": "SE",
+      "sku": "130300028_",
+      "article": "U734M",
+      "name": "Сжим У 734М (16-35/16-25) Sch El (140)",
+      "unit": "шт",
+      "category": "Кат. 3",
+      "product_group": null,
+      "stock_free": 9.0,
+      "stock_source": "warehouses",
+      "in_transit": 0.0,
+      "forecast_monthly": 217.3,
+      "safety_stock": 327.9,
+      "order_up_to": 746.4,
+      "moq": 140.0,
+      "recommended_qty": 840.0,
+      "final_qty": 840.0,
+      "baseline_qty": 700.0,
+      "urgency": "critical",
+      "days_of_cover": 1.2,
+      "unit_cost": 310.81,
+      "amount": 261080.4,
+      "explanation": "Месяц — сезонный пик (×1.31): прогноз 217 шт/мес → 840 шт, кратно 140",
+      "components": [
+        {
+          "key": "base",
+          "label": "База: среднее 12 мес без сезонности",
+          "value": 165.9,
+          "kind": "info",
+          "note": null
+        },
+        {
+          "key": "oneoff_excluded",
+          "label": "Исключены разовые строки",
+          "value": 604.5,
+          "kind": "info",
+          "note": "10.04.2025, документ 61247cbf23: 620 шт (обычно 16)"
+        },
+        {
+          "key": "seasonality",
+          "label": "Сезонность: октября",
+          "value": 1.31,
+          "kind": "factor",
+          "note": null
+        },
+        {
+          "key": "trend",
+          "label": "Тренд год к году",
+          "value": 1.0,
+          "kind": "factor",
+          "note": null
+        },
+        {
+          "key": "growth",
+          "label": "Прирост (параметр)",
+          "value": 1.0,
+          "kind": "factor",
+          "note": null
+        },
+        {
+          "key": "horizon_demand",
+          "label": "Спрос на срок поставки и период заказа",
+          "value": 418.5,
+          "kind": "qty",
+          "note": null
+        },
+        {
+          "key": "safety_stock",
+          "label": "Страховой запас (Кат. 3, 90%)",
+          "value": 327.9,
+          "kind": "qty",
+          "note": null
+        },
+        {
+          "key": "stock",
+          "label": "Текущий остаток",
+          "value": -9.0,
+          "kind": "qty",
+          "note": null
+        },
+        {
+          "key": "in_transit",
+          "label": "В пути",
+          "value": -0.0,
+          "kind": "qty",
+          "note": null
+        },
+        {
+          "key": "moq_rounding",
+          "label": "Округление до кратности 140",
+          "value": 102.60000000000002,
+          "kind": "qty",
+          "note": null
+        }
+      ],
+      "flags": [
+        "oneoff_excluded",
+        "seasonal",
+        "intermittent"
+      ]
+    },
+    {
+      "line_id": "IEK:130300792_",
+      "supplier": "IEK",
+      "sku": "130300792_",
+      "article": "CTG12-050-K04-050-R",
+      "name": "Трубы гибкая двустенная красная (с протяжкой) Ø50 IEK (50)",
+      "unit": "м",
+      "category": "A",
+      "product_group": null,
+      "stock_free": 0.0,
+      "stock_source": "estimate_lower_bound",
+      "in_transit": 0.0,
+      "forecast_monthly": 8708.4,
+      "safety_stock": 6344.9,
+      "order_up_to": 14796.6,
+      "moq": 50.0,
+      "recommended_qty": 14800.0,
+      "final_qty": 14800.0,
+      "baseline_qty": 14100.0,
+      "urgency": "critical",
+      "days_of_cover": 0.0,
+      "unit_cost": null,
+      "amount": null,
+      "explanation": "Месяц — сезонный пик (×1.80): прогноз 8 708 м/мес → 14 800 м, кратно 50",
+      "components": [
+        {
+          "key": "base",
+          "label": "База: среднее 12 мес без сезонности",
+          "value": 4435.5,
+          "kind": "info",
+          "note": null
+        },
+        {
+          "key": "oneoff_excluded",
+          "label": "Исключены разовые строки",
+          "value": 7910.0,
+          "kind": "info",
+          "note": "28.07.2026, документ 6396b2480c: 4300 шт (обычно 70)"
+        },
+        {
+          "key": "stockout_restored",
+          "label": "Восстановлен упущенный спрос",
+          "value": 5345.2,
+          "kind": "info",
+          "note": "2024-12 (остаток ниже 25% базы): +3032"
+        },
+        {
+          "key": "seasonality",
+          "label": "Сезонность: октября",
+          "value": 1.8,
+          "kind": "factor",
+          "note": null
+        },
+        {
+          "key": "trend",
+          "label": "Тренд год к году",
+          "value": 1.09,
+          "kind": "factor",
+          "note": null
+        },
+        {
+          "key": "growth",
+          "label": "Прирост (параметр)",
+          "value": 1.0,
+          "kind": "factor",
+          "note": null
+        },
+        {
+          "key": "horizon_demand",
+          "label": "Спрос на срок поставки и период заказа",
+          "value": 8451.7,
+          "kind": "qty",
+          "note": null
+        },
+        {
+          "key": "safety_stock",
+          "label": "Страховой запас (A, 97%)",
+          "value": 6344.9,
+          "kind": "qty",
+          "note": null
+        },
+        {
+          "key": "stock",
+          "label": "Текущий остаток",
+          "value": -0.0,
+          "kind": "qty",
+          "note": "нижняя оценка: остаток на 01.09 минус продажи 1–21.09"
+        },
+        {
+          "key": "in_transit",
+          "label": "В пути",
+          "value": -0.0,
+          "kind": "qty",
+          "note": null
+        },
+        {
+          "key": "moq_rounding",
+          "label": "Округление до кратности 50",
+          "value": 3.399999999999636,
+          "kind": "qty",
+          "note": null
+        }
+      ],
+      "flags": [
+        "oneoff_excluded",
+        "stockout_restored",
+        "seasonal",
+        "trend_up",
+        "approx_stock"
+      ]
+    },
+    {
+      "line_id": "IEK:130300791_",
+      "supplier": "IEK",
+      "sku": "130300791_",
+      "article": "CTG12-040-K04-050-R",
+      "name": "Трубы гибкая двустенная красная (с протяжкой) Ø40 IEK (50)",
+      "unit": "м",
+      "category": "A",
+      "product_group": null,
+      "stock_free": 0.0,
+      "stock_source": "estimate_lower_bound",
+      "in_transit": 0.0,
+      "forecast_monthly": 8197.5,
+      "safety_stock": 4949.7,
+      "order_up_to": 12435.9,
+      "moq": 50.0,
+      "recommended_qty": 12450.0,
+      "final_qty": 12450.0,
+      "baseline_qty": 10950.0,
+      "urgency": "critical",
+      "days_of_cover": 0.0,
+      "unit_cost": null,
+      "amount": null,
+      "explanation": "Месяц — сезонный пик (×1.99): прогноз 8 197 м/мес → 12 450 м, кратно 50",
+      "components": [
+        {
+          "key": "base",
+          "label": "База: среднее 12 мес без сезонности",
+          "value": 4066.1,
+          "kind": "info",
+          "note": null
+        },
+        {
+          "key": "oneoff_excluded",
+          "label": "Исключены разовые строки",
+          "value": 9520.0,
+          "kind": "info",
+          "note": "19.08.2026, документ 6c0409417f: 4000 шт (обычно 60)"
+        },
+        {
+          "key": "stockout_restored",
+          "label": "Восстановлен упущенный спрос",
+          "value": 1379.5,
+          "kind": "info",
+          "note": "2025-09 (остаток ниже 25% базы): +1380"
+        },
+        {
+          "key": "seasonality",
+          "label": "Сезонность: октября",
+          "value": 1.99,
+          "kind": "factor",
+          "note": null
+        },
+        {
+          "key": "trend",
+          "label": "Тренд год к году",
+          "value": 1.01,
+          "kind": "factor",
+          "note": null
+        },
+        {
+          "key": "growth",
+          "label": "Прирост (параметр)",
+          "value": 1.0,
+          "kind": "factor",
+          "note": null
+        },
+        {
+          "key": "horizon_demand",
+          "label": "Спрос на срок поставки и период заказа",
+          "value": 7486.2,
+          "kind": "qty",
+          "note": null
+        },
+        {
+          "key": "safety_stock",
+          "label": "Страховой запас (A, 97%)",
+          "value": 4949.7,
+          "kind": "qty",
+          "note": null
+        },
+        {
+          "key": "stock",
+          "label": "Текущий остаток",
+          "value": -0.0,
+          "kind": "qty",
+          "note": "нижняя оценка: остаток на 01.09 минус продажи 1–21.09"
+        },
+        {
+          "key": "in_transit",
+          "label": "В пути",
+          "value": -0.0,
+          "kind": "qty",
+          "note": null
+        },
+        {
+          "key": "moq_rounding",
+          "label": "Округление до кратности 50",
+          "value": 14.100000000000364,
+          "kind": "qty",
+          "note": null
+        }
+      ],
+      "flags": [
+        "oneoff_excluded",
+        "stockout_restored",
+        "seasonal",
+        "approx_stock"
+      ]
+    },
+    {
+      "line_id": "IEK:130300779_",
+      "supplier": "IEK",
+      "sku": "130300779_",
+      "article": "CTG12-063-K04-050-R",
+      "name": "Трубы гибкая двустенная красная (с протяжкой) Ø63 IEK (50)",
+      "unit": "м",
+      "category": "A",
+      "product_group": null,
+      "stock_free": 0.0,
+      "stock_source": "estimate_lower_bound",
+      "in_transit": 2000.0,
+      "forecast_monthly": 6254.6,
+      "safety_stock": 4537.5,
+      "order_up_to": 11130.4,
+      "moq": 50.0,
+      "recommended_qty": 9150.0,
+      "final_qty": 9150.0,
+      "baseline_qty": 6450.0,
+      "urgency": "critical",
+      "days_of_cover": 9.6,
+      "unit_cost": null,
+      "amount": null,
+      "explanation": "Месяц — сезонный пик (×1.45): прогноз 6 255 м/мес → 9 150 м, кратно 50",
+      "components": [
+        {
+          "key": "base",
+          "label": "База: среднее 12 мес без сезонности",
+          "value": 3795.0,
+          "kind": "info",
+          "note": null
+        },
+        {
+          "key": "oneoff_excluded",
+          "label": "Исключены разовые строки",
+          "value": 3700.0,
+          "kind": "info",
+          "note": "15.04.2026, документ 537fbe11aa: 3750 шт (обычно 50)"
+        },
+        {
+          "key": "seasonality",
+          "label": "Сезонность: октября",
+          "value": 1.45,
+          "kind": "factor",
+          "note": null
+        },
+        {
+          "key": "trend",
+          "label": "Тренд год к году",
+          "value": 1.14,
+          "kind": "factor",
+          "note": null
+        },
+        {
+          "key": "growth",
+          "label": "Прирост (параметр)",
+          "value": 1.0,
+          "kind": "factor",
+          "note": null
+        },
+        {
+          "key": "horizon_demand",
+          "label": "Спрос на срок поставки и период заказа",
+          "value": 6592.9,
+          "kind": "qty",
+          "note": null
+        },
+        {
+          "key": "safety_stock",
+          "label": "Страховой запас (A, 97%)",
+          "value": 4537.5,
+          "kind": "qty",
+          "note": null
+        },
+        {
+          "key": "stock",
+          "label": "Текущий остаток",
+          "value": -0.0,
+          "kind": "qty",
+          "note": "нижняя оценка: остаток на 01.09 минус продажи 1–21.09"
+        },
+        {
+          "key": "in_transit",
+          "label": "В пути",
+          "value": -2000.0,
+          "kind": "qty",
+          "note": null
+        },
+        {
+          "key": "moq_rounding",
+          "label": "Округление до кратности 50",
+          "value": 19.600000000000364,
+          "kind": "qty",
+          "note": null
+        }
+      ],
+      "flags": [
+        "oneoff_excluded",
+        "seasonal",
+        "trend_up",
+        "approx_stock"
+      ]
+    },
+    {
+      "line_id": "IEK:260100138_",
+      "supplier": "IEK",
+      "sku": "260100138_",
+      "article": "UNP40-006-04-04",
+      "name": "Наконечник медно-луженный JG - 6 IEK (600)",
+      "unit": "шт",
+      "category": "A",
+      "product_group": null,
+      "stock_free": 344.0,
+      "stock_source": "estimate_lower_bound",
+      "in_transit": 0.0,
+      "forecast_monthly": 1726.4,
+      "safety_stock": 1005.1,
+      "order_up_to": 2797.7,
+      "moq": 600.0,
+      "recommended_qty": 3000.0,
+      "final_qty": 3000.0,
+      "baseline_qty": 1800.0,
+      "urgency": "critical",
+      "days_of_cover": 6.0,
+      "unit_cost": null,
+      "amount": null,
+      "explanation": "Устойчивый рост спроса (×1.12 год к году): прогноз 1 726 шт/мес → 3 000 шт, кратно 600",
+      "components": [
+        {
+          "key": "base",
+          "label": "База: среднее 12 мес без сезонности",
+          "value": 1341.5,
+          "kind": "info",
+          "note": null
+        },
+        {
+          "key": "stockout_restored",
+          "label": "Восстановлен упущенный спрос",
+          "value": 2493.5,
+          "kind": "info",
+          "note": "2026-01 (полный дефицит): +1241"
+        },
+        {
+          "key": "seasonality",
+          "label": "Сезонность: октября",
+          "value": 1.15,
+          "kind": "factor",
+          "note": null
+        },
+        {
+          "key": "trend",
+          "label": "Тренд год к году",
+          "value": 1.12,
+          "kind": "factor",
+          "note": null
+        },
+        {
+          "key": "growth",
+          "label": "Прирост (параметр)",
+          "value": 1.0,
+          "kind": "factor",
+          "note": null
+        },
+        {
+          "key": "horizon_demand",
+          "label": "Спрос на срок поставки и период заказа",
+          "value": 1792.6,
+          "kind": "qty",
+          "note": null
+        },
+        {
+          "key": "safety_stock",
+          "label": "Страховой запас (A, 97%)",
+          "value": 1005.1,
+          "kind": "qty",
+          "note": null
+        },
+        {
+          "key": "stock",
+          "label": "Текущий остаток",
+          "value": -344.0,
+          "kind": "qty",
+          "note": "нижняя оценка: остаток на 01.09 минус продажи 1–21.09"
+        },
+        {
+          "key": "in_transit",
+          "label": "В пути",
+          "value": -0.0,
+          "kind": "qty",
+          "note": null
+        },
+        {
+          "key": "moq_rounding",
+          "label": "Округление до кратности 600",
+          "value": 546.3000000000002,
+          "kind": "qty",
+          "note": null
+        }
+      ],
+      "flags": [
+        "stockout_restored",
+        "seasonal",
+        "trend_up",
+        "approx_stock"
+      ]
+    },
+    {
+      "line_id": "SE:030300013_",
+      "supplier": "SE",
+      "sku": "030300013_",
+      "article": "U195",
+      "name": "Распределительная коробка с/у для твердых стен 75х30 карболит IP30 У-195 Systeme Electric (108)",
+      "unit": "шт",
+      "category": null,
+      "product_group": null,
+      "stock_free": 1.0,
+      "stock_source": "estimate_lower_bound",
+      "in_transit": 0.0,
+      "forecast_monthly": 8.5,
+      "safety_stock": 57.7,
+      "order_up_to": 108.0,
+      "moq": 108.0,
+      "recommended_qty": 108.0,
+      "final_qty": 108.0,
+      "baseline_qty": 108.0,
+      "urgency": "critical",
+      "days_of_cover": 3.5,
+      "unit_cost": null,
+      "amount": null,
+      "explanation": "Месяц — сезонный пик (×1.31): прогноз 8 шт/мес → 108 шт, кратно 108",
+      "components": [
+        {
+          "key": "base",
+          "label": "База: среднее 12 мес без сезонности",
+          "value": 6.5,
+          "kind": "info",
+          "note": null
+        },
+        {
+          "key": "seasonality",
+          "label": "Сезонность: октября",
+          "value": 1.31,
+          "kind": "factor",
+          "note": null
+        },
+        {
+          "key": "trend",
+          "label": "Тренд год к году",
+          "value": 1.0,
+          "kind": "factor",
+          "note": null
+        },
+        {
+          "key": "growth",
+          "label": "Прирост (параметр)",
+          "value": 1.0,
+          "kind": "factor",
+          "note": null
+        },
+        {
+          "key": "horizon_demand",
+          "label": "Спрос на срок поставки и период заказа",
+          "value": 16.3,
+          "kind": "qty",
+          "note": null
+        },
+        {
+          "key": "safety_stock",
+          "label": "Страховой запас (—, 95%)",
+          "value": 57.7,
+          "kind": "qty",
+          "note": null
+        },
+        {
+          "key": "min_order_floor",
+          "label": "Минимум для редкого спроса",
+          "value": 34.0,
+          "kind": "qty",
+          "note": "не меньше типичной строки продажи"
+        },
+        {
+          "key": "stock",
+          "label": "Текущий остаток",
+          "value": -1.0,
+          "kind": "qty",
+          "note": "нижняя оценка: остаток на 01.09 минус продажи 1–21.09"
+        },
+        {
+          "key": "in_transit",
+          "label": "В пути",
+          "value": -0.0,
+          "kind": "qty",
+          "note": null
+        },
+        {
+          "key": "moq_rounding",
+          "label": "Округление до кратности 108",
+          "value": 1.0,
+          "kind": "qty",
+          "note": null
+        }
+      ],
+      "flags": [
+        "seasonal",
+        "intermittent",
         "approx_stock"
       ]
     },
@@ -357,41 +894,41 @@
       "name": "Установочная коробка для полых стен г/к 65х45 IMT35150 Systeme Electric (210)",
       "unit": "шт",
       "category": "Кат. 1",
-      "product_group": "Коробки установочные",
+      "product_group": null,
       "stock_free": 40798.0,
       "stock_source": "warehouses",
       "in_transit": 37800.0,
-      "forecast_monthly": 32535.0,
-      "safety_stock": 18660.0,
-      "order_up_to": 90220.0,
+      "forecast_monthly": 36744.2,
+      "safety_stock": 18888.3,
+      "order_up_to": 100285.9,
       "moq": 3780.0,
-      "recommended_qty": 15120.0,
-      "final_qty": 15120.0,
-      "baseline_qty": 3780.0,
-      "urgency": "planned",
-      "days_of_cover": 72.5,
+      "recommended_qty": 22680.0,
+      "final_qty": 22680.0,
+      "baseline_qty": 0.0,
+      "urgency": "high",
+      "days_of_cover": 64.2,
       "unit_cost": 133.71,
-      "amount": 2021695.2,
-      "explanation": "Устойчивый рост ×1.14 и осенний сезон: прогноз 32 535 шт/мес; в пути 37 800 → 15 120 шт (4 паллеты по 3 780)",
+      "amount": 3032542.8,
+      "explanation": "Месяц — сезонный пик (×1.21): прогноз 36 744 шт/мес → 22 680 шт, кратно 3780",
       "components": [
         {
           "key": "base",
           "label": "База: среднее 12 мес без сезонности",
-          "value": 25900.0,
+          "value": 26666.0,
           "kind": "info",
           "note": null
         },
         {
           "key": "seasonality",
-          "label": "Сезонность октября (группа 0302)",
-          "value": 1.1,
+          "label": "Сезонность: октября",
+          "value": 1.21,
           "kind": "factor",
           "note": null
         },
         {
           "key": "trend",
-          "label": "Тренд YoY (сжатый)",
-          "value": 1.142,
+          "label": "Тренд год к году",
+          "value": 1.14,
           "kind": "factor",
           "note": null
         },
@@ -404,24 +941,24 @@
         },
         {
           "key": "horizon_demand",
-          "label": "Спрос на L+R = 40+30 дн",
-          "value": 71560.0,
+          "label": "Спрос на срок поставки и период заказа",
+          "value": 81397.5,
           "kind": "qty",
           "note": null
         },
         {
           "key": "safety_stock",
           "label": "Страховой запас (Кат. 1, 97%)",
-          "value": 18660.0,
+          "value": 18888.3,
           "kind": "qty",
           "note": null
         },
         {
           "key": "stock",
-          "label": "Остаток по складам",
+          "label": "Текущий остаток",
           "value": -40798.0,
           "kind": "qty",
-          "note": "свободный + витрина + ТЗ + РЦ + розница"
+          "note": null
         },
         {
           "key": "in_transit",
@@ -432,8 +969,8 @@
         },
         {
           "key": "moq_rounding",
-          "label": "Округление до кратности 3 780",
-          "value": 3498.0,
+          "label": "Округление до кратности 3780",
+          "value": 992.2000000000007,
           "kind": "qty",
           "note": null
         }
@@ -451,41 +988,48 @@
       "name": "Установочная коробка для твердых стен 65х60 IMT35101 Systeme Electric (120)",
       "unit": "шт",
       "category": "Кат. 1",
-      "product_group": "Коробки установочные",
+      "product_group": null,
       "stock_free": 62498.0,
       "stock_source": "warehouses",
       "in_transit": 0.0,
-      "forecast_monthly": 26915.0,
-      "safety_stock": 10909.0,
-      "order_up_to": 70724.0,
+      "forecast_monthly": 29129.6,
+      "safety_stock": 11971.2,
+      "order_up_to": 75999.3,
       "moq": 120.0,
-      "recommended_qty": 8280.0,
-      "final_qty": 8280.0,
+      "recommended_qty": 13560.0,
+      "final_qty": 13560.0,
       "baseline_qty": 0.0,
       "urgency": "high",
-      "days_of_cover": 69.7,
+      "days_of_cover": 64.4,
       "unit_cost": 75.62,
-      "amount": 626133.6,
-      "explanation": "Excel-метод заказ не предлагает, но продажи растут ×1.25 к прошлому году: запаса хватит на 70 дн при горизонте 70 → 8 280 шт",
+      "amount": 1025407.2,
+      "explanation": "Месяц — сезонный пик (×1.20): прогноз 29 130 шт/мес → 13 560 шт, кратно 120",
       "components": [
         {
           "key": "base",
           "label": "База: среднее 12 мес без сезонности",
-          "value": 21730.0,
+          "value": 21549.8,
           "kind": "info",
           "note": null
         },
         {
+          "key": "oneoff_excluded",
+          "label": "Исключены разовые строки",
+          "value": 4241.0,
+          "kind": "info",
+          "note": "18.09.2025, документ 2940c7e27c: 4271 шт (обычно 30)"
+        },
+        {
           "key": "seasonality",
-          "label": "Сезонность октября (группа 0302)",
-          "value": 1.1,
+          "label": "Сезонность: октября",
+          "value": 1.2,
           "kind": "factor",
           "note": null
         },
         {
           "key": "trend",
-          "label": "Тренд YoY (сжатый)",
-          "value": 1.126,
+          "label": "Тренд год к году",
+          "value": 1.13,
           "kind": "factor",
           "note": null
         },
@@ -498,21 +1042,21 @@
         },
         {
           "key": "horizon_demand",
-          "label": "Спрос на L+R = 40+30 дн",
-          "value": 59815.0,
+          "label": "Спрос на срок поставки и период заказа",
+          "value": 64028.1,
           "kind": "qty",
           "note": null
         },
         {
           "key": "safety_stock",
           "label": "Страховой запас (Кат. 1, 97%)",
-          "value": 10909.0,
+          "value": 11971.2,
           "kind": "qty",
           "note": null
         },
         {
           "key": "stock",
-          "label": "Остаток по складам",
+          "label": "Текущий остаток",
           "value": -62498.0,
           "kind": "qty",
           "note": null
@@ -520,66 +1064,74 @@
         {
           "key": "in_transit",
           "label": "В пути",
-          "value": 0.0,
+          "value": -0.0,
           "kind": "qty",
           "note": null
         },
         {
           "key": "moq_rounding",
           "label": "Округление до кратности 120",
-          "value": 54.0,
+          "value": 58.70000000000073,
           "kind": "qty",
           "note": null
         }
       ],
       "flags": [
+        "oneoff_excluded",
         "seasonal",
         "trend_up"
       ]
     },
     {
-      "line_id": "SE:300200428_",
-      "supplier": "SE",
-      "sku": "300200428_",
-      "article": "ATN000343",
-      "name": "A398 Роз. с з/к 16А с/у б/рамки \"ATLAS\" алюминий ATN343 (10)",
+      "line_id": "IEK:130200124_",
+      "supplier": "IEK",
+      "sku": "130200124_",
+      "article": "YNN10-812-14DP-K07",
+      "name": "Шина \"N\" нулевая 8х12мм комб с изол \"Стойка\" ШНИ 14 КС IEK (20)",
       "unit": "шт",
-      "category": "Кат. 1",
-      "product_group": "Розетки и выключатели",
-      "stock_free": 1174.0,
-      "stock_source": "warehouses",
-      "in_transit": 0.0,
-      "forecast_monthly": 253.0,
-      "safety_stock": 632.0,
-      "order_up_to": 1222.0,
-      "moq": 10.0,
-      "recommended_qty": 50.0,
-      "final_qty": 50.0,
-      "baseline_qty": 170.0,
+      "category": "B",
+      "product_group": null,
+      "stock_free": 117.0,
+      "stock_source": "estimate_lower_bound",
+      "in_transit": 160.0,
+      "forecast_monthly": 178.0,
+      "safety_stock": 181.3,
+      "order_up_to": 354.5,
+      "moq": 20.0,
+      "recommended_qty": 80.0,
+      "final_qty": 80.0,
+      "baseline_qty": 60.0,
       "urgency": "planned",
-      "days_of_cover": 139.0,
-      "unit_cost": 1050.61,
-      "amount": 52530.5,
-      "explanation": "Продажи падают (×0.61 к прошлому году): Excel-метод предложил бы 170 шт, по тренду достаточно 50",
+      "days_of_cover": 46.7,
+      "unit_cost": null,
+      "amount": null,
+      "explanation": "Месяц — сезонный пик (×1.33): прогноз 178 шт/мес → 80 шт, кратно 20",
       "components": [
         {
           "key": "base",
           "label": "База: среднее 12 мес без сезонности",
-          "value": 303.0,
+          "value": 149.2,
           "kind": "info",
           "note": null
         },
         {
+          "key": "stockout_restored",
+          "label": "Восстановлен упущенный спрос",
+          "value": 370.0,
+          "kind": "info",
+          "note": "2025-03 (полный дефицит): +370"
+        },
+        {
           "key": "seasonality",
-          "label": "Сезонность октября (группа 3002)",
-          "value": 1.0,
+          "label": "Сезонность: октября",
+          "value": 1.33,
           "kind": "factor",
           "note": null
         },
         {
           "key": "trend",
-          "label": "Тренд YoY (сжатый)",
-          "value": 0.835,
+          "label": "Тренд год к году",
+          "value": 0.9,
           "kind": "factor",
           "note": null
         },
@@ -592,47 +1144,160 @@
         },
         {
           "key": "horizon_demand",
-          "label": "Спрос на L+R = 40+30 дн",
-          "value": 590.0,
+          "label": "Спрос на срок поставки и период заказа",
+          "value": 173.2,
           "kind": "qty",
           "note": null
         },
         {
           "key": "safety_stock",
-          "label": "Страховой запас (Кат. 1, 97%)",
-          "value": 632.0,
+          "label": "Страховой запас (B, 95%)",
+          "value": 181.3,
           "kind": "qty",
           "note": null
         },
         {
           "key": "stock",
-          "label": "Остаток по складам",
-          "value": -1174.0,
+          "label": "Текущий остаток",
+          "value": -117.0,
           "kind": "qty",
-          "note": null
+          "note": "нижняя оценка: остаток на 01.09 минус продажи 1–21.09"
         },
         {
           "key": "in_transit",
           "label": "В пути",
-          "value": 0.0,
+          "value": -160.0,
           "kind": "qty",
           "note": null
         },
         {
           "key": "moq_rounding",
-          "label": "Округление до кратности 10",
-          "value": 2.0,
+          "label": "Округление до кратности 20",
+          "value": 2.5,
           "kind": "qty",
           "note": null
         }
       ],
       "flags": [
-        "trend_down"
+        "stockout_restored",
+        "seasonal",
+        "trend_down",
+        "approx_stock"
+      ]
+    },
+    {
+      "line_id": "IEK:010300096_",
+      "supplier": "IEK",
+      "sku": "010300096_",
+      "article": "MAD22-5-040-C-30",
+      "name": "УЗО АВДТ 32 40А IEK (6/60)",
+      "unit": "шт",
+      "category": "B",
+      "product_group": null,
+      "stock_free": 450.0,
+      "stock_source": "estimate_lower_bound",
+      "in_transit": 0.0,
+      "forecast_monthly": 305.5,
+      "safety_stock": 185.3,
+      "order_up_to": 479.6,
+      "moq": 1.0,
+      "recommended_qty": 30.0,
+      "final_qty": 30.0,
+      "baseline_qty": 51.0,
+      "urgency": "planned",
+      "days_of_cover": 44.2,
+      "unit_cost": null,
+      "amount": null,
+      "explanation": "Месяц — сезонный пик (×1.24): прогноз 306 шт/мес → 30 шт, кратно 1",
+      "components": [
+        {
+          "key": "base",
+          "label": "База: среднее 12 мес без сезонности",
+          "value": 240.9,
+          "kind": "info",
+          "note": null
+        },
+        {
+          "key": "oneoff_excluded",
+          "label": "Исключены разовые строки",
+          "value": 1022.0,
+          "kind": "info",
+          "note": "15.05.2025, документ dc3f8e97f6: 630 шт (обычно 6)"
+        },
+        {
+          "key": "stockout_restored",
+          "label": "Восстановлен упущенный спрос",
+          "value": 198.7,
+          "kind": "info",
+          "note": "2025-06 (полный дефицит): +176"
+        },
+        {
+          "key": "seasonality",
+          "label": "Сезонность: октября",
+          "value": 1.24,
+          "kind": "factor",
+          "note": null
+        },
+        {
+          "key": "trend",
+          "label": "Тренд год к году",
+          "value": 1.02,
+          "kind": "factor",
+          "note": null
+        },
+        {
+          "key": "growth",
+          "label": "Прирост (параметр)",
+          "value": 1.0,
+          "kind": "factor",
+          "note": null
+        },
+        {
+          "key": "horizon_demand",
+          "label": "Спрос на срок поставки и период заказа",
+          "value": 294.3,
+          "kind": "qty",
+          "note": null
+        },
+        {
+          "key": "safety_stock",
+          "label": "Страховой запас (B, 95%)",
+          "value": 185.3,
+          "kind": "qty",
+          "note": null
+        },
+        {
+          "key": "stock",
+          "label": "Текущий остаток",
+          "value": -450.0,
+          "kind": "qty",
+          "note": "нижняя оценка: остаток на 01.09 минус продажи 1–21.09"
+        },
+        {
+          "key": "in_transit",
+          "label": "В пути",
+          "value": -0.0,
+          "kind": "qty",
+          "note": null
+        },
+        {
+          "key": "moq_rounding",
+          "label": "Округление до кратности 1",
+          "value": 0.39999999999997726,
+          "kind": "qty",
+          "note": null
+        }
+      ],
+      "flags": [
+        "oneoff_excluded",
+        "stockout_restored",
+        "seasonal",
+        "approx_stock"
       ]
     }
   ],
   "warnings": [
-    "МОК контракта: числа иллюстративные, посчитаны вручную по формулам docs/design.md",
-    "IEK: текущий остаток — нижняя оценка (остаток на 01.09 − продажи 1–21.09)"
+    "IEK: текущий остаток — нижняя оценка (остаток на 01.09 минус продажи сентября)",
+    "Не заказываем 1303 SKU: списаны с закупки, не подлежат заказу или нет истории продаж"
   ]
 }

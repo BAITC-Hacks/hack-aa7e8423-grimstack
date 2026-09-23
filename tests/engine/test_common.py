@@ -28,3 +28,11 @@ def test_doc_hash_is_stable_and_short():
     a = doc_hash("Расходная накладная 20000064179 от 09.06.2025")
     assert a == doc_hash("Расходная накладная 20000064179 от 09.06.2025")
     assert len(a) == 10 and "20000064179" not in a
+
+
+def test_read_sales_tx_without_file_is_empty(tmp_path):
+    from app.ingest.common import read_sales_tx
+
+    tx = read_sales_tx(tmp_path / "sales_tx.xlsx", "IEK")
+    assert tx.empty
+    assert list(tx.columns) == ["supplier", "sku", "date", "doc", "qty"]

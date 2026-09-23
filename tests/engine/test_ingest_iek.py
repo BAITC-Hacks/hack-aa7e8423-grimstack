@@ -79,3 +79,12 @@ def test_load_uploaded_bad_xlsx_raises_bad_format():
     with pytest.raises(IngestError) as exc:
         load_uploaded("IEK", files)
     assert exc.value.code == "bad_format"
+
+
+def test_load_uploaded_without_optional_sales_tx():
+    from app.ingest import REQUIRED_ROLES, load_uploaded
+
+    folder = Path(__file__).resolve().parents[2] / "data" / "raw" / "iek"
+    files = {role: (folder / f"{role}.xlsx").read_bytes() for role in REQUIRED_ROLES}
+    ds = load_uploaded("IEK", files)
+    assert ds.sales_tx.empty and len(ds.skus) > 1000

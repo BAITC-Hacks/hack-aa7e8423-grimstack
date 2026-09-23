@@ -35,3 +35,24 @@ def doc_hash(doc: str) -> str:
 
 def read_sheet(path: Path, sheet=0) -> pd.DataFrame:
     return pd.read_excel(path, sheet_name=sheet, header=None, dtype=object)
+
+
+TX_COLUMNS = ["supplier", "sku", "date", "doc", "qty"]
+
+
+def read_sales_tx(path: Path, supplier: str) -> pd.DataFrame:
+    """«Динамика продаж» 1С → строки расходных накладных 2025+ (формат одинаков у всех поставщиков).
+
+    Файл необязателен: без него очистка от разовых строк просто не срабатывает.
+    """
+    if not path.exists():
+        return pd.DataFrame(columns=TX_COLUMNS)
+    body = read_sheet(path).iloc[1:]  # строка 0 — заголовок; «Итого» отсеется по пустому коду
+    doc = body[2].astype(str)
+    qty = pd.to_numeric(body[7], errors="coerce").fillna(0.0)
+    tx_date = pd.to_datetime(body[0], format="%d.%m.%Y %H:%M:%S", errors="coerce")
+    code = body[3].map(norm_code)
+    keep = (doc.str.startswith("Расходная накладная") & (qty > 0)
+            & (tx_date >= pd.Timestamp("2025-01-01")) & code.notna())
+    return pd.DataFrame({"supplier": supplier, "sku": code[keep].values, "date": tx_date[keep].values,
+                         "doc": doc[keep].map(doc_hash).values, "qty": qty[keep].values}, columns=TX_COLUMNS)

@@ -33,22 +33,24 @@ def load_default() -> Dataset:
     if se is not None:
         parts.append(se.load(DATA_DIR / "raw" / "se", AS_OF))
     data = concat(parts)
-    _apply_product_groups(data)
+    apply_product_groups(data, _CATEGORIES_CSV)
     return data
 
 
-def _apply_product_groups(data: Dataset) -> None:
-    """Подмешивает группу Laya (data/categories/sku_categories.csv: supplier?, sku, group, prob)."""
-    if not _CATEGORIES_CSV.exists():
+def apply_product_groups(data: Dataset, csv_path: Path) -> None:
+    """Подмешивает товарную группу Laya из CSV (supplier?, sku, group, prob) в skus.product_group."""
+    if not csv_path.exists():
         return
-    cats = pd.read_csv(_CATEGORIES_CSV, dtype=str)
-    if cats.empty or "sku" not in cats.columns or "group" not in cats.columns:
+    cats = pd.read_csv(csv_path, dtype=str)
+    if cats.empty or not {"sku", "group"} <= set(cats.columns):
         return
     on = ["supplier", "sku"] if "supplier" in cats.columns else ["sku"]
-    cats = cats.drop_duplicates(subset=on, keep="first")
-    skus = data.skus.reset_index()
-    merged = skus.merge(cats[on + ["group"]], on=on, how="left")
-    data.skus["product_group"] = merged["group"].where(merged["group"].notna(), data.skus["product_group"].values)
+    groups = cats.drop_duplicates(subset=on).set_index(on)["group"]
+    keys = data.skus.index if on == ["supplier", "sku"] else data.skus.index.get_level_values("sku")
+    found = groups.reindex(keys).to_numpy()  # по позиции, а не по меткам индекса skus
+    current = data.skus["product_group"].to_numpy()
+    data.skus["product_group"] = pd.Series([g if isinstance(g, str) else c for g, c in zip(found, current)],
+                                           index=data.skus.index, dtype=object)
 
 
 def load_uploaded(supplier: Supplier, files: dict[str, bytes]) -> Dataset:

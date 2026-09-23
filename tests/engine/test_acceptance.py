@@ -132,3 +132,19 @@ def test_no_order_when_stock_covers_horizon():
 def test_months_are_periods():
     ds = make_dataset({"A": noisy(100)})
     assert isinstance(ds.sales_monthly.columns[0], pd.Period)
+
+
+def test_waterfall_is_exact_with_fractional_moq():
+    for level in (10.3, 17.7, 23.1, 41.9):
+        found = line(make_dataset({"A": noisy(level)}, moq=0.25, stock_now=0))
+        waterfall = sum(c.value for c in found.components if c.kind == "qty")
+        assert abs(waterfall - found.recommended_qty) < 1e-6, (level, waterfall, found.recommended_qty)
+
+
+def test_intermittent_floor_is_its_own_component():
+    rare = [30.0 if i % 3 == 0 else 0.0 for i in range(33)]  # продажа раз в квартал
+    found = line(make_dataset({"A": rare}, stock_now=0, tx_lines=1), service_level=0.6)
+    keys = {c.key: c.value for c in found.components}
+    assert "intermittent" in found.flags
+    assert keys.get("min_order_floor", 0) > 0
+    assert abs(keys["moq_rounding"]) < found.moq

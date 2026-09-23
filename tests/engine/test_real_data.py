@@ -111,3 +111,46 @@ def test_trend_up_for_demo_sku(result, ds):
         h = engine.history(ds, "SE", "030200201_", RunParams())
         avg_last12 = sum(h.restored[-12:]) / 12
         assert h.forecast[0] > avg_last12
+
+
+def _line(result, supplier, sku):
+    return next((l for l in result.lines if l.supplier == supplier and l.sku == sku), None)
+
+
+def test_in_transit_demo_sku_reduces_order(ds, result):
+    """MH1 на реальных данных: SE 030200193_ — в пути 37 800 (10 × кратность 3 780)."""
+    import copy
+
+    without = copy.copy(ds)
+    mask = (ds.in_transit["supplier"] == "SE") & (ds.in_transit["sku"] == "030200193_")
+    assert ds.in_transit.loc[mask, "qty"].sum() == 37800
+    without.in_transit = ds.in_transit[~mask]
+    before = _line(result, "SE", "030200193_").recommended_qty
+    after = _line(engine.run(without, RunParams()), "SE", "030200193_").recommended_qty
+    assert before < after
+
+
+def test_oneoff_demo_skus_are_detected(ds):
+    """MH4 на реальных данных: 7 488 шт по 010500008_ (02.09.2026) и 630 шт по 010300096_ (05.2025)."""
+    events = engine.pipeline._prepare(ds).events
+    for sku, qty in (("010500008_", 7488), ("010300096_", 630)):
+        mine = events[(events["supplier"] == "IEK") & (events["sku"] == sku)]
+        assert qty in set(mine["qty"]), sku
+        assert (mine["capped_to"] < mine["qty"]).all()
+
+
+def test_se_pallets_are_not_oneoffs(ds):
+    from app.engine.cleaning import pallet_mask
+
+    pallets = ds.sales_tx[pallet_mask(ds.sales_tx, ds.skus)]
+    events = engine.pipeline._prepare(ds).events
+    assert (pallets["sku"] == "030300013_").sum() > 0
+    assert events[(events["supplier"] == "SE") & (events["sku"] == "030300013_")].empty
+
+
+def test_stockout_demo_sku_130200124(ds):
+    """MH3: шина ШНИ-14 — остаток 0 в феврале–апреле 2025, продажи провалились до 0/0/43."""
+    h = engine.history(ds, "IEK", "130200124_", RunParams())
+    months = [h.months.index(m) for m in ("2025-02", "2025-03", "2025-04")]
+    assert all(h.stockout[i] is not None for i in months)
+    assert sum(h.restored[i] for i in months) > sum(h.cleaned[i] for i in months)

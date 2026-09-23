@@ -69,6 +69,7 @@ class Prepared:
 
 
 _CACHE: dict[int, tuple] = {}
+_CACHE_SIZE = 4
 
 
 def _detect_oneoffs(tx, skus, sales_monthly, as_of) -> pd.DataFrame:
@@ -166,6 +167,8 @@ def _prepare(ds) -> Prepared:
     if cached is not None and cached[0] is ds:
         return cached[1]
     prepared = _build(ds)
+    if len(_CACHE) >= _CACHE_SIZE:  # загрузки через /api/datasets не должны копиться в памяти
+        _CACHE.pop(next(iter(_CACHE)))
     _CACHE[key] = (ds, prepared)
     return prepared
 
@@ -293,6 +296,7 @@ def _order_lines(ds, prepared: Prepared, params: RunParams) -> tuple[list[OrderL
         ss = float(primary["safety_stock"].loc[key])
         s_target = float(primary["order_up_to"].loc[key])
         horizon = float(primary["horizon_demand"].loc[key])
+        floor = max(0.0, s_target - horizon - ss)  # подъём S до типичной строки при редком спросе
         approx = bool(prepared.approx_stock.loc[key])
         unit_cost = sku_row["unit_cost"]
         unit_cost = None if pd.isna(unit_cost) else float(unit_cost)
@@ -337,7 +341,7 @@ def _order_lines(ds, prepared: Prepared, params: RunParams) -> tuple[list[OrderL
                 oneoff_note=_oneoff_note(prepared.events, supplier, sku) if oe > 0 else None,
                 restored=rs, restored_note=_restored_note(prepared.added, prepared.types, key) if rs > 0 else None,
                 season_val=season_val, month=month, trend_val=trend_val, growth_pct=params.growth_pct,
-                category=category, sl=float(primary["sl"].loc[key]), horizon=horizon, ss=ss,
+                category=category, sl=float(primary["sl"].loc[key]), horizon=horizon, ss=ss, floor=floor,
                 stock=stock, transit=transit, moq=mq, qty=q, approx_stock=approx)
             explanation = explain.explanation_analyze(
                 unit=unit, forecast_monthly=fm, qty=q, moq=mq, seasonal=bool(prepared.seasonal_flag.loc[key]),
@@ -347,7 +351,7 @@ def _order_lines(ds, prepared: Prepared, params: RunParams) -> tuple[list[OrderL
             baseline_qty = float(baseline_r["qty"].loc[key])
         else:
             comps = explain.components_baseline(base=float(prepared.base_baseline.loc[key]), horizon=horizon,
-                                                  ss=ss, stock=stock, transit=transit, moq=mq, qty=q,
+                                                  ss=ss, floor=floor, stock=stock, transit=transit, moq=mq, qty=q,
                                                   sl=float(primary["sl"].loc[key]), approx_stock=approx)
             lr_val = float((primary["L"].loc[key] + primary["R"].loc[key]))
             explanation = explain.explanation_baseline(unit=unit, avg_monthly=fm, qty=q, moq=mq, lr_days=lr_val)

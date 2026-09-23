@@ -6,17 +6,30 @@ MONTHS_RU = ["января", "февраля", "марта", "апреля", "м
              "июля", "августа", "сентября", "октября", "ноября", "декабря"]
 
 
-def _qty_parts(horizon: float, ss: float, stock: float, transit: float, qty: float) -> dict:
-    """qty-компоненты округляются до 0.1; moq_rounding — остаток, водопад сходится точно."""
-    parts = {"horizon_demand": round(horizon, 1), "safety_stock": round(ss, 1),
-              "stock": round(-stock, 1), "in_transit": round(-transit, 1)}
-    parts["moq_rounding"] = round(qty - sum(parts.values()), 1)
+def _waterfall(*, horizon, ss, floor, stock, transit, qty, moq, ss_label, approx_stock) -> list[Component]:
+    """qty-компоненты: части округлены до 0.1 для показа, moq_rounding — точный остаток без повторного
+    округления, поэтому их сумма строго равна qty при любой кратности, в том числе дробной."""
+    parts = [
+        Component(key="horizon_demand", label="Спрос на срок поставки и период заказа",
+                   value=round(horizon, 1), kind="qty"),
+        Component(key="safety_stock", label=ss_label, value=round(ss, 1), kind="qty"),
+    ]
+    if round(floor, 1) > 0:
+        parts.append(Component(key="min_order_floor", label="Минимум для редкого спроса",
+                                value=round(floor, 1), kind="qty", note="не меньше типичной строки продажи"))
+    stock_note = "нижняя оценка: остаток на 01.09 минус продажи 1–21.09" if approx_stock else None
+    parts += [
+        Component(key="stock", label="Текущий остаток", value=round(-stock, 1), kind="qty", note=stock_note),
+        Component(key="in_transit", label="В пути", value=round(-transit, 1), kind="qty"),
+    ]
+    parts.append(Component(key="moq_rounding", label=f"Округление до кратности {moq:g}",
+                            value=qty - sum(c.value for c in parts), kind="qty"))
     return parts
 
 
 def components_analyze(*, base, oneoff_excess, oneoff_note, restored, restored_note,
                         season_val, month, trend_val, growth_pct, category, sl,
-                        horizon, ss, stock, transit, moq, qty, approx_stock) -> list[Component]:
+                        horizon, ss, floor, stock, transit, moq, qty, approx_stock) -> list[Component]:
     comps = [Component(key="base", label="База: среднее 12 мес без сезонности",
                         value=round(base, 1), kind="info")]
     if oneoff_excess > 0:
@@ -31,37 +44,16 @@ def components_analyze(*, base, oneoff_excess, oneoff_note, restored, restored_n
         Component(key="trend", label="Тренд год к году", value=round(trend_val, 2), kind="factor"),
         Component(key="growth", label="Прирост (параметр)", value=round(1 + growth_pct / 100, 2), kind="factor"),
     ]
-    parts = _qty_parts(horizon, ss, stock, transit, qty)
-    stock_note = "нижняя оценка: остаток на 01.09 минус продажи 1–21.09" if approx_stock else None
-    comps += [
-        Component(key="horizon_demand", label="Спрос на срок поставки и период заказа",
-                   value=parts["horizon_demand"], kind="qty"),
-        Component(key="safety_stock", label=f"Страховой запас ({category or '—'}, {sl:.0%})",
-                   value=parts["safety_stock"], kind="qty"),
-        Component(key="stock", label="Текущий остаток", value=parts["stock"], kind="qty", note=stock_note),
-        Component(key="in_transit", label="В пути", value=parts["in_transit"], kind="qty"),
-        Component(key="moq_rounding", label=f"Округление до кратности {moq:g}",
-                   value=parts["moq_rounding"], kind="qty"),
-    ]
-    return comps
+    return comps + _waterfall(horizon=horizon, ss=ss, floor=floor, stock=stock, transit=transit, qty=qty,
+                              moq=moq, ss_label=f"Страховой запас ({category or '—'}, {sl:.0%})",
+                              approx_stock=approx_stock)
 
 
-def components_baseline(*, base, horizon, ss, stock, transit, moq, qty, sl, approx_stock) -> list[Component]:
+def components_baseline(*, base, horizon, ss, floor, stock, transit, moq, qty, sl, approx_stock) -> list[Component]:
     comps = [Component(key="base", label="Excel-метод: среднее 12 мес без очистки",
                         value=round(base, 1), kind="info")]
-    parts = _qty_parts(horizon, ss, stock, transit, qty)
-    stock_note = "нижняя оценка: остаток на 01.09 минус продажи 1–21.09" if approx_stock else None
-    comps += [
-        Component(key="horizon_demand", label="Спрос на срок поставки и период заказа",
-                   value=parts["horizon_demand"], kind="qty"),
-        Component(key="safety_stock", label=f"Страховой запас ({sl:.0%})",
-                   value=parts["safety_stock"], kind="qty"),
-        Component(key="stock", label="Текущий остаток", value=parts["stock"], kind="qty", note=stock_note),
-        Component(key="in_transit", label="В пути", value=parts["in_transit"], kind="qty"),
-        Component(key="moq_rounding", label=f"Округление до кратности {moq:g}",
-                   value=parts["moq_rounding"], kind="qty"),
-    ]
-    return comps
+    return comps + _waterfall(horizon=horizon, ss=ss, floor=floor, stock=stock, transit=transit, qty=qty,
+                              moq=moq, ss_label=f"Страховой запас ({sl:.0%})", approx_stock=approx_stock)
 
 
 def _lead_reason(*, seasonal, season_val, trend_up, trend_down, trend_val,

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from app.ingest.common import doc_hash, month_period, norm_code, read_sheet
+from app.ingest.common import month_period, norm_code, read_sales_tx, read_sheet
 from app.ingest.dataset import SKU_COLUMNS, Dataset
 
 _GROUP4_RE = re.compile(r"^\d{9}_$")
@@ -50,20 +50,6 @@ def _monthly_stock(folder: Path) -> tuple[pd.Series, pd.DataFrame]:
                          index=codes.values)
     name = pd.Series(data[1].map(_clean_name).values, index=codes.values)
     return name, stock
-
-
-def _sales_tx(folder: Path) -> pd.DataFrame:
-    df = read_sheet(folder / "sales_tx.xlsx", sheet=0)
-    data = df.iloc[1:]
-    doc = data[2].astype(str)
-    is_invoice = doc.str.startswith("Расходная накладная")
-    qty = pd.to_numeric(data[7], errors="coerce").fillna(0.0)
-    dt = pd.to_datetime(data[0], format="%d.%m.%Y %H:%M:%S", errors="coerce")
-    keep = is_invoice & (qty > 0) & (dt >= pd.Timestamp(2025, 1, 1))
-    code = data[3].map(norm_code)
-    keep &= code.notna()
-    return pd.DataFrame({"supplier": "SE", "sku": code[keep].values, "date": dt[keep].values,
-                         "doc": doc[keep].map(doc_hash).values, "qty": qty[keep].values})
 
 
 def _find_col(header: pd.Series, name: str, *, startswith: bool = False) -> int:
@@ -133,7 +119,7 @@ def load(folder: Path, as_of: date) -> Dataset:
 
     sales_name, sales_article, sales_moq, sales = _monthly_sales(folder)
     stock_name, stock = _monthly_stock(folder)
-    tx = _sales_tx(folder)
+    tx = read_sales_tx(folder / "sales_tx.xlsx", "SE")
     moq_article, moq_qty = _moq_file(folder)
     td, td_sales, in_transit = _td_sheet(folder)
 
