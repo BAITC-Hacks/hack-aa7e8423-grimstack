@@ -1,7 +1,7 @@
-.appLayout { position: relative; display: grid; grid-template-columns: 216px minmax(0, 1fr); width: min(calc(100% - 48px), var(--content-max)); min-height: calc(100dvh - 48px); margin: 24px auto; overflow: clip; border: 1px solid var(--border); border-radius: var(--radius-panel); background: var(--surface); box-shadow: var(--shadow-frame); }
+.appLayout { position: relative; display: grid; grid-template-columns: 216px minmax(0, 1fr); width: 100%; min-height: 100dvh; margin: 0; overflow: clip; background: var(--surface); }
 .skipLink { position: absolute; z-index: var(--z-toast); top: -60px; left: 230px; padding: 10px 14px; border-radius: var(--radius-control); background: var(--accent); color: var(--on-accent); font-weight: 700; }
 .skipLink:focus { top: 10px; }
-.sidebar { position: sticky; top: 0; display: flex; flex-direction: column; height: min(100dvh, 960px); padding: 0 0 22px; border-right: 1px solid var(--border); background: var(--surface); color: var(--text); }
+.sidebar { position: sticky; top: 0; display: flex; flex-direction: column; height: 100dvh; padding: 0 0 22px; border-right: 1px solid var(--border); background: var(--surface); color: var(--text); }
 .brand { display: flex; align-items: center; gap: 11px; min-height: 66px; padding: 10px 17px; background: var(--brand-gradient); color: var(--on-accent); }
 .brandMark { display: grid; flex: none; place-items: center; width: 34px; height: 34px; border: 1px solid rgb(255 255 255 / .65); border-radius: 50%; color: var(--on-accent); font-size: 16px; font-weight: 700; }
 .brand strong { display: block; font-size: 16px; letter-spacing: -.02em; }
@@ -135,7 +135,7 @@
 @media (max-width: 1799px) { .withDetail { grid-template-columns: minmax(0, 1fr); } .backdrop { display: block; position: fixed; z-index: calc(var(--z-drawer) - 1); inset: 0; width: 100%; border: 0; background: var(--scrim); } }
 @media (max-width: 1200px) { .content { padding-inline: 28px; } .topbar { padding-inline: 28px; } .chartGrid { grid-template-columns: minmax(0, 1fr); } .dataLayout { grid-template-columns: minmax(0, 1fr); } .dataAside { grid-template-columns: repeat(2, minmax(0, 1fr)); } .parameterGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 920px) {
-  .appLayout { display: block; width: 100%; min-height: 100dvh; margin: 0; border: 0; border-radius: 0; box-shadow: none; }
+  .appLayout { display: block; }
   .skipLink { left: 12px; }
   .sidebar { position: static; height: auto; min-height: 0; padding: 0; border-right: 0; }
   .brand { min-height: 58px; padding-inline: 22px; }

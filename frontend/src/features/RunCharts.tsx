@@ -62,7 +62,7 @@ export function SupplierChart({ run }: { run: RunResult }) {
     tooltip: { theme: 'light', y: { formatter: (value) => `${formatNumber(value)} поз.` } },
   };
   const series = [{ name: 'Позиции', data: run.suppliers.map((supplier) => supplier.lines_count) }];
-  return <div className={styles.supplierChart}><div aria-hidden="true"><Chart type="bar" height={Math.max(190, categories.length * 72)} options={options} series={series} /></div><table className={styles.dataTable}><caption>Позиции заказа по поставщикам</caption><thead><tr><th>Поставщик</th><th>Позиций</th></tr></thead><tbody>{run.suppliers.map((supplier) => <tr key={supplier.supplier}><th>{supplier.supplier_name}</th><td>{formatNumber(supplier.lines_count)}</td></tr>)}</tbody></table></div>;
+  return <div className={styles.supplierChart}><div aria-hidden="true"><Chart type="bar" height={Math.max(190, categories.length * 72)} options={options} series={series} /></div><div className={styles.dataTable}><table><caption>Позиции заказа по поставщикам</caption><thead><tr><th>Поставщик</th><th>Позиций</th></tr></thead><tbody>{run.suppliers.map((supplier) => <tr key={supplier.supplier}><th>{supplier.supplier_name}</th><td>{formatNumber(supplier.lines_count)}</td></tr>)}</tbody></table></div></div>;
 }
 
 export function ComparisonChart({ run }: { run: RunResult }) {
