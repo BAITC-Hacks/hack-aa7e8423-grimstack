@@ -79,7 +79,7 @@ export default function ScenarioPanel({ run, meta }: { run: RunResult; meta: Met
   const chartOptions: ApexOptions = {
     chart: { background: 'transparent', toolbar: { show: false }, animations: { enabled: false }, fontFamily: color('--font-body') },
     theme: { mode: 'light' },
-    colors: chartLines.map((line) => line.scenario_qty > line.base_qty ? color('--accent') : color('--critical')),
+    colors: chartLines.map((line) => line.scenario_qty > line.base_qty ? color('--accent') : color('--series-2')),
     plotOptions: { bar: { horizontal: true, distributed: true, borderRadius: 3, barHeight: '62%' } },
     grid: { borderColor: color('--border'), strokeDashArray: 3 },
     dataLabels: { enabled: false },

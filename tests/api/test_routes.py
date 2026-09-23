@@ -196,6 +196,21 @@ def test_compare_runs_missing_dataset_and_unknown_amount(client):
     assert response.json()["changed"] == []
 
 
+def test_compare_runs_rejects_invalid_params_and_equal_base_scenario(client):
+    assert_error(client.post("/api/runs/compare", json={
+        "base": {}, "scenario": {"growth_pct": 9999}
+    }), 422)
+
+    response = client.post("/api/runs/compare", json={
+        "base": {"supplier": "SE"}, "scenario": {"supplier": "SE"}
+    })
+    assert response.status_code == 200, response.text
+    assert response.json()["delta"] == {
+        "lines_to_order": 0, "critical": 0, "total_qty": 0, "total_amount": 0
+    }
+    assert response.json()["changed"] == []
+
+
 def test_health_meta_and_saved_filtered_run(client):
     assert client.get("/health").json() == {"status": "ok"}
     meta = client.get("/api/meta")

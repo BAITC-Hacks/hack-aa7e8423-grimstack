@@ -7,7 +7,7 @@ import styles from './RunCharts.module.css';
 const urgencies: { key: Urgency; label: string; token: string }[] = [
   { key: 'critical', label: 'Срочно', token: '--critical' },
   { key: 'high', label: 'Скоро', token: '--warning' },
-  { key: 'planned', label: 'Плановый', token: '--accent' },
+  { key: 'planned', label: 'Плановый', token: '--success' },
   { key: 'none', label: 'Без заказа', token: '--border-strong' },
 ];
 
