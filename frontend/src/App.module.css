@@ -67,18 +67,18 @@
 .supplierActions button { min-height: var(--control-height-dense); font-size: 12px; }
 .supplierMeta { margin: 6px 0 14px; color: var(--text-muted); font-size: 12px; }
 .tableScroll { max-width: 100%; overflow-x: auto; }
-.tableScroll table { width: 100%; min-width: 66rem; border-collapse: collapse; font-size: 12px; }
-.tableScroll th, .tableScroll td { padding: 11px 9px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.tableScroll table { width: 100%; min-width: 60rem; border-collapse: collapse; font-size: 12px; }
+.tableScroll th, .tableScroll td { padding: 11px 7px; border-bottom: 1px solid var(--border); vertical-align: middle; }
 .tableScroll th { background: var(--nav-bg); color: var(--nav-text); text-align: left; white-space: nowrap; font-size: 11px; font-weight: 600; }
 .tableScroll th:first-child { border-radius: var(--radius-control) 0 0 0; }
 .tableScroll th:last-child { border-radius: 0 var(--radius-control) 0 0; }
 .tableScroll tbody tr:hover { background: var(--accent-soft); }
-.productCell { min-width: 14rem; max-width: 20rem; }
+.productCell { min-width: 13rem; max-width: 18rem; }
 .productButton { width: 100%; padding: 0; border: 0; background: transparent; color: var(--text); font-weight: 600; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
 .productButton:hover { color: var(--accent); }
 .sku { display: block; margin-bottom: 4px; color: var(--text-muted); font: 10px/1.4 var(--font-code); overflow-wrap: anywhere; }
 .number { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.explanation { min-width: 10rem; max-width: 14rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); }
+.explanation { display: -webkit-box; margin-top: var(--space-1); overflow: hidden; color: var(--text-muted); font-size: var(--font-xs); line-height: 1.35; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .compare, .cellError { color: var(--critical); }
 .selected { background: var(--accent-soft); }
 .editor { min-width: 8rem; }
