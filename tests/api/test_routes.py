@@ -1,15 +1,52 @@
-"""API contract checks while the calculation core still returns sample data."""
+"""API contract checks with isolated sample responses from the calculation core."""
 
 import json
+from datetime import datetime, timezone
 from io import BytesIO
+from pathlib import Path
+from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
 from openpyxl import load_workbook
 
-from app import engine
+from app import engine, ingest
 from app.api.routes import EXPORT_COLUMNS, MAX_UPLOAD_BYTES
+from app.contracts import Meta, RunResult, SkuHistory
 from app.main import create_app
+
+
+CONTRACTS = Path(__file__).resolve().parents[2] / "contracts"
+
+
+@pytest.fixture(autouse=True)
+def sample_core(monkeypatch):
+    """Keep HTTP tests deterministic while ingestion and forecasting evolve separately."""
+
+    def sample(name):
+        return json.loads((CONTRACTS / name).read_text(encoding="utf-8"))
+
+    def run(_data, params):
+        result = RunResult.model_validate(sample("sample_run.json"))
+        result.run_id = uuid4().hex[:12]
+        result.created_at = datetime.now(timezone.utc)
+        result.params = params
+        if params.supplier is not None:
+            result.lines = [line for line in result.lines if line.supplier == params.supplier]
+            result.suppliers = [s for s in result.suppliers if s.supplier == params.supplier]
+        return result
+
+    def history(_data, supplier, sku, _params):
+        result = SkuHistory.model_validate(sample("sample_sku_history.json"))
+        result.supplier = supplier
+        result.sku = sku
+        return result
+
+    monkeypatch.setattr(ingest, "load_default", lambda: {"source": "default"})
+    monkeypatch.setattr(engine, "run", run)
+    monkeypatch.setattr(engine, "meta", lambda _data: Meta.model_validate(sample("sample_meta.json")))
+    monkeypatch.setattr(engine, "history", history)
+    monkeypatch.setitem(ingest._LOADERS, "IEK", lambda _folder, _as_of: {"source": "upload"})
 
 
 @pytest.fixture
@@ -40,7 +77,7 @@ def test_health_meta_and_saved_filtered_run(client):
 
     run = new_run(client, supplier="IEK")
     assert {line["supplier"] for line in run["lines"]} == {"IEK"}
-    assert run["kpi"]["lines_to_order"] == len(run["lines"]) == 3
+    assert run["kpi"]["lines_to_order"] == len(run["lines"])
     assert run["kpi"]["total_amount"] is None
     assert client.get(f"/api/runs/{run['run_id']}").json() == run
     assert_error(client.get("/api/runs/missing"), 404)
@@ -51,7 +88,7 @@ def test_health_meta_and_saved_filtered_run(client):
 
 def test_patch_recalculates_totals_and_checks_quantity(client):
     run = new_run(client)
-    line = next(item for item in run["lines"] if item["supplier"] == "SE")
+    line = next(item for item in run["lines"] if item["supplier"] == "SE" and item["unit_cost"] is not None)
     original_se = next(s for s in run["suppliers"] if s["supplier"] == "SE")
     new_qty = line["final_qty"] + line["moq"]
     path = f"/api/runs/{run['run_id']}/lines/{line['line_id']}"
@@ -74,8 +111,8 @@ def test_patch_recalculates_totals_and_checks_quantity(client):
 
     assert client.patch(path, json={"final_qty": 0}).status_code == 200
     saved = client.get(f"/api/runs/{run['run_id']}").json()
-    assert saved["kpi"]["lines_to_order"] == 5
-    assert next(s for s in saved["suppliers"] if s["supplier"] == "SE")["lines_count"] == 2
+    assert saved["kpi"]["lines_to_order"] == run["kpi"]["lines_to_order"] - 1
+    assert next(s for s in saved["suppliers"] if s["supplier"] == "SE")["lines_count"] == original_se["lines_count"] - 1
 
 
 def test_approval_is_persisted_once_and_blocks_changes(tmp_path):
@@ -91,7 +128,7 @@ def test_approval_is_persisted_once_and_blocks_changes(tmp_path):
         records = json.loads(approval_path.read_text(encoding="utf-8"))
         assert len(records) == 1
         assert records[0]["supplier"] == "IEK"
-        assert len(records[0]["lines"]) == 3
+        assert len(records[0]["lines"]) == sum(line["supplier"] == "IEK" for line in run["lines"])
 
         line_id = next(line["line_id"] for line in run["lines"] if line["supplier"] == "IEK")
         assert_error(
@@ -115,7 +152,7 @@ def test_export_contains_only_positive_order_lines_and_blank_iek_prices(client):
     rows = list(workbook.active.values)
     workbook.close()
     assert rows[0] == EXPORT_COLUMNS
-    assert len(rows) == 3  # header and two remaining IEK products
+    assert len(rows) == 1 + sum(line["supplier"] == "IEK" for line in run["lines"]) - 1
     assert iek_line["sku"] not in {row[0] for row in rows[1:]}
     assert all(row[4] > 0 and row[5] is None and row[6] is None for row in rows[1:])
     assert_error(client.get(f"/api/runs/{run['run_id']}/export.xlsx?supplier=XYZ"), 404)
