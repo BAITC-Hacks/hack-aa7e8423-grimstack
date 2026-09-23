@@ -5,20 +5,22 @@ import { formatNumber } from '../shared/format';
 import styles from './historyChart.module.css';
 
 export default function HistoryChart({ history }: { history: SkuHistory }) {
+  const tokens = getComputedStyle(document.documentElement);
+  const color = (name: string) => tokens.getPropertyValue(name).trim();
   const months = [...history.months, ...history.forecast_months];
   const pad = (values: number[]) => [...values, ...Array<null>(history.forecast_months.length).fill(null)];
   const forecast = [...Array<null>(history.months.length - 1).fill(null), history.restored.at(-1) ?? null, ...history.forecast];
   const options: ApexOptions = {
     chart: { background: 'transparent', toolbar: { show: false }, animations: { enabled: false } },
-    colors: ['#F2F4F5', '#AAB3BB', '#78B995', '#69A9E0'],
+    colors: [color('--text'), color('--text-muted'), color('--success'), color('--accent')],
     theme: { mode: 'dark' },
     xaxis: { categories: months, labels: { rotate: -45 } },
     yaxis: { labels: { formatter: (value) => formatNumber(value) } },
     legend: { show: true, position: 'bottom' },
     stroke: { width: [2, 1, 2, 2], dashArray: [0, 0, 0, 6] },
     tooltip: { shared: true },
-    grid: { borderColor: '#363C42' },
-    annotations: { xaxis: history.months.flatMap((month, index) => history.stockout[index] ? [{ x: month, borderColor: '#E07878', label: { text: 'Нет товара', style: { background: '#43272A', color: '#F2F4F5' } } }] : []) },
+    grid: { borderColor: color('--border') },
+    annotations: { xaxis: history.months.flatMap((month, index) => history.stockout[index] ? [{ x: month, borderColor: color('--critical'), label: { text: 'Нет товара', style: { background: color('--critical-soft'), color: color('--text') } } }] : []) },
   };
   const series = [
     { name: 'Продажи', data: pad(history.raw) },

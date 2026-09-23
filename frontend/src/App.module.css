@@ -1,0 +1,76 @@
+.pageHeader { display: flex; justify-content: space-between; align-items: end; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-6); }
+.pageHeader h1 { margin: 0; font-size: var(--font-xl); }
+.eyebrow { margin-bottom: var(--space-1); color: var(--text-muted); font-size: var(--font-xs); letter-spacing: .08em; text-transform: uppercase; }
+.headerMeta { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; color: var(--text-muted); font-size: var(--font-sm); }
+.demoBadge { padding: var(--space-1) var(--space-3); border-radius: var(--radius-control); color: var(--warning); background: var(--warning-soft); font-weight: 700; }
+.parameterGrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, .7fr) auto; gap: var(--space-4); align-items: end; }
+.more { margin-top: var(--space-3); }
+.more summary { width: fit-content; padding: var(--space-2) 0; color: var(--accent); cursor: pointer; }
+.advancedGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-4); padding-top: var(--space-3); }
+.uploadLink { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; margin-top: var(--space-4); color: var(--text-muted); font-size: var(--font-sm); overflow-wrap: anywhere; }
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-6); margin-block: var(--space-8); }
+.runMeta { display: flex; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; margin-top: var(--space-4); color: var(--text-muted); font-size: var(--font-sm); overflow-wrap: anywhere; }
+.secondaryMetrics { margin-bottom: var(--space-6); color: var(--text-muted); font-size: var(--font-sm); }
+.workspace { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; gap: var(--space-6); }
+.withDetail { grid-template-columns: minmax(0, 1.38fr) minmax(0, 1fr); }
+.orders { min-width: 0; }
+.ordersHeading { display: flex; justify-content: space-between; align-items: start; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-6); }
+.ordersHeading h2 { margin: 0; font-size: var(--font-lg); }
+.filters { display: flex; gap: var(--space-3); flex-wrap: wrap; }
+.filters > * { flex: 1 1 var(--detail-width-min); }
+.filters > :last-child { flex-basis: 8rem; }
+.supplier + .supplier { margin-top: var(--space-8); }
+.supplierHeader, .supplierTitle, .supplierActions { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.supplierHeader { justify-content: space-between; }
+.supplierTitle h3 { margin: 0; font-size: var(--font-md); }
+.supplierActions { margin-left: auto; }
+.supplierActions button { min-height: var(--control-height-dense); }
+.supplierMeta { margin: var(--space-2) 0 var(--space-3); color: var(--text-muted); font-size: var(--font-sm); }
+.tableScroll { max-width: 100%; overflow-x: auto; }
+.tableScroll table { width: 100%; border-collapse: collapse; font-size: var(--font-sm); }
+.tableScroll th, .tableScroll td { padding: var(--space-3) var(--space-2); border-bottom: var(--border-width) solid var(--border); vertical-align: middle; }
+.tableScroll th { color: var(--text-muted); text-align: left; white-space: nowrap; font-weight: 500; }
+.productCell { min-width: 16rem; max-width: 23rem; }
+.productButton { width: 100%; padding: 0; border: 0; background: transparent; color: var(--text); font-weight: 600; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+.productButton:hover { color: var(--accent); }
+.sku { display: block; margin-bottom: var(--space-1); color: var(--text-muted); font: var(--font-xs)/var(--line-body) var(--font-code); overflow-wrap: anywhere; }
+.number { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.compare, .cellError { color: var(--critical); }
+.selected { background: var(--accent-soft); }
+.editor { min-width: 8rem; }
+.editorControls { display: flex; gap: var(--space-2); align-items: center; }
+.editorControls input { min-width: 0; width: 7rem; height: var(--control-height-dense); padding-inline: var(--space-2); border: var(--border-width) solid var(--border-strong); border-radius: var(--radius-control); color: var(--text); background: var(--surface); font-variant-numeric: tabular-nums; }
+.editorControls input:disabled { opacity: .5; }
+.editorControls button { min-height: var(--control-height-dense); padding-inline: var(--space-2); }
+.cellError { display: block; max-width: 12rem; }
+.cards { display: none; }
+.backdrop { display: none; }
+.empty { margin-top: var(--space-8); }
+.empty h2 { font-size: var(--font-lg); }
+.empty p { margin-bottom: 0; color: var(--text-muted); }
+.dialogActions { display: flex; justify-content: end; gap: var(--space-3); flex-wrap: wrap; margin-top: var(--space-6); }
+.uploadFields { display: grid; gap: var(--space-3); margin-block: var(--space-4); }
+@media (max-width: 1439px) {
+  .withDetail { grid-template-columns: minmax(0, 1fr); }
+  .backdrop { display: block; position: fixed; z-index: calc(var(--z-drawer) - 1); inset: 0; width: 100%; border: 0; background: rgb(0 0 0 / .7); }
+}
+@media (max-width: 1023px) {
+  .parameterGrid, .advancedGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 639px) {
+  .parameterGrid, .advancedGrid { grid-template-columns: minmax(0, 1fr); }
+  .parameterGrid > button { width: 100%; }
+  .kpis { gap: var(--space-4); margin-block: var(--space-6); }
+  .supplierActions { margin-left: 0; width: 100%; }
+  .supplierActions button { flex: 1 1 8rem; }
+  .tableScroll { display: none; }
+  .cards { display: block; }
+  .card { padding-block: var(--space-4); border-top: var(--border-width) solid var(--border); }
+  .cardFacts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); margin-block: var(--space-3); }
+  .cardFacts div { min-width: 0; }
+  .cardFacts span { display: block; color: var(--text-muted); font-size: var(--font-xs); }
+  .cardFacts strong { display: block; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .editor { margin-bottom: var(--space-3); }
+}
+@media (max-width: 359px) { .kpis { grid-template-columns: minmax(0, 1fr); } }

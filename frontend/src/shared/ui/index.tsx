@@ -1,13 +1,13 @@
 import * as RadixDialog from '@radix-ui/react-dialog';
-import type { ButtonHTMLAttributes, HTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react';
+import { forwardRef, type ButtonHTMLAttributes, type HTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from 'react';
 import type { Urgency } from '../../api/types';
 import { urgencyLabels } from '../format';
 import styles from './ui.module.css';
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost' | 'danger'; loading?: boolean };
-export function Button({ variant = 'secondary', loading = false, className = '', children, disabled, ...props }: ButtonProps) {
-  return <button {...props} disabled={disabled || loading} aria-busy={loading} className={`${styles.button} ${styles[variant]} ${className}`}>{loading ? 'Загрузка…' : children}</button>;
-}
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button({ variant = 'secondary', loading = false, className = '', children, disabled, ...props }, ref) {
+  return <button {...props} ref={ref} disabled={disabled || loading} aria-busy={loading} className={`${styles.button} ${styles[variant]} ${className}`}>{loading ? 'Загрузка…' : children}</button>;
+});
 
 export function PageShell({ children }: { children: ReactNode }) { return <main className={styles.shell}>{children}</main>; }
 export function SectionPanel({ children, className = '', ...props }: HTMLAttributes<HTMLElement>) { return <section {...props} className={`${styles.panel} ${className}`}>{children}</section>; }

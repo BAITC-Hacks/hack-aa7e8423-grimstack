@@ -1,9 +1,8 @@
-import ExcelJS from 'exceljs';
 import rawMeta from './mock-data/meta.json';
 import rawRun from './mock-data/run.json';
 import rawHistory from './mock-data/sku-history.json';
 import { ApiError, type ProcurementApi } from './ProcurementApi';
-import type { Meta, OrderLine, RunParams, RunResult, SkuHistory, Supplier, SupplierSummary } from './types';
+import type { Meta, RunParams, RunResult, SkuHistory, Supplier } from './types';
 
 const meta = rawMeta as Meta;
 const fixture = rawRun as RunResult;
@@ -75,6 +74,7 @@ export const mockClient: ProcurementApi = {
   },
   async exportXlsx(runId, supplier) {
     await pause();
+    const { default: ExcelJS } = await import('exceljs');
     const lines = getStored(runId).lines.filter((line) => line.supplier === supplier && line.final_qty > 0);
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Заказ');

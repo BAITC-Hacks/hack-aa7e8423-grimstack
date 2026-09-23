@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError, type DatasetFiles } from './api/ProcurementApi';
 import { getApi } from './api/client';
-import type { FileRole, Meta, OrderLine, RunParams, RunResult, Supplier, SupplierSummary, Urgency } from './api/types';
+import type { FileRole, Meta, OrderLine, RunParams, Supplier, SupplierSummary, Urgency } from './api/types';
 import { SkuPanel } from './features/SkuPanel';
 import { saveBlob } from './shared/download';
 import { formatDate, formatMoney, formatNumber, formatQty } from './shared/format';
