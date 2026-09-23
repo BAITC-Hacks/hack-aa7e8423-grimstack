@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { ChartLineUp, ClipboardText, Database, SquaresFour } from '@phosphor-icons/react';
 import { ApiError, type DatasetFiles } from './api/ProcurementApi';
 import { getApi } from './api/client';
 import type { FileRole, Meta, OrderLine, RunParams, Supplier, SupplierSummary, Urgency } from './api/types';
@@ -22,12 +23,13 @@ const ComparisonChart = lazy(() => import('./features/RunCharts').then((module) 
 const BacktestPanel = lazy(() => import('./features/BacktestPanel').then((module) => ({ default: module.BacktestPanel })));
 const ScenarioPanel = lazy(() => import('./features/ScenarioPanel'));
 type View = 'overview' | 'orders' | 'analytics' | 'data';
-const viewItems: { id: View; label: string }[] = [
-  { id: 'overview', label: 'Обзор' },
-  { id: 'orders', label: 'Заказы' },
-  { id: 'analytics', label: 'Аналитика' },
-  { id: 'data', label: 'Данные и расчёт' },
+const viewItems: { id: View; label: string; shortLabel: string }[] = [
+  { id: 'overview', label: 'Обзор', shortLabel: 'Обзор' },
+  { id: 'orders', label: 'Заказы', shortLabel: 'Заказы' },
+  { id: 'analytics', label: 'Аналитика', shortLabel: 'Аналитика' },
+  { id: 'data', label: 'Данные и расчёт', shortLabel: 'Данные' },
 ];
+const viewIcons = { overview: SquaresFour, orders: ClipboardText, analytics: ChartLineUp, data: Database };
 function readView(): View {
   const value = window.location.pathname.slice(1).split('/')[0];
   return viewItems.find((item) => item.id === value)?.id ?? 'overview';
@@ -237,15 +239,19 @@ export default function App() {
   const subtitle = { overview: 'Что и сколько заказать у IEK и Systeme Electric, что срочно', orders: 'Проверьте количество, при необходимости поправьте и утвердите', analytics: 'Чем расчёт отличается от Excel-метода и насколько точен прогноз', data: 'Данные и параметры, на которых построен расчёт' }[view];
 
   return <div className={styles.appLayout}>
+    <a className={styles.skipLink} href="#main-content">К содержанию</a>
     <aside className={styles.sidebar} aria-label="Навигация">
-      <div className={styles.brand}><div><strong>GrimStack</strong><small>Заказы поставщикам</small></div></div>
-      
-      <nav className={styles.nav}>{viewItems.map((item) => <a key={item.id} href={item.id === 'overview' ? '/' : `/${item.id}`} aria-current={view === item.id ? 'page' : undefined} className={view === item.id ? styles.activeNav : ''} onClick={(event) => { event.preventDefault(); navigate(item.id); }}>{item.label}</a>)}</nav>
+      <div className={styles.brand}><span className={styles.brandMark} aria-hidden="true">G</span><div><strong>GrimStack</strong><small>Заказы поставщикам</small></div></div>
+      <div className={styles.navCaption}>РАБОЧАЯ ОБЛАСТЬ</div>
+      <nav className={styles.nav} aria-label="Разделы">{viewItems.map((item) => {
+        const Icon = viewIcons[item.id];
+        return <a key={item.id} href={item.id === 'overview' ? '/' : `/${item.id}`} aria-current={view === item.id ? 'page' : undefined} className={view === item.id ? styles.activeNav : ''} onClick={(event) => { event.preventDefault(); navigate(item.id); }}><Icon size={19} weight={view === item.id ? 'fill' : 'regular'} aria-hidden="true" /><span className={styles.navLabel}>{item.label}</span><span className={styles.navShort}>{item.shortLabel}</span></a>;
+      })}</nav>
       <div className={styles.sidebarBottom}><span className={styles.statusDot} />{run ? 'Расчёт активен' : bootstrapping ? 'Идёт расчёт' : 'Нет расчёта'}<small>Данные на {formatDate(run?.data_as_of ?? metaQuery.data?.data_as_of)}</small></div>
     </aside>
 
     <div className={styles.mainColumn}>
-      <header className={styles.topbar}><span>Электрокомплект · IEK и Systeme Electric</span><div>{import.meta.env.VITE_MOCK === '1' && <span className={styles.demoBadge}>Демо-данные</span>}<span className={styles.topbarDate}>Обновлено {formatDate(run?.created_at ?? metaQuery.data?.data_as_of)}</span></div></header>
+      <header className={styles.topbar}><span className={styles.topbarOrg}>Электрокомплект<span className={styles.topbarBrands}> · IEK и Systeme Electric</span></span><div>{import.meta.env.VITE_MOCK === '1' && <span className={styles.demoBadge}>Демо-данные</span>}<span className={styles.topbarDate}>Обновлено {formatDate(run?.created_at ?? metaQuery.data?.data_as_of)}</span></div></header>
       <main id="main-content" className={styles.content}>
         <header className={styles.pageHeader}><div><h1>{title}</h1><p className={styles.subtitle}>{subtitle}</p></div>{view !== 'data' && <Button type="button" variant="primary" onClick={() => navigate('data')}>Параметры расчёта</Button>}</header>
         {metaQuery.isError && <InlineAlert tone="error">Не удалось загрузить параметры: {metaQuery.error.message} <Button type="button" onClick={() => void metaQuery.refetch()}>Повторить</Button></InlineAlert>}
