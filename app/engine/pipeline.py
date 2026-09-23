@@ -383,9 +383,9 @@ def _kpi(lines: list[OrderLine], prepared: Prepared, overstock_lines: int) -> Ru
 
 def _warnings(lines: list[OrderLine], prepared: Prepared, filter_mask: pd.Series) -> list[str]:
     out = []
-    for supplier in dict.fromkeys([*SUPPLIERS, *(l.supplier for l in lines)]):
-        if any(l.supplier == supplier and "approx_stock" in l.flags for l in lines):
-            out.append(f"{supplier}: текущий остаток — нижняя оценка (остаток на 01.09 минус продажи сентября)")
+    if any(l.supplier == "IEK" and "approx_stock" in l.flags for l in lines):
+        out.append("IEK: текущий остаток — нижняя оценка (остаток на 01.09 минус продажи сентября)")
+    for supplier in SUPPLIERS:  # префикс «IEK:»/«SE:» — сводка по поставщику берёт только свои предупреждения
         critical = [l for l in lines if l.supplier == supplier and l.urgency == "critical"]
         estimated = sum("approx_stock" in l.flags for l in critical)
         if estimated:
