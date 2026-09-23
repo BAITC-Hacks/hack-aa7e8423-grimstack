@@ -1,0 +1,7 @@
+.chart { min-width: 0; }
+.tableDetails { margin-bottom: var(--space-6); color: var(--text-muted); font-size: var(--font-sm); }
+.tableDetails summary { cursor: pointer; color: var(--accent); }
+.tableScroll { max-width: 100%; overflow-x: auto; }
+.tableScroll table { width: 100%; border-collapse: collapse; }
+.tableScroll th, .tableScroll td { padding: var(--space-2); border-bottom: var(--border-width) solid var(--border); text-align: right; white-space: nowrap; }
+.tableScroll th:first-child { text-align: left; }

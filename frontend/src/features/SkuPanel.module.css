@@ -1,0 +1,20 @@
+.panel { min-width: 0; padding: var(--space-6); border: var(--border-width) solid var(--border); border-radius: var(--radius-panel); background: var(--surface); }
+.panel section + section { margin-top: var(--space-6); }
+.panel h2 { margin-bottom: 0; font-size: var(--font-lg); overflow-wrap: anywhere; }
+.panel h3 { margin-bottom: var(--space-3); font-size: var(--font-md); }
+.header { display: flex; justify-content: space-between; align-items: start; gap: var(--space-4); }
+.kicker, .description, .flags { color: var(--text-muted); font-size: var(--font-sm); }
+.kicker { margin-bottom: var(--space-1); font-family: var(--font-code); }
+.description { margin-block: var(--space-4); }
+.facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); padding: var(--space-4); border: var(--border-width) solid var(--border); border-radius: var(--radius-control); }
+.facts div { min-width: 0; }
+.facts span { display: block; color: var(--text-muted); font-size: var(--font-xs); }
+.facts strong { font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.steps { border-top: var(--border-width) solid var(--border); }
+.step { display: flex; justify-content: space-between; gap: var(--space-3); padding-block: var(--space-2); border-bottom: var(--border-width) solid var(--border); font-size: var(--font-sm); }
+.step span { min-width: 0; }
+.step strong { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.total { color: var(--accent); }
+.flags { margin-top: var(--space-6); overflow-wrap: anywhere; }
+@media (max-width: 1439px) { .panel { position: fixed; z-index: var(--z-drawer); top: 0; right: 0; width: min(100%, 40rem); height: 100dvh; overflow-y: auto; border-radius: 0; } }
+@media (max-width: 639px) { .panel { width: 100%; padding: var(--space-4); } }
