@@ -1,0 +1,4 @@
+.chart { min-width: 0; max-width: 100%; overflow: hidden; }
+.caption, .message { color: var(--text-muted); font-size: var(--font-xs); }
+.caption { margin: 0 0 var(--space-2); }
+.message { margin: var(--space-2) 0; }
