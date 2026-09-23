@@ -36,7 +36,8 @@ function Parameters({ meta, params, setParams, onCalculate, calculating, onOpenU
   const supplierInfo = meta?.suppliers.find((item) => item.supplier === params.supplier);
   return <div className={styles.parameterPanel} aria-label="Параметры расчёта">
     <div className={styles.parameterGrid}>
-      <Select id="supplier" label="Поставщик" value={params.supplier ?? ''} onChange={(event) => setParams({ ...params, supplier: (event.target.value || null) as Supplier | null, dataset_id: null, category: null, lead_time_days: null, review_period_days: null })}><option value="">Все поставщики</option>{meta?.suppliers.map((item) => <option key={item.supplier} value={item.supplier}>{item.supplier_name}</option>)}</Select>
+      <Select id="supplier" label="Поставщик" value={params.supplier ?? ''} onChange={(event) => setParams({ ...params, supplier: (event.target.value || null) as Supplier | null, dataset_id: null, category: params.category && meta?.product_groups.includes(params.category) ? params.category : null, lead_time_days: null, review_period_days: null })}><option value="">Все поставщики</option>{meta?.suppliers.map((item) => <option key={item.supplier} value={item.supplier}>{item.supplier_name}</option>)}</Select>
+      <Select id="category" label="Категория" value={params.category ?? ''} onChange={(event) => setParams({ ...params, category: event.target.value || null })}><option value="">Все категории</option>{(meta?.product_groups.length ?? 0) > 0 && <optgroup label="Товарные группы">{meta?.product_groups.map((group) => <option key={group} value={group}>{group}</option>)}</optgroup>}{supplierInfo && <optgroup label={`Класс ${supplierInfo.supplier_name}`}>{supplierInfo.categories.map((category) => <option key={category} value={category}>{category}</option>)}</optgroup>}</Select>
       <Select id="method" label="Метод" value={params.method} onChange={(event) => setParams({ ...params, method: event.target.value as RunParams['method'] })}><option value="analyze">Наш расчёт</option><option value="baseline">Excel-метод</option></Select>
       <Field id="lead" label="Срок поставки L, дни" type="number" min={1} max={365} placeholder={supplierInfo ? `По умолчанию: ${supplierInfo.lead_time_days}` : 'По поставщику'} value={params.lead_time_days ?? ''} onChange={(event) => setParams({ ...params, lead_time_days: event.target.value ? Number(event.target.value) : null })} />
       <Field id="review" label="Период R, дни" type="number" min={1} max={365} placeholder={supplierInfo ? `По умолчанию: ${supplierInfo.review_period_days}` : 'По поставщику'} value={params.review_period_days ?? ''} onChange={(event) => setParams({ ...params, review_period_days: event.target.value ? Number(event.target.value) : null })} />
@@ -44,7 +45,6 @@ function Parameters({ meta, params, setParams, onCalculate, calculating, onOpenU
       <Button variant="primary" type="button" loading={calculating} onClick={onCalculate}>Рассчитать</Button>
     </div>
     <details className={styles.more}><summary>Доп. параметры</summary><div className={styles.advancedGrid}>
-      <Select id="category" label="Категория" value={params.category ?? ''} disabled={!supplierInfo} onChange={(event) => setParams({ ...params, category: event.target.value || null })}><option value="">Все категории</option>{supplierInfo?.categories.map((category) => <option key={category} value={category}>{category}</option>)}</Select>
       <Field id="service" label="Уровень сервиса, %" type="number" min={51} max={99} step="0.1" placeholder="По категории" value={params.service_level === null ? '' : params.service_level * 100} onChange={(event) => setParams({ ...params, service_level: event.target.value ? Number(event.target.value) / 100 : null })} />
     </div><div className={styles.uploadLink}><Button type="button" onClick={onOpenUpload}>Загрузить свои выгрузки</Button>{params.dataset_id && <span>Набор данных: {params.dataset_id}</span>}</div></details>
   </div>;
@@ -57,11 +57,15 @@ function QuantityEditor({ line, approved, onSave }: { line: OrderLine; approved:
   const changed = Number(draft) !== line.final_qty;
   async function submit() {
     const value = Number(draft);
-    if (draft.trim() === '' || !isValidQuantity(value, line.moq)) { setError(`Количество должно быть кратно ${formatNumber(line.moq)} и не меньше 0`); return; }
+    if (draft.trim() === '' || !isValidQuantity(value, line.moq)) {
+      const lower = Math.max(0, Math.floor(value / line.moq) * line.moq);
+      setError(Number.isFinite(value) && value >= 0 ? `Нужно кратно ${formatNumber(line.moq)}: ближайшие ${formatNumber(lower)} или ${formatNumber(lower + line.moq)}` : 'Количество не может быть отрицательным');
+      return;
+    }
     setBusy(true); setError('');
     try { await onSave(line, value); } catch (cause) { if (cause instanceof ApiError && cause.status === 409) setDraft(String(line.final_qty)); setError(cause instanceof Error ? cause.message : 'Не удалось сохранить количество'); } finally { setBusy(false); }
   }
-  return <div className={styles.editor}><div className={styles.editorControls}><input aria-label={`Итоговое количество для ${line.name}`} type="number" min="0" step={line.moq} value={draft} disabled={approved || busy} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void submit(); if (event.key === 'Escape') { setDraft(String(line.final_qty)); setError(''); } }} />{changed && !approved && <Button type="button" disabled={busy} loading={busy} onClick={() => void submit()}>Сохранить</Button>}</div>{error && <small role="alert" className={styles.cellError}>{error}</small>}</div>;
+  return <div className={styles.editor}><div className={styles.editorControls}><input aria-label={`Итоговое количество для ${line.name}`} type="number" min="0" step={line.moq} value={draft} disabled={approved || busy} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void submit(); if (event.key === 'Escape') { setDraft(String(line.final_qty)); setError(''); } }} />{changed && !approved && <Button type="button" disabled={busy} loading={busy} onClick={() => void submit()}>Сохранить</Button>}</div>{error ? <small role="alert" className={styles.cellError}>{error}</small> : !changed && line.final_qty !== line.recommended_qty && <small className={styles.edited}>изменено вручную</small>}</div>;
 }
 
 function OrderCard({ line, approved, selected, onSelect, onSave }: { line: OrderLine; approved: boolean; selected: boolean; onSelect: (line: OrderLine) => void; onSave: (line: OrderLine, quantity: number) => Promise<void> }) {
@@ -101,7 +105,7 @@ function SupplierOrders({ summary, lines, selectedId, onSelect, onSave, onApprov
     </div>
     <div className={styles.cards}>{pageLines.map((line) => <OrderCard key={line.line_id} line={line} approved={summary.status === 'approved'} selected={selectedId === line.line_id} onSelect={onSelect} onSave={onSave} />)}</div>
     {pageCount > 1 && <nav className={styles.pagination} aria-label={`Страницы заказов ${summary.supplier_name}`}><span>Показаны {formatNumber(currentPage * pageSize + 1)}–{formatNumber(currentPage * pageSize + pageLines.length)} из {formatNumber(lines.length)}</span><div><Button type="button" disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>Назад</Button><span>Страница {formatNumber(currentPage + 1)} из {formatNumber(pageCount)}</span><Button type="button" disabled={currentPage >= pageCount - 1} onClick={() => setPage(currentPage + 1)}>Далее</Button></div></nav>}
-    <Dialog open={confirm} onOpenChange={setConfirm} title={`Утвердить заказ ${summary.supplier_name}?`}><p>После утверждения количества этого поставщика нельзя будет изменить.</p><div className={styles.dialogActions}><Button type="button" onClick={() => setConfirm(false)}>Отмена</Button><Button type="button" variant="primary" loading={busy} onClick={() => void action(async () => { await onApprove(summary.supplier); setConfirm(false); })}>Утвердить</Button></div></Dialog>
+    <Dialog open={confirm} onOpenChange={setConfirm} title={`Утвердить заказ ${summary.supplier_name}?`}><p>{formatNumber(summary.lines_count)} поз. · {formatNumber(Math.round(summary.total_qty))} ед.{summary.total_amount === null ? '' : ` · ${formatMoney(summary.total_amount)}`} · изменено вручную: {formatNumber(lines.filter((line) => line.final_qty !== line.recommended_qty).length)}</p>{lines.some((line) => line.urgency === 'critical' && line.flags.includes('approx_stock')) && <InlineAlert tone="warning">Часть срочных позиций рассчитана по оценочному остатку — сверьте фактический остаток в 1С.</InlineAlert>}<p>После утверждения количества этого поставщика нельзя будет изменить. Заказ поставщику автоматически не отправляется.</p><div className={styles.dialogActions}><Button type="button" onClick={() => setConfirm(false)}>Отмена</Button><Button type="button" variant="primary" loading={busy} onClick={() => void action(async () => { await onApprove(summary.supplier); setConfirm(false); })}>Утвердить</Button></div></Dialog>
   </section>;
 }
 
@@ -138,7 +142,7 @@ export default function App() {
   const [runId, setRunId] = useState<string | null>(() => import.meta.env.VITE_MOCK === '1' ? null : sessionStorage.getItem('grimstack-run-id'));
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
-  const [summary, setSummary] = useState<{ text: string; cached: boolean } | null>(null);
+  const [summary, setSummary] = useState<{ text: string; cached: boolean; unavailable?: boolean } | null>(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [calculating, setCalculating] = useState(false);
@@ -214,7 +218,14 @@ export default function App() {
   }
   async function approve(supplier: Supplier) { if (!runId) return; await (await getApi()).approveSupplier(runId, supplier); await queryClient.invalidateQueries({ queryKey: ['run', runId] }); }
   async function exportFile(supplier: Supplier) { if (!runId) return; const file = await (await getApi()).exportXlsx(runId, supplier); saveBlob(file.blob, file.filename ?? `order_${supplier}_${new Date().toISOString().slice(0, 10)}.xlsx`); }
-  async function showSummary(supplier: Supplier) { if (!runId) return; const result = await (await getApi()).getSummary(runId, supplier); setSummary(result); }
+  async function showSummary(supplier: Supplier) {
+    if (!runId) return;
+    try { setSummary(await (await getApi()).getSummary(runId, supplier)); }
+    catch (cause) {
+      if (!(cause instanceof ApiError && cause.status === 503)) throw cause;
+      setSummary({ text: 'Готовая сводка сохранена для исходного расчёта с параметрами по умолчанию. После ручных правок или смены параметров текст пишет LLM — для этого нужен ключ OPENAI_API_KEY в .env. Числа заказа и обоснования строк от этого не зависят.', cached: false, unavailable: true });
+    }
+  }
   function resetRun() { autoRunAttempted.current = true; manualRunStarted.current = true; sessionStorage.removeItem('grimstack-run-id'); setRunId(null); setSelectedId(null); }
   function navigate(next: View) {
     if (next !== view) { window.history.pushState(null, '', next === 'overview' ? '/' : `/${next}`); setView(next); setSelectedId(null); window.scrollTo({ top: 0, behavior: 'instant' }); }
@@ -245,7 +256,7 @@ export default function App() {
         {view === 'data' && import.meta.env.VITE_MOCK === '1' && <InlineAlert tone="info">Демо-режим показывает фиксированный образец расчёта. Изменение параметров и загрузка файлов не меняют его значения.</InlineAlert>}
 
         {view === 'overview' && run && !calculating && <>
-          <section className={styles.kpis} aria-label="Главные показатели"><KpiMetric label="Позиций к заказу" value={formatNumber(run.kpi.lines_to_order)} /><KpiMetric label="Срочные позиции" value={formatNumber(run.kpi.critical)} hint={(() => { const count = run.lines.filter((line) => line.flags.includes('approx_stock') && (line.urgency === 'critical' || line.urgency === 'high')).length; return count ? `из них ${formatNumber(count)} — IEK по оценочному остатку` : undefined; })()} critical /><KpiMetric label="Сумма заказа SE" value={run.kpi.total_amount === null ? 'Нет цены' : `${new Intl.NumberFormat('ru-RU', { notation: 'compact', maximumFractionDigits: 1 }).format(run.kpi.total_amount)} ₸`} hint="у IEK нет цен" /><KpiMetric label="Позиции с излишком" value={formatNumber(run.kpi.overstock_lines)} hint="запас выше целевого уровня" /></section>
+          <section className={styles.kpis} aria-label="Главные показатели"><KpiMetric label="Позиций к заказу" value={formatNumber(run.kpi.lines_to_order)} /><KpiMetric label="Срочные позиции" value={formatNumber(run.kpi.critical)} hint={(() => { const count = run.lines.filter((line) => line.urgency === 'critical' && line.flags.includes('approx_stock')).length; return count ? `из них ${formatNumber(count)} — по оценочному остатку` : undefined; })()} critical /><KpiMetric label="Сумма заказа SE" value={run.kpi.total_amount === null ? 'Нет цены' : `${new Intl.NumberFormat('ru-RU', { notation: 'compact', maximumFractionDigits: 1 }).format(run.kpi.total_amount).replace(/\s+/, ' ')}\u00a0₸`} hint="у IEK нет цен" /><KpiMetric label="Позиции с излишком" value={formatNumber(run.kpi.overstock_lines)} hint="запас выше целевого уровня" /></section>
           <div className={styles.overviewSecondary}><span>Исключено разовых: <strong>{formatNumber(Math.round(run.kpi.oneoff_units_excluded))} шт</strong></span><span>Восстановлено спроса: <strong>{formatNumber(Math.round(run.kpi.stockout_units_restored))} шт</strong></span></div>
           <div className={styles.chartGrid}>
             <SectionPanel className={styles.chartPanel}><div className={styles.sectionHeading}><div><p className={styles.sectionKicker}>СТРУКТУРА ПОРТФЕЛЯ</p><h2>Риск по позициям</h2></div><span>{formatNumber(run.lines.length)} SKU</span></div><Suspense fallback={<Skeleton label="Загрузка структуры заказов" />}><RiskChart run={run} /></Suspense></SectionPanel>
@@ -271,6 +282,6 @@ export default function App() {
       </main>
     </div>
     <UploadDialog open={uploadOpen} onOpenChange={setUploadOpen} onUploaded={(datasetId, supplier, warnings) => { resetRun(); setParams((current) => ({ ...current, supplier, category: null, lead_time_days: null, review_period_days: null, dataset_id: datasetId })); setNotice(`Набор ${datasetId} загружен. Запустите новый расчёт. ${warnings.join(' ')}`); }} />
-    <Dialog open={summary !== null} onOpenChange={(open) => { if (!open) setSummary(null); }} title="Сводка по заказу">{summary && <><p>{summary.text}</p>{summary.cached && <p>Из кэша</p>}<div className={styles.dialogActions}><Button type="button" onClick={() => setSummary(null)}>Закрыть</Button></div></>}</Dialog>
+    <Dialog open={summary !== null} onOpenChange={(open) => { if (!open) setSummary(null); }} title={summary?.unavailable ? 'Сводка для этого расчёта не готова' : 'Сводка по заказу'}>{summary && <>{summary.unavailable ? <InlineAlert tone="info">{summary.text}</InlineAlert> : <p className={styles.summaryText}>{summary.text}</p>}{summary.cached && <p className={styles.muted}>Из кэша</p>}<div className={styles.dialogActions}><Button type="button" onClick={() => setSummary(null)}>Закрыть</Button></div></>}</Dialog>
   </div>;
 }

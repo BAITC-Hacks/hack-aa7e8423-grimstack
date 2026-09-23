@@ -32,16 +32,18 @@ function baseOptions(): ApexOptions {
 
 export function RiskChart({ run }: { run: RunResult }) {
   const color = palette();
-  const counts = urgencies.map(({ key }) => run.lines.filter((line) => line.urgency === key).length);
+  // пустые категории не показываем: «Без заказа: 0» выглядит как сломанный показатель
+  const shown = urgencies.map((item) => ({ ...item, count: run.lines.filter((line) => line.urgency === item.key).length })).filter((item) => item.count > 0);
+  const counts = shown.map(({ count }) => count);
   if (run.lines.length === 0) return <p className={styles.noData}>В расчёте нет позиций.</p>;
   const options: ApexOptions = {
     ...baseOptions(),
-    labels: urgencies.map(({ label }) => label),
-    colors: urgencies.map(({ token }) => color(token)),
-    stroke: { width: 0 },
+    labels: shown.map(({ label }) => label),
+    colors: shown.map(({ token }) => color(token)),
+    stroke: { width: 2, colors: [color('--surface')] },
     plotOptions: { pie: { donut: { size: '76%', labels: { show: true, name: { show: true }, value: { show: true, formatter: (value: string) => formatNumber(Number(value)) }, total: { show: true, label: 'Позиций', formatter: () => formatNumber(run.lines.length) } } } } },
   };
-  return <div className={styles.risk}><div className={styles.donut} aria-hidden="true"><Chart type="donut" height={260} options={options} series={counts} /></div><div className={styles.legend}>{urgencies.map(({ key, label, token }, index) => <div key={key}><span className={styles.legendLabel}><i style={{ background: color(token) }} />{label}</span><strong>{formatNumber(counts[index])}</strong></div>)}</div></div>;
+  return <div className={styles.risk}><div className={styles.donut} aria-hidden="true"><Chart type="donut" height={260} options={options} series={counts} /></div><div className={styles.legend}>{shown.map(({ key, label, token, count }) => <div key={key}><span className={styles.legendLabel}><i style={{ background: color(token) }} />{label}</span><strong>{formatNumber(count)}</strong></div>)}</div></div>;
 }
 
 export function SupplierChart({ run }: { run: RunResult }) {

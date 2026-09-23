@@ -88,7 +88,8 @@
 .editorControls input { min-width: 0; width: 6rem; height: var(--control-height-dense); padding-inline: 8px; border: 1px solid var(--border-strong); border-radius: var(--radius-control); color: var(--text); background: var(--surface); font-variant-numeric: tabular-nums; }
 .editorControls input:disabled { opacity: .5; }
 .editorControls button { min-height: var(--control-height-dense); padding-inline: 8px; font-size: 11px; }
-.cellError { display: block; max-width: 12rem; }
+.cellError { display: block; max-width: 8rem; margin-top: 4px; font-size: 11px; line-height: 1.35; white-space: normal; }
+.edited { display: block; margin-top: 4px; color: var(--text-muted); font-size: 11px; }
 .cards, .backdrop { display: none; }
 .pagination { display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); flex-wrap: wrap; margin-top: var(--space-4); color: var(--text-muted); font-size: var(--font-xs); }
 .pagination > div { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
@@ -124,3 +125,4 @@
 @media (max-width: 700px) { .content { padding: 26px 16px 48px; } .topbar { padding-inline: 16px; } .topbarDate { display: none; } .pageHeader { align-items: start; flex-direction: column; gap: 18px; } .pageHeader button { width: 100%; } .kpis, .overviewGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .ordersHeading { align-items: stretch; } .filters { width: 100%; } .filters > :first-child { flex: 1 1 210px; width: auto; } .filters > :last-child { flex: 1 1 140px; width: auto; } .historyPanel .sectionHeading { align-items: stretch; flex-direction: column; } .analysisPicker { width: 100%; grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 639px) { .tableScroll { display: none; } .cards { display: block; } .card { padding-block: 16px; border-top: 1px solid var(--border); } .cardFacts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-block: 12px; } .cardFacts span { display: block; color: var(--text-muted); font-size: 11px; } .cardFacts strong { display: block; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; } .cardExplanation { color: var(--text-muted); font-size: 12px; } .editor { margin-bottom: 12px; } .supplierActions { margin-left: 0; width: 100%; } .supplierActions button { flex: 1 1 7rem; } .parameterGrid, .advancedGrid { grid-template-columns: minmax(0, 1fr); } .dataAside { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 480px) { .nav { grid-template-columns: repeat(2, minmax(0, 1fr)); } .topbar > span { font-size: 9px; } .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .overviewGrid { grid-template-columns: minmax(0, 1fr); } .sectionHeading { flex-wrap: wrap; } .empty { padding: 24px; } }
+.summaryText { white-space: pre-line; line-height: 1.6; }
