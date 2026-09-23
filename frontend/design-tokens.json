@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "name": "GrimStack procurement dark",
+    "description": "Canonical values for frontend/src/styles/tokens.css and shared UI components."
+  },
+  "color": {
+    "bg": "#17191B",
+    "surface": "#1E2124",
+    "surfaceRaised": "#262B30",
+    "border": "#363C42",
+    "borderStrong": "#56616B",
+    "text": "#F2F4F5",
+    "textMuted": "#AAB3BB",
+    "accent": "#69A9E0",
+    "onAccent": "#111920",
+    "accentSoft": "#243C50",
+    "critical": "#E07878",
+    "criticalSoft": "#43272A",
+    "warning": "#E2AB55",
+    "warningSoft": "#403322",
+    "success": "#78B995",
+    "successSoft": "#263D32"
+  },
+  "font": {
+    "body": "IBM Plex Sans",
+    "code": "IBM Plex Mono",
+    "size": {
+      "xs": 12,
+      "sm": 14,
+      "md": 16,
+      "lg": 20,
+      "xl": 24,
+      "kpiMin": 24,
+      "kpiMax": 34
+    },
+    "lineHeight": {
+      "heading": 1.25,
+      "body": 1.45
+    }
+  },
+  "space": {
+    "1": 4,
+    "2": 8,
+    "3": 12,
+    "4": 16,
+    "6": 24,
+    "8": 32,
+    "12": 48
+  },
+  "radius": {
+    "control": 8,
+    "panel": 12
+  },
+  "size": {
+    "borderWidth": 1,
+    "controlHeight": 44,
+    "controlHeightDense": 36,
+    "touchTargetMin": 44,
+    "contentMax": 1600,
+    "detailWidthMin": 420
+  },
+  "breakpoint": {
+    "mobileMax": 639,
+    "tabletMax": 1023,
+    "desktopMax": 1439,
+    "wideMin": 1440
+  },
+  "zIndex": {
+    "sticky": 10,
+    "drawer": 20,
+    "dialog": 30,
+    "toast": 40
+  },
+  "motion": {
+    "quickMs": 120,
+    "standardMs": 180
+  }
+}

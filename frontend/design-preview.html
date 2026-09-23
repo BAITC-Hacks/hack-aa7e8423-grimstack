@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GrimStack — предварительный просмотр дизайн-системы</title>
+  <style>
+    /* Статический предпросмотр. Канонические значения находятся в design-tokens.json. */
+    :root {
+      color-scheme: dark;
+      --bg: #17191B; --surface: #1E2124; --surface-raised: #262B30;
+      --border: #363C42; --border-strong: #56616B; --text: #F2F4F5; --text-muted: #AAB3BB;
+      --accent: #69A9E0; --on-accent: #111920; --accent-soft: #243C50;
+      --critical: #E07878; --critical-soft: #43272A;
+      --warning: #E2AB55; --warning-soft: #403322;
+      --success: #78B995; --success-soft: #263D32;
+      --space-2: 8px; --space-3: 12px; --space-4: 16px;
+      --space-6: 24px; --space-8: 32px;
+      --radius-control: 8px; --radius-panel: 12px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.45 "IBM Plex Sans", system-ui, sans-serif; }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .shell { width: min(100% - 64px, 1600px); margin: 0 auto; padding: 32px 0 48px; }
+    .eyebrow { color: var(--text-muted); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+    h1 { margin: 4px 0 24px; font-size: 24px; line-height: 1.25; }
+    .panel { min-width: 0; border: 1px solid var(--border); border-radius: var(--radius-panel); background: var(--surface); padding: var(--space-6); }
+    .filters { display: grid; grid-template-columns: minmax(160px, 1fr) minmax(180px, 1fr) 120px auto; gap: var(--space-4); align-items: end; }
+    label { display: grid; gap: var(--space-2); color: var(--text-muted); font-size: 14px; }
+    select, input { width: 100%; min-width: 0; height: 44px; padding: 0 12px; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-control); }
+    .button { min-height: 44px; padding: 0 16px; border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface-raised); color: var(--text); white-space: nowrap; }
+    .button:hover { border-color: var(--accent); }
+    .button.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 700; }
+    .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-6); margin: 32px 0; }
+    .metric span { display: block; color: var(--text-muted); font-size: 14px; }
+    .metric strong { display: block; margin-top: 4px; font-size: clamp(24px, 2vw, 34px); line-height: 1.25; font-variant-numeric: tabular-nums; }
+    .workspace { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(420px, 1fr); gap: var(--space-4); }
+    .heading { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-4); }
+    .heading h2 { margin: 0; font-size: 20px; }
+    .heading .actions { display: flex; gap: var(--space-2); margin-left: auto; flex-wrap: wrap; }
+    .badge { display: inline-flex; align-items: center; min-height: 28px; padding: 2px 10px; border-radius: 999px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+    .badge.warning { background: var(--warning-soft); color: var(--warning); }
+    .badge.critical { background: var(--critical-soft); color: var(--critical); }
+    .badge.success { background: var(--success-soft); color: var(--success); }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+    th, td { padding: 12px 10px; border-bottom: 1px solid var(--border); }
+    th { color: var(--text-muted); font-weight: 500; white-space: nowrap; }
+    td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    tr.selected { background: var(--accent-soft); }
+    .detail h2 { margin: 0 0 20px; font-size: 20px; }
+    .chart { height: 170px; display: grid; align-items: end; border-bottom: 1px solid var(--border); background: linear-gradient(90deg, transparent 0 75%, color-mix(in srgb, var(--critical) 12%, transparent) 75% 88%, transparent 88%); }
+    .chart svg { display: block; width: 100%; height: 150px; overflow: visible; }
+    .chart .history-line { fill: none; stroke: var(--text); stroke-width: 3; }
+    .chart .forecast-line { fill: none; stroke: var(--accent); stroke-width: 3; stroke-dasharray: 7 7; }
+    .caption { margin: 16px 0; color: var(--text-muted); font-size: 13px; }
+    .steps { margin-top: 16px; }
+    .step { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; font-size: 14px; }
+    .step span:last-child { font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .step.total { border-top: 1px solid var(--border); font-weight: 700; }
+    .note { margin-top: 24px; color: var(--text-muted); font-size: 12px; }
+    .section-spaced { margin-top: var(--space-6); }
+    .critical-text { color: var(--critical); }
+    .mobile-row button { margin-top: var(--space-2); }
+    @media (max-width: 1439px) { .workspace { grid-template-columns: 1fr; } }
+    @media (max-width: 1023px) { .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 639px) { .shell { width: min(100% - 32px, 1600px); padding-top: 24px; } .panel { padding: 16px; } .filters { grid-template-columns: 1fr; } .heading .actions { margin-left: 0; width: 100%; } .heading .actions .button { flex: 1; } .table-wrap { display: none; } .mobile-row { display: block !important; border-top: 1px solid var(--border); padding: 12px 0; } }
+    .mobile-row { display: none; }
+    @media (max-width: 359px) { .metrics { grid-template-columns: 1fr; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="eyebrow">Предпросмотр системы компонентов · значения условные</div>
+    <h1>Планирование заказов</h1>
+    <section class="panel filters" aria-label="Параметры расчёта">
+      <label>Поставщик<select><option>Все</option><option>IEK</option><option>Systeme Electric</option></select></label>
+      <label>Метод<select><option>Наш расчёт</option><option>Excel-метод</option></select></label>
+      <label>Прирост, %<input type="number" value="0"></label>
+      <button class="button primary" type="button">Рассчитать</button>
+    </section>
+    <section class="metrics" aria-label="Главные показатели">
+      <div class="metric"><span>К заказу</span><strong>312 поз.</strong></div>
+      <div class="metric"><span>Срочно</span><strong class="critical-text">142</strong></div>
+      <div class="metric"><span>Разовых убрано</span><strong>109 тыс. шт</strong></div>
+      <div class="metric"><span>Упущенный спрос</span><strong>+12,8 тыс.</strong></div>
+    </section>
+    <div class="workspace">
+      <section class="panel" aria-label="Заказы поставщиков">
+        <div class="heading"><h2>IEK</h2><span class="badge warning">Черновик</span><div class="actions"><button class="button" type="button">Утвердить</button><button class="button" type="button">Excel для 1С</button></div></div>
+        <div class="table-wrap"><table><thead><tr><th>Товар</th><th>Остаток</th><th>Заказ</th><th>Excel</th><th>Срочность</th></tr></thead><tbody><tr class="selected"><td>Труба Ø50, м</td><td class="num">≈0</td><td class="num">15 000</td><td class="num">13 400</td><td><span class="badge critical">Срочно</span></td></tr><tr><td>УЗО АВДТ 32 40А</td><td class="num">≈450</td><td class="num">100</td><td class="num">79</td><td>Плановый</td></tr></tbody></table></div>
+        <div class="mobile-row"><strong>Труба Ø50, м</strong><div>Остаток ≈0 · Заказ 15 000 · <span class="critical-text">Срочно</span></div><button class="button" type="button">Подробнее</button></div>
+        <div class="heading section-spaced"><h2>Systeme Electric</h2><span class="badge success">Утверждён</span></div>
+        <div class="table-wrap"><table><tbody><tr><td>Коробка IMT35101</td><td class="num">62 498</td><td class="num">8 280</td><td class="num">0</td><td><span class="badge warning">Скоро</span></td></tr></tbody></table></div>
+        <div class="mobile-row"><strong>Коробка IMT35101</strong><div>Заказ 8 280 · Excel 0</div><button class="button" type="button">Подробнее</button></div>
+      </section>
+      <aside class="panel detail" aria-label="Объяснение выбранного товара">
+        <h2>Труба Ø50 — почему 15 000 м</h2>
+        <div class="chart" role="img" aria-label="Условный пример графика продаж, stockout и прогноза">
+          <svg viewBox="0 0 500 150" preserveAspectRatio="none" aria-hidden="true"><polyline class="history-line" points="0,125 45,115 90,85 135,95 180,45 225,125 270,35 315,85 360,120 405,90"/><polyline class="forecast-line" points="405,90 455,30 500,75"/></svg>
+        </div>
+        <p class="caption">Светлая линия — продажи · голубой пунктир — прогноз · красная зона — stockout</p>
+        <div class="steps"><div class="step"><span>Спрос на 31 день</span><span>9 242</span></div><div class="step"><span>+ страховой запас</span><span>5 730</span></div><div class="step"><span>− остаток и в пути</span><span>0</span></div><div class="step"><span>+ округление до кратности 50</span><span>28</span></div><div class="step total"><span>Заказ</span><span>15 000 м</span></div></div>
+      </aside>
+    </div>
+    <p class="note">Это статический предпросмотр токенов и компонентов. Цифры взяты из демонстрационного макета и не являются результатом расчёта.</p>
+  </main>
+</body>
+</html>
