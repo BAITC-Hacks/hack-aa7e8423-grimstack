@@ -64,7 +64,8 @@
      Лимит 30 МБ на файл, при превышении — 422.
    - `POST /api/runs/{run_id}/summary?supplier=IEK` → `ai.summary(...)`. Если вернулся
      `None` — 503 с `detail`: «LLM недоступна: нет ключа и кэша».
-   - Неизвестный `run_id`, `line_id` или `supplier` → 404.
+   - Неизвестный `run_id`, `line_id` или `supplier` → 404. Неизвестный SKU: `engine.history`
+     бросает `KeyError` → 404.
 5. **`tests/api/`** — pytest + `fastapi.testclient`, на каждый пункт выше хотя бы один
    тест, включая негативные: 404, 409, 422 на отрицательное и некратное количество,
    пустой файл, не-xlsx, 503 на сводку.
@@ -76,7 +77,8 @@ Docker и деплой на Northflank делает Aliar. От тебя нуж�
 
 ## Готово, когда
 
-- `pytest -q` зелёный.
+- `pytest -q tests/api tests/test_contracts.py` зелёный. Приёмка ядра `tests/engine`
+  зеленеет по мере готовности ядра — это зона Aliar.
 - `python -m app` поднимает сервис, а `curl localhost:8000/health` отвечает `ok`.
 - `POST /api/runs` отдаёт `RunResult`.
 - Экспорт открывается в Excel.
